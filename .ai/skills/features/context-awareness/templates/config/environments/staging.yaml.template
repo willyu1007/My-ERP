@@ -1,0 +1,34 @@
+# Staging Environment Configuration
+# Copy this file to staging.yaml and fill in actual values
+
+environment: staging
+description: Testing and QA environment
+
+database:
+  host: ${DB_HOST}
+  port: ${DB_PORT:-5432}
+  name: ${DB_NAME:-app_staging}
+  user: ${DB_USER}
+  # password: use DB_PASSWORD env var or secrets manager
+  ssl: true
+
+api:
+  baseUrl: ${API_BASE_URL}
+  timeout: ${API_TIMEOUT:-30000}
+
+gateway:
+  rateLimit:
+    enabled: true
+    requestsPerMinute: ${RATE_LIMIT:-100}
+  auth:
+    provider: ${AUTH_PROVIDER}
+    jwksUri: ${JWKS_URI}
+
+logging:
+  level: info
+  format: json
+
+features:
+  debugMode: false
+  mockServices: false
+

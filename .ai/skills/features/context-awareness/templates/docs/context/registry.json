@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "updatedAt": "",
+  "artifacts": [
+    {
+      "id": "api-openapi",
+      "type": "openapi",
+      "path": "docs/context/api/openapi.yaml",
+      "mode": "contract",
+      "format": "openapi-3.1",
+      "tags": [
+        "api"
+      ],
+      "source": {
+        "kind": "manual",
+        "notes": "Edit the contract file; then run ctl-context touch."
+      }
+    },
+    {
+      "id": "api-index",
+      "type": "json",
+      "path": "docs/context/api/api-index.json",
+      "mode": "generated",
+      "format": "api-index-v1",
+      "tags": [
+        "api",
+        "index",
+        "llm"
+      ],
+      "source": {
+        "kind": "command",
+        "command": "node .ai/scripts/ctl-api-index.mjs generate --touch",
+        "notes": "Generated from openapi.yaml. Do NOT hand-edit."
+      }
+    },
+    {
+      "id": "glossary",
+      "type": "json",
+      "path": "docs/context/glossary.json",
+      "mode": "contract",
+      "format": "glossary-v1",
+      "tags": [
+        "glossary",
+        "llm"
+      ],
+      "source": {
+        "kind": "manual",
+        "notes": "Edit via ctl-context add-term/remove-term; then run ctl-context touch."
+      }
+    },
+    {
+      "id": "architecture-principles",
+      "type": "markdown",
+      "path": "docs/context/architecture-principles.md",
+      "mode": "contract",
+      "format": "architecture-principles-v1",
+      "tags": [
+        "architecture",
+        "llm"
+      ],
+      "source": {
+        "kind": "manual",
+        "notes": "Edit the Markdown file directly; then run ctl-context touch."
+      }
+    },
+    {
+      "id": "db-schema",
+      "type": "db-schema",
+      "path": "docs/context/db/schema.json",
+      "mode": "generated",
+      "format": "normalized-db-schema-v2",
+      "tags": [
+        "db"
+      ],
+      "source": {
+        "kind": "command",
+        "command": "node .ai/scripts/ctl-db-ssot.mjs sync-to-context",
+        "notes": "Generated via ctl-db-ssot sync-to-context (then ctl-context touch). Do NOT hand-edit."
+      }
+    },
+    {
+      "id": "bpmn-example",
+      "type": "bpmn",
+      "path": "docs/context/process/example.bpmn",
+      "mode": "contract",
+      "format": "bpmn-2.0",
+      "tags": [
+        "bpmn",
+        "process"
+      ],
+      "source": {
+        "kind": "manual",
+        "notes": "Replace with real processes or add more .bpmn files; then run ctl-context touch."
+      }
+    }
+  ]
+}

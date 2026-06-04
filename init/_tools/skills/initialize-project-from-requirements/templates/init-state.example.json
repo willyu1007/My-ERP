@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "language": "en",
+  "llm": { "language": "en" },
+  "stage": "A",
+  "createdAt": "2020-01-01T00:00:00.000Z",
+  "stage-a": {
+    "mustAsk": {
+      "terminologyAlignment": { "asked": false, "answered": false, "writtenTo": null },
+      "onePurpose": { "asked": false, "answered": false, "writtenTo": null },
+      "userRoles": { "asked": false, "answered": false, "writtenTo": null },
+      "mustRequirements": { "asked": false, "answered": false, "writtenTo": null },
+      "outOfScope": { "asked": false, "answered": false, "writtenTo": null },
+      "userJourneys": { "asked": false, "answered": false, "writtenTo": null },
+      "constraints": { "asked": false, "answered": false, "writtenTo": null },
+      "successMetrics": { "asked": false, "answered": false, "writtenTo": null }
+    },
+    "docsWritten": {
+      "requirements": false,
+      "nfr": false,
+      "glossary": false,
+      "riskQuestions": false
+    },
+    "validated": false,
+    "userApproved": false
+  },
+  "stage-b": {
+    "drafted": false,
+    "validated": false,
+    "packsReviewed": false,
+    "userApproved": false
+  },
+  "stage-c": {
+    "scaffoldApplied": false,
+    "configsGenerated": false,
+    "manifestUpdated": false,
+    "wrappersSynced": false,
+    "skillRetentionReviewed": false,
+    "userApproved": false
+  },
+  "history": []
+}

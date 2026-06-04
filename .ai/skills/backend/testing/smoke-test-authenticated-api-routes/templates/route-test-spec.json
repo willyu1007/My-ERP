@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RouteSmokeTestSpec",
+  "type": "object",
+  "properties": {
+    "endpoint": { "type": "string", "description": "METHOD path, e.g. 'POST /users'" },
+    "auth": { "type": "string", "description": "cookie | bearer | api-key | mock" },
+    "validRequest": {
+      "type": "object",
+      "properties": {
+        "headers": { "type": "object", "additionalProperties": { "type": "string" } },
+        "query": { "type": "object" },
+        "body": {}
+      },
+      "additionalProperties": false
+    },
+    "expected": {
+      "type": "object",
+      "properties": {
+        "status": { "type": "integer" },
+        "responseShapeNotes": { "type": "string" }
+      },
+      "required": ["status"]
+    },
+    "sideEffects": { "type": "string" },
+    "invalidRequest": { "type": "object" },
+    "expectedInvalid": { "type": "object" }
+  },
+  "required": ["endpoint", "auth", "validRequest", "expected"]
+}

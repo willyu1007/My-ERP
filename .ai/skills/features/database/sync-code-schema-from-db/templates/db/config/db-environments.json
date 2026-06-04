@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "updatedAt": "2025-12-25T00:00:00Z",
+  "environments": [
+    {
+      "id": "dev",
+      "description": "Local development database",
+      "connectionTemplate": "postgresql://${DB_USER}:${DB_PASSWORD}@localhost:5432/${DB_NAME}",
+      "permissions": {
+        "migrations": true,
+        "seedData": true,
+        "directQueries": true
+      }
+    },
+    {
+      "id": "staging",
+      "description": "Staging database",
+      "connectionTemplate": "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}",
+      "permissions": {
+        "migrations": "review-required",
+        "seedData": false,
+        "directQueries": false
+      }
+    },
+    {
+      "id": "prod",
+      "description": "Production database",
+      "connectionTemplate": "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}",
+      "permissions": {
+        "migrations": "change-request",
+        "seedData": false,
+        "directQueries": false
+      }
+    }
+  ]
+}
+

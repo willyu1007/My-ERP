@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "updatedAt": "2025-12-25T00:00:00Z",
+  "sampling": {
+    "default": 0.1,
+    "errorRate": 1.0,
+    "description": "Sample 10% of traces, 100% of errors"
+  },
+  "spanNaming": {
+    "http": "{method} {route}",
+    "db": "{operation} {table}",
+    "external": "{service}.{operation}",
+    "examples": [
+      "GET /api/users",
+      "SELECT users",
+      "redis.GET"
+    ]
+  },
+  "requiredAttributes": [
+    "service.name",
+    "service.version",
+    "deployment.environment"
+  ],
+  "conventions": {
+    "standard": "OpenTelemetry Semantic Conventions",
+    "reference": "https://opentelemetry.io/docs/specs/semconv/"
+  }
+}
+

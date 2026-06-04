@@ -1,0 +1,94 @@
+# Maestro Login Flow
+#
+# Tests the login functionality with valid and invalid credentials.
+# Run with: maestro test flows/login.yaml
+#
+# Environment variables:
+# - TEST_USER: Test account email
+# - TEST_PASS: Test account password
+
+appId: com.myapp.example
+
+---
+
+# Launch with fresh state
+- launchApp:
+    clearState: true
+
+# Wait for login screen (or navigate to it)
+- assertVisible:
+    id: "login-screen"
+    timeout: 10000
+    optional: true
+
+# If not on login screen, tap login button
+- runFlow:
+    when:
+      notVisible:
+        id: "login-screen"
+    commands:
+      - tapOn:
+          id: "login-button"
+      - assertVisible:
+          id: "login-screen"
+          timeout: 5000
+
+# Test 1: Empty form validation
+- tapOn:
+    id: "submit-button"
+
+- assertVisible:
+    id: "error-message"
+    timeout: 3000
+
+# Test 2: Invalid credentials
+- clearText:
+    id: "email-input"
+
+- inputText:
+    id: "email-input"
+    text: "invalid@example.com"
+
+- inputText:
+    id: "password-input"
+    text: "wrongpassword"
+
+- hideKeyboard
+
+- tapOn:
+    id: "submit-button"
+
+- assertVisible:
+    text: "Invalid credentials"
+    timeout: 5000
+
+# Test 3: Valid login
+- clearText:
+    id: "email-input"
+
+- clearText:
+    id: "password-input"
+
+- inputText:
+    id: "email-input"
+    text: ${TEST_USER}
+
+- inputText:
+    id: "password-input"
+    text: ${TEST_PASS}
+
+- hideKeyboard
+
+- tapOn:
+    id: "submit-button"
+
+# Wait for successful login (home screen appears)
+- assertVisible:
+    id: "home-screen"
+    timeout: 15000
+
+# Verify user is logged in
+- assertVisible:
+    id: "user-avatar"
+
+- takeScreenshot: login-successful

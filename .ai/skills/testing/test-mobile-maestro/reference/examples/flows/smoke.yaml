@@ -1,0 +1,54 @@
+# Maestro Smoke Test Flow
+#
+# A minimal smoke test to verify app launches and core features are accessible.
+# Run with: maestro test flows/smoke.yaml
+#
+# Best practices demonstrated:
+# - Accessibility identifiers for stable selectors
+# - Explicit waits with visible assertions
+# - Clear step naming
+
+appId: com.myapp.example  # Replace with your app's bundle/package ID
+
+---
+
+# Launch app fresh
+- launchApp:
+    clearState: true
+
+# Wait for app to be ready
+- assertVisible:
+    id: "main-screen"
+    timeout: 10000
+
+# Test 1: Verify welcome screen
+- assertVisible:
+    id: "welcome-text"
+
+- assertVisible:
+    text: "Welcome"
+
+# Test 2: Navigate to settings
+- tapOn:
+    id: "settings-tab"
+
+- assertVisible:
+    id: "settings-screen"
+    timeout: 5000
+
+# Test 3: Navigate back to home
+- tapOn:
+    id: "home-tab"
+
+- assertVisible:
+    id: "main-screen"
+
+# Test 4: Verify critical CTA is accessible
+- assertVisible:
+    id: "cta-button"
+
+- assertEnabled:
+    id: "cta-button"
+
+# Capture final state
+- takeScreenshot: smoke-test-completed

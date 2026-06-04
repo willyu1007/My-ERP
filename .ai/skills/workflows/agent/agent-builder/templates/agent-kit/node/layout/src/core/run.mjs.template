@@ -1,0 +1,195 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { readJson, nowIso } from './util.mjs';
+import { makeValidators } from './contracts.mjs';
+import { agentError } from './errors.mjs';
+import { loadPromptPack, buildBaseMessages } from './prompts.mjs';
+import { makeLLMClient } from './llm.mjs';
+import { getToolDefinitionsForLLM, executeTool } from './tools.mjs';
+import { ConversationManager } from './conversation.mjs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+function loadManifest() {
+  const p = path.join(__dirname, '..', '..', 'config', 'agent.manifest.json');
+  return readJson(p);
+}
+
+function loadRuntimeConfig() {
+  const p = path.join(__dirname, '..', '..', 'config', 'default.json');
+  return readJson(p);
+}
+
+function isEnabled() {
+  const v = process.env.AGENT_ENABLED;
+  if (v === undefined) {
+    // Fail-closed by default to reduce risk of accidental exposure in production.
+    // For local development, you may set NODE_ENV=development or AGENT_ALLOW_MISSING_ENABLED=true.
+    const allow = String(process.env.AGENT_ALLOW_MISSING_ENABLED || '').toLowerCase() === 'true'
+      || String(process.env.NODE_ENV || '').toLowerCase() === 'development';
+    return !!allow;
+  }
+  return String(v).toLowerCase() === 'true' || v === '1';
+}
+
+function toRunResponse({ contract_version, request_id, output, structured_output, usage, metadata }) {
+  return {
+    contract_version,
+    request_id,
+    status: 'ok',
+    output: output || '',
+    structured_output: structured_output || undefined,
+    metadata: metadata || {},
+    usage: usage || {}
+  };
+}
+
+export async function runAgent(runRequest, options = {}) {
+  const manifest = loadManifest();
+  const runtimeCfg = loadRuntimeConfig();
+  const contractVersion = manifest?.contracts?.version || '1.0.0';
+
+  const schemaDir = path.join(__dirname, '..', '..', 'schemas');
+  const validators = makeValidators({ schemaDir });
+
+  const v = validators.validateRunRequest(runRequest);
+  if (!v.ok) {
+    return { ok: false, error: validators.errorFromValidation(contractVersion, v.errors) };
+  }
+
+  if (!isEnabled()) {
+    return { ok: false, error: agentError({
+      contract_version: contractVersion,
+      code: 'agent_disabled',
+      message: 'Agent is disabled by kill switch.',
+      retryable: false,
+      details: {}
+    })};
+  }
+
+  const modelProfile = manifest?.model?.primary;
+  const llmClient = makeLLMClient({
+    base_url_env: modelProfile?.provider?.base_url_env || 'LLM_BASE_URL',
+    api_key_env: modelProfile?.provider?.api_key_env || 'LLM_API_KEY'
+  });
+
+  const promptsDir = path.join(__dirname, '..', '..', 'prompts');
+  const promptPack = loadPromptPack(promptsDir);
+
+  const conv = new ConversationManager({ manifest, llmClient, promptPack });
+
+  // Request context (do NOT mutate the request; keep headers and other metadata out of the contract)
+  const requestContext = options.requestContext || {};
+
+  // Collect conversation messages
+  const conversationMsgs = conv.getConversationMessages(runRequest, requestContext);
+
+  const messages = buildBaseMessages(promptPack, conversationMsgs, runRequest.input);
+
+  const toolsEnabled = !!(runtimeCfg?.tools?.enabled || String(process.env.AGENT_TOOLS_ENABLED || '').toLowerCase() === 'true');
+  const tools = toolsEnabled ? getToolDefinitionsForLLM(manifest) : null;
+  const temperature = modelProfile?.params?.temperature;
+
+  const emitEvent = options.emitEvent;
+  const responseMode = options.responseMode || runRequest?.options?.response_mode || 'blocking';
+  const interactive = responseMode === 'streaming';
+
+  if (emitEvent) emitEvent({ type: 'progress', timestamp: nowIso(), data: { stage: 'llm_start' } });
+
+  // Tool loop (non-streaming scaffold). If you need streaming + tools, implement in Stage D.
+  // maxSteps can be configured via manifest.tools.max_steps, runtime config, or env var (fallback: 5)
+  const maxSteps = manifest?.tools?.max_steps
+    || runtimeCfg?.tools?.max_steps
+    || Number(process.env.AGENT_TOOLS_MAX_STEPS || 5);
+  let step = 0;
+  let lastText = '';
+  let currentMessages = messages;
+
+  while (step < maxSteps) {
+    step += 1;
+
+    if (interactive && emitEvent) {
+      // Streaming: attempt provider streaming (content-only).
+      const streamResult = await llmClient.stream({
+        model: modelProfile.model,
+        messages: currentMessages,
+        tools: null,
+        tool_choice: 'none',
+        temperature,
+        onDelta: ({ ts, delta }) => {
+          lastText += delta;
+          emitEvent({ type: 'delta', timestamp: ts, data: { text: delta } });
+        }
+      });
+
+      if (streamResult?.stream_text && !lastText) lastText = streamResult.stream_text;
+
+      break;
+    } else {
+      const json = await llmClient.complete({
+        model: modelProfile.model,
+        messages: currentMessages,
+        tools: toolsEnabled ? tools : null,
+        tool_choice: (toolsEnabled && tools && tools.length) ? 'auto' : undefined,
+        temperature
+      });
+
+      const msg = json?.choices?.[0]?.message;
+      const toolCalls = msg?.tool_calls || [];
+
+      if (msg?.content) lastText = msg.content;
+
+      if (!toolCalls.length) break;
+
+      // Execute tool calls
+      for (const tc of toolCalls) {
+        const toolId = tc?.function?.name;
+        let args = {};
+        try { args = JSON.parse(tc?.function?.arguments || '{}'); } catch (e) {}
+
+        if (emitEvent) emitEvent({ type: 'tool', timestamp: nowIso(), data: { tool_id: toolId } });
+
+        const result = await executeTool({ manifest, toolId, input: args, contract_version: contractVersion });
+        if (!result.ok) {
+          return { ok: false, error: result.error };
+        }
+
+        // Append tool result message
+        currentMessages = currentMessages.concat([
+          { role: 'assistant', content: msg?.content || '', tool_calls: toolCalls },
+          { role: 'tool', tool_call_id: tc.id, name: toolId, content: JSON.stringify(result.output) }
+        ]);
+      }
+    }
+  }
+
+  const runResponse = toRunResponse({
+    contract_version: contractVersion,
+    request_id: runRequest.request_id,
+    output: lastText,
+    metadata: { generated_at: nowIso(), agent_id: manifest.agent?.id || runtimeCfg.agent_id }
+  });
+
+  const vr = validators.validateRunResponse(runResponse);
+  if (!vr.ok) {
+    return { ok: false, error: agentError({
+      contract_version: contractVersion,
+      code: 'invalid_response',
+      message: 'Generated response failed schema validation.',
+      retryable: false,
+      details: { validationErrors: vr.errors }
+    })};
+  }
+
+  // Record conversation turn and (maybe) update summary
+  try {
+    await conv.recordTurn({ runRequest, userText: runRequest.input, assistantText: lastText, interactive, requestContext });
+  } catch (e) {
+    // Non-fatal in scaffold
+  }
+
+  if (emitEvent) emitEvent({ type: 'final', timestamp: nowIso(), data: { request_id: runRequest.request_id, response: runResponse } });
+
+  return { ok: true, response: runResponse };
+}

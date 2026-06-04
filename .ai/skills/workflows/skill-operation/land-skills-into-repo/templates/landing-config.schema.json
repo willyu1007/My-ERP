@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Skills Landing Config",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "ssot_dir": {
+      "type": "string",
+      "description": "Destination SSOT directory inside repo. Default: .ai/skills"
+    },
+    "ignore": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Glob-style patterns to ignore during copy (matched against POSIX-style relative paths)."
+    },
+    "backup_dir": {
+      "type": "string",
+      "description": "Backup base directory (relative to repo root or absolute). Default: .ai/.backups/skills-landing"
+    },
+    "default_overwrite": {
+      "type": "string",
+      "enum": [
+        "never",
+        "changed",
+        "always"
+      ],
+      "default": "changed"
+    },
+    "default_prune": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

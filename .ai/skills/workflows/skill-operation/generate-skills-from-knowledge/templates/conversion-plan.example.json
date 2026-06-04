@@ -1,0 +1,73 @@
+{
+  "version": "1.0",
+  "skills_root": "out/skills",
+  "layout": "categorized",
+  "default_taxonomy": {
+    "tier1": "workflows",
+    "tier2": "common"
+  },
+  "operations": [
+    {
+      "type": "split",
+      "detail": "Split a long runbook into two skills: 'triage-service-errors' and 'instrument-observability'."
+    },
+    {
+      "type": "merge",
+      "detail": "Merged two overlapping guidelines docs into 'author-technical-docs'."
+    }
+  ],
+  "skills": [
+    {
+      "name": "triage-service-errors",
+      "title": "Triage Service Errors",
+      "description": "Diagnose and triage recurring service errors using a reproducible checklist and verification steps.",
+      "tier1": "backend",
+      "tier2": "errors",
+      "sources": [
+        {
+          "path": "docs/runbooks/error-triage.md",
+          "why": "Primary runbook"
+        },
+        {
+          "path": "docs/standards/logging.md",
+          "why": "Logging conventions referenced by the runbook"
+        }
+      ],
+      "create": {
+        "reference": true,
+        "examples": [
+          "http-500-triage.md"
+        ],
+        "templates": [
+          "triage-checklist.md"
+        ]
+      }
+    },
+    {
+      "name": "author-technical-docs",
+      "title": "Author Technical Documentation",
+      "description": "Convert existing engineering notes into LLM-first documentation with progressive disclosure and verification steps.",
+      "tier1": "workflows",
+      "tier2": "documentation",
+      "sources": [
+        {
+          "path": "docs/notes/engineering-notes.md",
+          "why": "Raw notes to be transformed"
+        },
+        {
+          "path": "docs/standards/documentation.md",
+          "why": "Documentation requirements"
+        }
+      ],
+      "create": {
+        "reference": true,
+        "examples": [
+          "before-and-after.md"
+        ],
+        "templates": [
+          "doc-outline.md"
+        ]
+      }
+    }
+  ]
+}

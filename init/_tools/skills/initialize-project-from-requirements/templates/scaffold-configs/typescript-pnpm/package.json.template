@@ -1,0 +1,22 @@
+{
+  "name": "{{project.name}}",
+  "version": "0.1.0",
+  "description": "{{project.description}}",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "build": "echo \"Add build script\"",
+    "dev": "echo \"Add dev script\"",
+    "lint": "echo \"Add lint script\"",
+    "test": "echo \"Add test script\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}
+

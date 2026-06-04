@@ -1,0 +1,20 @@
+# Model routing profiles registry (template)
+#
+# Profiles are business-level intent labels (stable IDs) mapped to one or more provider/model candidates.
+# Feature code should call by `profile_id` whenever possible.
+
+version: 1
+
+profiles:
+  # Example: a general-purpose profile with a primary and fallback
+  - profile_id: balanced
+    intent: general_text_generation
+    candidates:
+      - provider_id: example-provider
+        model_id: example-model-small
+        weight: 100
+    fallback:
+      # Optional: fallback candidates or another profile_id
+      - provider_id: example-provider
+        model_id: example-model-tiny
+        weight: 100

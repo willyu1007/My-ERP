@@ -1,0 +1,813 @@
+{
+  "kind": "agent_blueprint",
+  "version": 1,
+  "meta": {
+    "generated_at": "2025-12-30T02:49:59.708301Z",
+    "generator": "agent-builder",
+    "notes": "Example blueprint (edit for your project)."
+  },
+  "agent": {
+    "id": "example-agent",
+    "name": "Example Agent",
+    "summary": "Example production-embedded agent scaffold (API + worker + sdk + cron + pipeline).",
+    "owners": [
+      {
+        "type": "team",
+        "id": "example-team",
+        "contact": "#example-channel"
+      }
+    ]
+  },
+  "scope": {
+    "in_scope": [
+      "Accept a text input and return a structured response.",
+      "Support HTTP blocking and WebSocket streaming interfaces.",
+      "Support async worker execution (placeholder)."
+    ],
+    "out_of_scope": [
+      "Direct destructive actions without approval.",
+      "Persisting PII without redaction and retention controls."
+    ],
+    "definition_of_done": "All P0 acceptance scenarios pass; docs and registry entry are complete; kill switch works; schemas are versioned."
+  },
+  "integration": {
+    "primary": "api",
+    "attach": [
+      "worker",
+      "sdk",
+      "cron",
+      "pipeline"
+    ],
+    "trigger": {
+      "kind": "sync_request",
+      "notes": "HTTP request triggers primary path."
+    },
+    "target": {
+      "kind": "service",
+      "name": "backend-api",
+      "details": "Invoked by the backend service at a specific integration point."
+    },
+    "upstream_contract_ref": "#/schemas/RunRequest",
+    "downstream_contract_ref": "#/schemas/RunResponse",
+    "failure_contract": {
+      "mode": "propagate_error",
+      "notes": "Return structured AgentError with retryable hints."
+    },
+    "rollback_or_disable": {
+      "method": "feature_flag",
+      "notes": "Use AGENT_ENABLED and optional feature flag gating in the host service."
+    }
+  },
+  "interfaces": [
+    {
+      "type": "http",
+      "entrypoint": "node src/adapters/http/server.mjs",
+      "request_schema_ref": "#/schemas/RunRequest",
+      "response_schema_ref": "#/schemas/RunResponse",
+      "error_schema_ref": "#/schemas/AgentError",
+      "response_mode": "streaming",
+      "exposure_level": "progress",
+      "streaming": {
+        "protocol": "websocket",
+        "event_schema_ref": "#/schemas/RunEvent"
+      }
+    },
+    {
+      "type": "worker",
+      "entrypoint": "node src/adapters/worker/worker.mjs",
+      "request_schema_ref": "#/schemas/RunRequest",
+      "response_schema_ref": "#/schemas/RunResponse",
+      "error_schema_ref": "#/schemas/AgentError",
+      "response_mode": "async",
+      "exposure_level": "none"
+    },
+    {
+      "type": "sdk",
+      "entrypoint": "require('agents/example-agent').runAgent",
+      "request_schema_ref": "#/schemas/RunRequest",
+      "response_schema_ref": "#/schemas/RunResponse",
+      "error_schema_ref": "#/schemas/AgentError",
+      "response_mode": "blocking",
+      "exposure_level": "none"
+    },
+    {
+      "type": "cron",
+      "entrypoint": "node src/adapters/cron/cron.mjs",
+      "request_schema_ref": "#/schemas/RunRequest",
+      "response_schema_ref": "#/schemas/RunResponse",
+      "error_schema_ref": "#/schemas/AgentError",
+      "response_mode": "blocking",
+      "exposure_level": "none"
+    },
+    {
+      "type": "pipeline",
+      "entrypoint": "node src/adapters/pipeline/pipeline.mjs",
+      "request_schema_ref": "#/schemas/RunRequest",
+      "response_schema_ref": "#/schemas/RunResponse",
+      "error_schema_ref": "#/schemas/AgentError",
+      "response_mode": "blocking",
+      "exposure_level": "none"
+    }
+  ],
+  "api": {
+    "protocol": "http",
+    "base_path": "/agents/example-agent",
+    "timeout_budget_ms": 15000,
+    "routes": [
+      {
+        "name": "health",
+        "method": "get",
+        "path": "/health",
+        "request_schema_ref": "#/schemas/RunRequest",
+        "response_schema_ref": "#/schemas/RunResponse",
+        "error_schema_ref": "#/schemas/AgentError",
+        "notes": "Health check. Does not require a RunRequest body."
+      },
+      {
+        "name": "run",
+        "method": "post",
+        "path": "/run",
+        "request_schema_ref": "#/schemas/RunRequest",
+        "response_schema_ref": "#/schemas/RunResponse",
+        "error_schema_ref": "#/schemas/AgentError",
+        "notes": "Blocking execution endpoint."
+      }
+    ],
+    "auth": {
+      "kind": "internal_gateway",
+      "env_var": "AGENT_API_KEY",
+      "notes": "Prefer internal gateway auth; API key is placeholder for local testing."
+    },
+    "degradation": {
+      "mode": "route_to_worker",
+      "notes": "If primary path is overloaded, enqueue to worker and return async acknowledgement."
+    }
+  },
+  "schemas": {
+    "RunRequest": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "RunRequest",
+      "type": "object",
+      "required": [
+        "request_id",
+        "input",
+        "contract_version"
+      ],
+      "properties": {
+        "contract_version": {
+          "type": "string",
+          "description": "Contract version for request/response compatibility."
+        },
+        "request_id": {
+          "type": "string"
+        },
+        "conversation_id": {
+          "type": "string"
+        },
+        "input": {
+          "type": "string"
+        },
+        "context": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "response_mode": {
+              "type": "string",
+              "enum": [
+                "blocking",
+                "streaming",
+                "async"
+              ]
+            },
+            "max_output_tokens": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "RunResponse": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "RunResponse",
+      "type": "object",
+      "required": [
+        "request_id",
+        "status",
+        "output",
+        "contract_version"
+      ],
+      "properties": {
+        "contract_version": {
+          "type": "string"
+        },
+        "request_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "error"
+          ]
+        },
+        "output": {
+          "type": "string"
+        },
+        "structured_output": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "usage": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "input_tokens": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "output_tokens": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "total_tokens": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "estimated_cost_usd": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "AgentError": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AgentError",
+      "type": "object",
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "contract_version"
+      ],
+      "properties": {
+        "contract_version": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "retryable": {
+          "type": "boolean"
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "RunEvent": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "RunEvent",
+      "type": "object",
+      "required": [
+        "type",
+        "timestamp"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "progress",
+            "delta",
+            "tool",
+            "final",
+            "error"
+          ]
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "ToolExampleInput": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ToolExampleInput",
+      "type": "object",
+      "required": [
+        "query"
+      ],
+      "properties": {
+        "query": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ToolExampleOutput": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ToolExampleOutput",
+      "type": "object",
+      "required": [
+        "result"
+      ],
+      "properties": {
+        "result": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ToolExampleError": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ToolExampleError",
+      "type": "object",
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "contracts": {
+    "version": "1.0.0",
+    "compatibility_policy": "backward_compatible",
+    "deprecation_window_days": 30
+  },
+  "model": {
+    "primary": {
+      "provider": {
+        "type": "openai_compatible",
+        "base_url_env": "LLM_BASE_URL",
+        "api_key_env": "LLM_API_KEY",
+        "notes": "OpenAI-compatible gateway. For OpenAI native, set type=openai."
+      },
+      "model": "gpt-5-mini",
+      "reasoning_profile": "fast",
+      "params": {
+        "temperature": 0.2
+      }
+    },
+    "fallback": {
+      "provider": {
+        "type": "openai_compatible",
+        "base_url_env": "LLM_BASE_URL",
+        "api_key_env": "LLM_API_KEY"
+      },
+      "model": "gpt-5-mini",
+      "reasoning_profile": "fast",
+      "params": {
+        "temperature": 0.2
+      }
+    },
+    "summarizer": {
+      "provider": {
+        "type": "openai_compatible",
+        "base_url_env": "LLM_BASE_URL",
+        "api_key_env": "LLM_API_KEY"
+      },
+      "model": "gpt-5-mini",
+      "reasoning_profile": "fast",
+      "params": {
+        "temperature": 0.0
+      }
+    },
+    "strategy": {
+      "degradation_mode": "fallback_model",
+      "notes": "If primary fails, use fallback; if both fail, return_unavailable."
+    }
+  },
+  "configuration": {
+    "env_vars": [
+      {
+        "name": "AGENT_ENABLED",
+        "description": "Kill switch. If false, agent returns unavailable.",
+        "required": true,
+        "sensitivity": "internal",
+        "example_placeholder": "true"
+      },
+      {
+        "name": "PORT",
+        "description": "HTTP server port.",
+        "required": true,
+        "sensitivity": "public",
+        "example_placeholder": "8080"
+      },
+      {
+        "name": "LLM_BASE_URL",
+        "description": "Base URL for the LLM API (OpenAI-compatible).",
+        "required": true,
+        "sensitivity": "internal",
+        "example_placeholder": "https://api.example.com/v1"
+      },
+      {
+        "name": "LLM_API_KEY",
+        "description": "API key for the LLM provider.",
+        "required": true,
+        "sensitivity": "secret",
+        "example_placeholder": "<set-in-secret-store>"
+      },
+      {
+        "name": "AGENT_API_KEY",
+        "description": "Optional API key for local testing (avoid in production; prefer gateway auth).",
+        "required": false,
+        "sensitivity": "secret",
+        "example_placeholder": "<optional>"
+      },
+      {
+        "name": "AGENT_WORKER_INPUT_DIR",
+        "description": "Worker input directory for file-queue placeholder.",
+        "required": false,
+        "sensitivity": "internal",
+        "example_placeholder": "./var/worker/in"
+      },
+      {
+        "name": "AGENT_WORKER_OUTPUT_DIR",
+        "description": "Worker output directory for file-queue placeholder.",
+        "required": false,
+        "sensitivity": "internal",
+        "example_placeholder": "./var/worker/out"
+      }
+    ],
+    "config_files": [
+      {
+        "path": "config/default.json",
+        "description": "Non-secret runtime defaults."
+      }
+    ]
+  },
+  "conversation": {
+    "mode": "summary_buffer",
+    "scope": "per_conversation",
+    "key": {
+      "source": "header",
+      "name": "x-conversation-id"
+    },
+    "storage": {
+      "kind": "in_memory"
+    },
+    "retention": {
+      "ttl_seconds": 86400,
+      "max_items": 1000
+    },
+    "redaction": {
+      "mode": "basic"
+    },
+    "summary": {
+      "update_method": "llm",
+      "refresh_policy": "threshold",
+      "update_timing": "async_post_turn",
+      "threshold": {
+        "max_tokens_since_update": 1500,
+        "max_turns_since_update": 6,
+        "cooldown_seconds": 10
+      },
+      "max_summary_tokens": 800
+    },
+    "summary_buffer": {
+      "window_turns": 8,
+      "window_tokens": 2500
+    }
+  },
+  "budgets": {
+    "latency_ms": {
+      "p50": 1500,
+      "p95": 8000,
+      "timeout_budget_ms": 15000
+    },
+    "throughput": {
+      "rps": 5,
+      "concurrency": 10
+    },
+    "tokens": {
+      "max_input_tokens": 12000,
+      "max_output_tokens": 1200
+    },
+    "cost": {
+      "max_usd_per_task": 0.05
+    }
+  },
+  "data_flow": {
+    "data_classes": [
+      "internal"
+    ],
+    "llm_egress": {
+      "what_is_sent": "User input text plus limited contextual metadata; no raw secrets. Redact identifiers when possible.",
+      "redaction": "basic",
+      "allowed": true
+    },
+    "retention": {
+      "ttl_seconds": 86400,
+      "notes": "Conversation state retained for 24h in memory only by default."
+    }
+  },
+  "observability": {
+    "logs": {
+      "required_fields": [
+        "timestamp",
+        "level",
+        "agent_id",
+        "request_id",
+        "correlation_id",
+        "event"
+      ],
+      "correlation_id_field": "correlation_id",
+      "notes": "Log PII-safe fields only."
+    },
+    "metrics": {
+      "enabled": true,
+      "notes": "Track latency, token usage, tool error rate."
+    },
+    "tracing": {
+      "enabled": false
+    },
+    "alerts": [
+      {
+        "name": "agent_error_rate_high",
+        "condition": "error_rate > 5% over 5m",
+        "severity": "high",
+        "owner": "example-team"
+      }
+    ]
+  },
+  "security": {
+    "side_effect_policy": "writes_require_approval",
+    "approvals": [
+      {
+        "id": "write_ops_manual_approval",
+        "mode": "human_required",
+        "applies_to": {
+          "side_effect_level": [
+            "write",
+            "destructive"
+          ]
+        },
+        "notes": "Any write/destructive tool calls require human approval in host workflow."
+      }
+    ]
+  },
+  "tools": {
+    "tools": [
+      {
+        "id": "example_search",
+        "kind": "http_api",
+        "side_effect_level": "read_only",
+        "input_schema_ref": "#/schemas/ToolExampleInput",
+        "output_schema_ref": "#/schemas/ToolExampleOutput",
+        "error_schema_ref": "#/schemas/ToolExampleError",
+        "timeouts": {
+          "timeout_ms": 3000
+        },
+        "retry": {
+          "max_attempts": 2,
+          "backoff": "exponential_jitter"
+        },
+        "idempotency": {
+          "strategy": "none"
+        },
+        "auth": {
+          "kind": "api_key",
+          "env_var": "EXAMPLE_API_KEY"
+        },
+        "audit": {
+          "required": true,
+          "log_fields": [
+            "tool_id",
+            "request_id",
+            "duration_ms"
+          ]
+        },
+        "usage_guidelines": "Read-only search API."
+      }
+    ]
+  },
+  "prompting": {
+    "complexity_tier": "tier2",
+    "examples_strategy": "Include 3\u20136 examples covering common success and failure branches.",
+    "prompt_modules": [
+      "base",
+      "safety",
+      "formatting"
+    ]
+  },
+  "acceptance": {
+    "scenarios": [
+      {
+        "title": "HTTP health endpoint returns ok",
+        "given": "Agent HTTP server is running",
+        "when": "GET /agents/example-agent/health",
+        "then": "API returns {status: ok}",
+        "expected_output_checks": [
+          "http status == 200"
+        ],
+        "priority": "P1",
+        "kind": "http_health"
+      },
+      {
+        "title": "HTTP run returns a structured response",
+        "given": "AGENT_ENABLED=true and LLM credentials are configured",
+        "when": "POST /agents/example-agent/run with a valid RunRequest",
+        "then": "API returns RunResponse with status=ok",
+        "expected_output_checks": [
+          "status == ok",
+          "output is non-empty",
+          "contract_version preserved"
+        ],
+        "priority": "P0",
+        "kind": "http_run"
+      },
+      {
+        "title": "WebSocket streaming returns delta events and final response",
+        "given": "AGENT_ENABLED=true and LLM credentials are configured",
+        "when": "WebSocket /agents/example-agent/ws streaming with a valid RunRequest",
+        "then": "WS emits RunEvent.delta and a final event containing RunResponse status=ok",
+        "expected_output_checks": [
+          "ws received delta",
+          "ws no error",
+          "final response status == ok"
+        ],
+        "priority": "P1",
+        "kind": "ws_streaming"
+      },
+      {
+        "title": "SDK adapter returns a structured response",
+        "kind": "sdk",
+        "given": "AGENT_ENABLED=true",
+        "when": "SDK adapter calls runAgent via require('src/adapters/sdk')",
+        "then": "SDK returns RunResponse status=ok with non-empty output",
+        "expected_output_checks": [
+          "status == ok",
+          "output is non-empty"
+        ],
+        "priority": "P2"
+      },
+      {
+        "title": "Pipeline adapter returns a structured response",
+        "given": "AGENT_ENABLED=true and LLM credentials are configured",
+        "when": "Pipeline adapter (stdin) processes a valid RunRequest",
+        "then": "CLI returns RunResponse status=ok and exits 0",
+        "expected_output_checks": [
+          "exit code == 0",
+          "status == ok",
+          "output is non-empty"
+        ],
+        "priority": "P1",
+        "kind": "pipeline"
+      },
+      {
+        "title": "Cron adapter returns a structured response",
+        "given": "AGENT_ENABLED=true and LLM credentials are configured",
+        "when": "Cron adapter processes a valid RunRequest via AGENT_CRON_INPUT_JSON",
+        "then": "Cron entrypoint returns RunResponse status=ok and exits 0",
+        "expected_output_checks": [
+          "exit code == 0",
+          "status == ok"
+        ],
+        "priority": "P1",
+        "kind": "cron"
+      },
+      {
+        "title": "Worker adapter processes an input file and produces output",
+        "given": "AGENT_ENABLED=true and LLM credentials are configured",
+        "when": "Worker consumes a JSON file from AGENT_WORKER_INPUT_DIR",
+        "then": "Worker outputs RunResponse status=ok and moves input to .done",
+        "expected_output_checks": [
+          "status == ok",
+          "output file exists",
+          "moved to .done"
+        ],
+        "priority": "P1",
+        "kind": "worker"
+      },
+      {
+        "title": "Degraded API routes to worker queue",
+        "given": "AGENT_ENABLED=true and AGENT_DEGRADED=true",
+        "when": "POST /agents/example-agent/run (degraded route_to_worker)",
+        "then": "API returns 202 queued with queued_file on disk",
+        "expected_output_checks": [
+          "http status == 202",
+          "queued_file exists"
+        ],
+        "priority": "P1",
+        "kind": "http_run"
+      },
+      {
+        "title": "Conversation memory increases message count on subsequent turns",
+        "given": "AGENT_ENABLED=true and LLM credentials are configured",
+        "when": "POST /agents/example-agent/run twice with the same conversation key header",
+        "then": "Second call includes more conversation messages than the first",
+        "expected_output_checks": [
+          "messages_count increases"
+        ],
+        "priority": "P1",
+        "kind": "http_conversation_debug"
+      },
+      {
+        "title": "Kill switch returns unavailable",
+        "given": "AGENT_ENABLED=false",
+        "when": "POST /agents/example-agent/run",
+        "then": "API returns AgentError with a retryable=false and an unavailable code",
+        "expected_output_checks": [
+          "http status == 503",
+          "retryable == false"
+        ],
+        "priority": "P0",
+        "kind": "http_run"
+      }
+    ]
+  },
+  "deliverables": {
+    "agent_module_path": "agents/example-agent",
+    "docs_path": "agents/example-agent/doc",
+    "registry_path": "agents/registry.json",
+    "core_adapter_separation": "required"
+  },
+  "worker": {
+    "source": {
+      "kind": "file_queue",
+      "name": "AGENT_WORKER_INPUT_DIR"
+    },
+    "execution": {
+      "max_concurrency": 2,
+      "timeout_ms": 30000
+    },
+    "retry": {
+      "max_attempts": 3,
+      "backoff": "exponential_jitter"
+    },
+    "idempotency": {
+      "strategy": "hash_payload"
+    },
+    "failure": {
+      "dead_letter": {
+        "kind": "directory",
+        "name": ".failed"
+      },
+      "alert_on": "after_retries"
+    }
+  },
+  "sdk": {
+    "language": "typescript",
+    "package": {
+      "name": "@example/example-agent",
+      "version": "0.1.0"
+    },
+    "exports": [
+      {
+        "name": "runAgent",
+        "input_schema_ref": "#/schemas/RunRequest",
+        "output_schema_ref": "#/schemas/RunResponse",
+        "error_schema_ref": "#/schemas/AgentError"
+      }
+    ],
+    "compatibility": {
+      "semver": "strict",
+      "breaking_change_policy": "Breaking changes require a major version bump and a migration note."
+    }
+  },
+  "cron": {
+    "schedule": "0 * * * *",
+    "timezone": "UTC",
+    "input": {
+      "kind": "env_json"
+    },
+    "output": {
+      "kind": "stdout"
+    }
+  },
+  "pipeline": {
+    "context": "ci",
+    "input_channel": "stdin",
+    "output_channel": "stdout",
+    "notes": "Used as a pipeline step; non-zero exit on error."
+  }
+}

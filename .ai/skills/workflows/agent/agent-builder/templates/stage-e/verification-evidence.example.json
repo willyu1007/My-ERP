@@ -1,0 +1,62 @@
+{
+  "agent_id": "example-agent",
+  "agent_name": "Example Agent",
+  "verified_at": "2025-01-01T12:00:00.000Z",
+  "repo_root": "/path/to/repo",
+  "agent_module_path": "agents/example-agent",
+  "scenarios": [
+    {
+      "title": "HTTP run returns a structured response",
+      "priority": "P0",
+      "status": "passed",
+      "checks": [
+        {
+          "check": "HTTP server adapter exists",
+          "result": true,
+          "actual": "agents/example-agent/src/adapters/http/server.mjs"
+        },
+        {
+          "check": "Core run module exists",
+          "result": true,
+          "actual": "agents/example-agent/src/core/run.mjs"
+        },
+        {
+          "check": "Request/Response schemas exist",
+          "result": true,
+          "actual": "present"
+        },
+        {
+          "check": "contract_version in manifest",
+          "result": true,
+          "actual": "present"
+        }
+      ],
+      "duration_ms": 45
+    },
+    {
+      "title": "Kill switch returns unavailable",
+      "priority": "P0",
+      "status": "passed",
+      "checks": [
+        {
+          "check": "AGENT_ENABLED in .env.example",
+          "result": true,
+          "actual": "present"
+        }
+      ],
+      "duration_ms": 12
+    }
+  ],
+  "summary": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0
+  },
+  "environment": {
+    "node_version": "v20.10.0",
+    "platform": "linux",
+    "workdir": "/tmp/agent-builder/abc123"
+  }
+}
+

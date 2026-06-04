@@ -1,0 +1,19 @@
+{
+  "id": "workflows",
+  "version": "1.0.0",
+  "description": "Core workflow skills for common development tasks and processes",
+  "includePrefixes": [
+    "workflows/"
+  ],
+  "dependencies": [],
+  "scripts": {},
+  "metadata": {
+    "author": "skill-template-addon",
+    "tags": [
+      "workflows",
+      "core",
+      "automation"
+    ]
+  }
+}
+

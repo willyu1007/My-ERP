@@ -1,0 +1,74 @@
+#!/bin/sh
+#
+# Git pre-commit hook for project governance sync.
+#
+# This hook automatically runs `ctl-project-governance sync` when dev-docs files are staged,
+# keeping the project hub (registry, dashboard, task-index) in sync.
+#
+# Supports multiple projects: syncs all initialized projects under .ai/project/
+#
+# Install: node .githooks/install.mjs
+# Uninstall: node .githooks/install.mjs --uninstall
+#
+
+set -e
+
+# Lint Markdown docs when any Markdown file is staged.
+if git diff --cached --name-only | grep -qE '\.md$'; then
+  if [ -f .ai/scripts/lint-docs.mjs ]; then
+    echo "[hook] Detected Markdown changes, running lint-docs..."
+    node .ai/scripts/lint-docs.mjs --path . --check-anchors
+  else
+    echo "[hook] lint-docs script not found at .ai/scripts/lint-docs.mjs, skipping."
+  fi
+fi
+
+# Auto-regenerate API Index when materialized OpenAPI contract changes
+if git diff --cached --name-only | grep -qE '^docs/context/api/openapi\.ya?ml$'; then
+  OPENAPI_FILE=""
+  if [ -f docs/context/api/openapi.yaml ]; then
+    OPENAPI_FILE="docs/context/api/openapi.yaml"
+  elif [ -f docs/context/api/openapi.yml ]; then
+    OPENAPI_FILE="docs/context/api/openapi.yml"
+  fi
+  if [ -n "$OPENAPI_FILE" ] && [ -f .ai/scripts/ctl-api-index.mjs ]; then
+    if [ -f .ai/scripts/ctl-openapi-quality.mjs ]; then
+      echo "[hook] Running OpenAPI quality check..."
+      if ! node .ai/scripts/ctl-openapi-quality.mjs verify --source "$OPENAPI_FILE" --strict; then
+        echo "[hook] OpenAPI quality check failed. Fix the issues above before committing."
+        exit 1
+      fi
+    fi
+    echo "[hook] Detected OpenAPI changes, regenerating API Index..."
+    node .ai/scripts/ctl-api-index.mjs generate --source "$OPENAPI_FILE" --touch --repo-root .
+    git add docs/context/api/api-index.json docs/context/api/API-INDEX.md docs/context/registry.json 2>/dev/null || true
+    echo "[hook] API Index regenerated."
+  fi
+fi
+
+# Check if any dev-docs files are staged (supports multi-root dev-docs)
+if git diff --cached --name-only | grep -qE '(^|/)dev-docs/'; then
+  echo "[hook] Detected dev-docs changes, running ctl-project-governance sync..."
+  
+  # Find all initialized projects (those with registry.yaml)
+  PROJECTS=$(find .ai/project -maxdepth 2 -name 'registry.yaml' 2>/dev/null | sed 's|.ai/project/||;s|/registry.yaml||' || true)
+  
+  if [ -z "$PROJECTS" ]; then
+    echo "[hook] No initialized projects found. Run 'node .ai/scripts/ctl-project-governance.mjs init --project main' to initialize."
+    exit 0
+  fi
+  
+  # Sync each project
+  for project in $PROJECTS; do
+    echo "[hook] Syncing project: $project"
+    node .ai/scripts/ctl-project-governance.mjs sync --apply --project "$project"
+  done
+  
+  # Stage any generated/updated files
+  git add .ai/project/ 2>/dev/null || true
+  git add ':(glob)**/.ai-task.yaml' 2>/dev/null || true
+  
+  echo "[hook] Project hub(s) synchronized."
+fi
+
+exit 0

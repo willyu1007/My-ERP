@@ -1,0 +1,27 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
+function readPrompt(promptsDir, filename) {
+  const p = path.join(promptsDir, filename);
+  return fs.readFileSync(p, 'utf8');
+}
+
+export function loadPromptPack(promptsDir) {
+  const system = readPrompt(promptsDir, 'system.md');
+  const developer = readPrompt(promptsDir, 'developer.md');
+  const examples = fs.existsSync(path.join(promptsDir, 'examples.md')) ? readPrompt(promptsDir, 'examples.md') : '';
+  const summarizer = fs.existsSync(path.join(promptsDir, 'summarizer.md')) ? readPrompt(promptsDir, 'summarizer.md') : '';
+  return { system, developer, examples, summarizer };
+}
+
+export function buildBaseMessages(promptPack, conversationMessages, userInput) {
+  const messages = [];
+  if (promptPack.system) messages.push({ role: 'system', content: promptPack.system });
+  if (promptPack.developer) messages.push({ role: 'developer', content: promptPack.developer });
+  if (promptPack.examples) messages.push({ role: 'developer', content: promptPack.examples });
+
+  for (const m of (conversationMessages || [])) messages.push(m);
+
+  messages.push({ role: 'user', content: userInput });
+  return messages;
+}

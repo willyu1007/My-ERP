@@ -1,0 +1,85 @@
+# GitHub Actions delivery template (opt-in)
+# - Installed via: `node .ai/skills/features/ci/scripts/ctl-ci.mjs add-delivery --provider github`
+#
+# Intent:
+# - Generate a human-executable delivery plan (no deploy) and upload it as an artifact.
+# - Safe-by-default: does not publish releases or deploy to infrastructure.
+#
+# Customize:
+# - Add container build/push once credentials and provenance policies are defined.
+# - Add deploy execution only if your repo explicitly opts in.
+
+name: Delivery
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: Deploy environment id (e.g. staging)
+        required: true
+      service:
+        description: Service id (e.g. api)
+        required: true
+      tag:
+        description: Optional artifact tag override
+        required: false
+
+jobs:
+  plan:
+    name: Delivery plan (no deploy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Generate plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/delivery
+
+          {
+            echo "# Delivery plan"
+            echo ""
+
+            echo "## Packaging"
+            if [ -f docs/packaging/registry.json ]; then
+              node .ai/skills/features/packaging/scripts/ctl-packaging.mjs status --repo-root .
+            else
+              echo "[skip] docs/packaging/registry.json not found (enable Packaging feature to use ctl-packaging)."
+            fi
+            echo ""
+
+            echo "## Release"
+            if [ -f release/config.json ]; then
+              node .ai/skills/features/release/scripts/ctl-release.mjs status --repo-root .
+            else
+              echo "[skip] release/config.json not found (enable Release feature to use ctl-release)."
+            fi
+            echo ""
+
+            echo "## Deploy plan"
+            if [ -f ops/deploy/config.json ]; then
+              node .ai/skills/features/deployment/scripts/ctl-deploy.mjs plan \
+                --service "${{ inputs.service }}" \
+                --env "${{ inputs.env }}" \
+                --tag "${{ inputs.tag }}" \
+                --repo-root .
+            else
+              echo "[skip] ops/deploy/config.json not found (enable Deployment feature to use ctl-deploy)."
+            fi
+          } | tee artifacts/delivery/plan.md
+
+      - name: Upload delivery artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-delivery
+          path: artifacts/delivery
+

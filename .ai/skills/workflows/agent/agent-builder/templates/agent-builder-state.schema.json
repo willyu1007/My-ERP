@@ -1,0 +1,201 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Agent Builder State",
+  "description": "Tracks a single agent-builder run across stages A–E.",
+  "type": "object",
+  "required": [
+    "version",
+    "run_id",
+    "created_at",
+    "stage",
+    "workdir",
+    "approvals",
+    "stage-a",
+    "stage-b",
+    "stage-c",
+    "history"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "complete"
+      ]
+    },
+    "workdir": {
+      "type": "string"
+    },
+    "repo_root": {
+      "type": "string"
+    },
+    "approvals": {
+      "type": "object",
+      "required": [
+        "A",
+        "B"
+      ],
+      "properties": {
+        "A": {
+          "type": "boolean"
+        },
+        "B": {
+          "type": "boolean"
+        },
+        "C": {
+          "type": "boolean"
+        },
+        "D": {
+          "type": "boolean"
+        },
+        "E": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "stage-a": {
+      "type": "object",
+      "required": [
+        "interview_notes_path",
+        "integration_decision_path"
+      ],
+      "properties": {
+        "interview_notes_path": {
+          "type": "string"
+        },
+        "integration_decision_path": {
+          "type": "string"
+        },
+        "approved_at": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "stage-b": {
+      "type": "object",
+      "required": [
+        "blueprint_path",
+        "validated"
+      ],
+      "properties": {
+        "blueprint_path": {
+          "type": "string"
+        },
+        "validated": {
+          "type": "boolean"
+        },
+        "validated_at": {
+          "type": "string"
+        },
+        "approved_at": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "stage-c": {
+      "type": "object",
+      "required": [
+        "planned"
+      ],
+      "properties": {
+        "planned": {
+          "type": "boolean"
+        },
+        "planned_at": {
+          "type": "string"
+        },
+        "applied": {
+          "type": "boolean"
+        },
+        "applied_at": {
+          "type": "string"
+        },
+        "generated_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "skipped_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "stage-d": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "not_started",
+            "in_progress",
+            "done"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "stage-e": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "not_started",
+            "in_progress",
+            "done"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "timestamp",
+          "event"
+        ],
+        "properties": {
+          "timestamp": {
+            "type": "string"
+          },
+          "event": {
+            "type": "string"
+          },
+          "details": {}
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

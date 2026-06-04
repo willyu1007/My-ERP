@@ -1,0 +1,19 @@
+{
+  "id": "frontend",
+  "version": "1.0.0",
+  "description": "Frontend development skills including React components, styling, routing, and performance",
+  "includePrefixes": [
+    "frontend/"
+  ],
+  "dependencies": [],
+  "scripts": {},
+  "metadata": {
+    "author": "skill-template-addon",
+    "tags": [
+      "frontend",
+      "react",
+      "ui"
+    ]
+  }
+}
+

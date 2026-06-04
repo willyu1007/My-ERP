@@ -1,0 +1,110 @@
+# ============================================================================
+# Git attributes (cross-platform, LF-normalized)
+# ============================================================================
+#
+# Goals:
+# - Normalize text files to LF in the repository (cross-platform diffs)
+# - Mark common binary formats as binary (no EOL conversion / no diff)
+# - Provide sane export-ignore defaults for archives
+#
+# Notes:
+# - This repo standardizes on LF for all text (including scripts).
+# - docs lint warns on missing final newline; keep files ending with LF.
+# - For existing repos, use: `git add --renormalize .` once after adding this file.
+#
+
+# ----------------------------------------------------------------------------
+# Text normalization (repo-wide LF)
+# ----------------------------------------------------------------------------
+* text=auto eol=lf
+
+# Explicitly treat common text formats as text (belt-and-suspenders)
+*.md     text eol=lf
+*.txt    text eol=lf
+*.json   text eol=lf
+*.yml    text eol=lf
+*.yaml   text eol=lf
+*.toml   text eol=lf
+*.ini    text eol=lf
+*.cfg    text eol=lf
+*.env    text eol=lf
+*.sh     text eol=lf
+*.bash   text eol=lf
+*.zsh    text eol=lf
+*.ps1    text eol=lf
+*.psm1   text eol=lf
+*.psd1   text eol=lf
+*.cmd    text eol=lf
+*.bat    text eol=lf
+*.js     text eol=lf
+*.cjs    text eol=lf
+*.mjs    text eol=lf
+*.ts     text eol=lf
+*.tsx    text eol=lf
+*.jsx    text eol=lf
+*.css    text eol=lf
+*.scss   text eol=lf
+*.html   text eol=lf
+*.xml    text eol=lf
+*.svg    text eol=lf
+*.sql    text eol=lf
+*.py     text eol=lf
+*.go     text eol=lf
+*.rs     text eol=lf
+*.java   text eol=lf
+*.kt     text eol=lf
+*.cs     text eol=lf
+*.c      text eol=lf
+*.h      text eol=lf
+*.cpp    text eol=lf
+*.hpp    text eol=lf
+
+# ----------------------------------------------------------------------------
+# Binary files (no text conversion)
+# ----------------------------------------------------------------------------
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.webp   binary
+*.ico    binary
+*.bmp    binary
+
+*.pdf    binary
+
+*.zip    binary
+*.7z     binary
+*.gz     binary
+*.tgz    binary
+*.bz2    binary
+*.xz     binary
+*.rar    binary
+
+*.woff   binary
+*.woff2  binary
+*.ttf    binary
+*.otf    binary
+*.eot    binary
+
+*.exe    binary
+*.dll    binary
+*.so     binary
+*.dylib  binary
+
+# ----------------------------------------------------------------------------
+# Export ignores (git archive)
+# ----------------------------------------------------------------------------
+/.github/     export-ignore
+/.gitlab-ci/  export-ignore
+/.vscode/     export-ignore
+/.idea/       export-ignore
+
+# Generated wrappers/stubs (regenerate via repo scripts)
+/.codex/      export-ignore
+/.claude/     export-ignore
+
+# Common local artifacts (usually untracked, but safe to ignore if present)
+/node_modules/ export-ignore
+/dist/         export-ignore
+/build/        export-ignore
+/coverage/     export-ignore

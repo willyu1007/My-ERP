@@ -1,0 +1,60 @@
+# GitLab CI delivery template (opt-in)
+# Installed via: `node .ai/skills/features/ci/scripts/ctl-ci.mjs add-delivery --provider gitlab`
+#
+# Intent:
+# - Add a manual "delivery plan" job that produces a plan artifact (no deploy).
+# - Safe-by-default: does not publish releases or deploy to infrastructure.
+#
+# Expected variables when running a manual pipeline:
+# - DELIVERY_ENV (e.g. staging)
+# - DELIVERY_SERVICE (e.g. api)
+# - DELIVERY_TAG (optional)
+
+delivery-plan:
+  stage: test
+  image: node:${NODE_VERSION}
+  timeout: 10 minutes
+  script:
+    - mkdir -p artifacts/delivery
+    - |
+      {
+        echo "# Delivery plan"
+        echo ""
+
+        echo "## Packaging"
+        if [ -f docs/packaging/registry.json ]; then
+          node .ai/skills/features/packaging/scripts/ctl-packaging.mjs status --repo-root .
+        else
+          echo "[skip] docs/packaging/registry.json not found (enable Packaging feature to use ctl-packaging)."
+        fi
+        echo ""
+
+        echo "## Release"
+        if [ -f release/config.json ]; then
+          node .ai/skills/features/release/scripts/ctl-release.mjs status --repo-root .
+        else
+          echo "[skip] release/config.json not found (enable Release feature to use ctl-release)."
+        fi
+        echo ""
+
+        echo "## Deploy plan"
+        if [ -f ops/deploy/config.json ]; then
+          node .ai/skills/features/deployment/scripts/ctl-deploy.mjs plan \
+            --service "${DELIVERY_SERVICE}" \
+            --env "${DELIVERY_ENV}" \
+            --tag "${DELIVERY_TAG}" \
+            --repo-root .
+        else
+          echo "[skip] ops/deploy/config.json not found (enable Deployment feature to use ctl-deploy)."
+        fi
+      } > artifacts/delivery/plan.md
+  artifacts:
+    when: always
+    paths:
+      - artifacts/delivery/
+    expire_in: 7 days
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: manual
+    - when: never
+

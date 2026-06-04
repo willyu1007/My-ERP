@@ -1,0 +1,19 @@
+{
+  "id": "standards",
+  "version": "1.0.0",
+  "description": "Coding standards and guidelines including code review, documentation, git conventions, and naming",
+  "includePrefixes": [
+    "standards/"
+  ],
+  "dependencies": [],
+  "scripts": {},
+  "metadata": {
+    "author": "skill-template-addon",
+    "tags": [
+      "standards",
+      "guidelines",
+      "quality"
+    ]
+  }
+}
+

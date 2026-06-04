@@ -1,0 +1,43 @@
+# {{agent_name}} (`{{agent_id}}`)
+
+This module was scaffolded by `agent-builder`.
+
+## Quickstart (local)
+
+1) Install deps:
+```bash
+npm install
+```
+
+2) Create env file from template:
+```bash
+cp .env.example .env
+# fill values (do not commit secrets)
+```
+
+3) Start HTTP server:
+```bash
+npm run start
+```
+
+### Endpoints
+- Health: `GET http://localhost:$PORT{{api_base_path}}/health`
+- Run (blocking): `POST http://localhost:$PORT{{api_base_path}}/run`
+- WebSocket (streaming): `WS ws://localhost:$PORT{{api_base_path}}/ws`
+
+## Worker (placeholder)
+```bash
+npm run worker
+```
+
+## Pipeline adapter
+```bash
+echo '{{pipeline_sample_request_json}}' | npm run pipeline
+```
+
+## Notes
+- Core logic lives in `src/core/`.
+- Adapters live in `src/adapters/`.
+- Schemas live in `schemas/`.
+- Prompts live in `prompts/`.
+

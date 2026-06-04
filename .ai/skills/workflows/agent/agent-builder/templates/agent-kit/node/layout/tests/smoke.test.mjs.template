@@ -1,0 +1,9 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { runAgent } from '../src/core/run.mjs';
+
+test('runAgent returns AgentError on missing fields', async () => {
+  const result = await runAgent({}, { responseMode: 'blocking' });
+  assert.equal(result.ok, false);
+  assert.ok(result.error);
+});

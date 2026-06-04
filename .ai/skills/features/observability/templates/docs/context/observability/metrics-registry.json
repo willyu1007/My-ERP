@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "updatedAt": "2025-12-25T00:00:00Z",
+  "metrics": [
+    {
+      "name": "http_requests_total",
+      "type": "counter",
+      "description": "Total HTTP requests",
+      "labels": ["method", "path", "status"],
+      "unit": "requests"
+    },
+    {
+      "name": "http_request_duration_seconds",
+      "type": "histogram",
+      "description": "HTTP request duration in seconds",
+      "labels": ["method", "path"],
+      "unit": "seconds",
+      "buckets": [0.01, 0.05, 0.1, 0.5, 1, 5]
+    }
+  ]
+}
+

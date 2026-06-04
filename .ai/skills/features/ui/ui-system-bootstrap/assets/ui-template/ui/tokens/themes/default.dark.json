@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "theme": "default.dark",
+    "extends": "base",
+    "description": "Default dark theme overrides. Keep changes primarily in color.*."
+  },
+  "color": {
+    "bg": "#0b1220",
+    "surface": "#0f172a",
+    "surface_elevated": "#111c33",
+    "text_primary": "#e5e7eb",
+    "text_secondary": "#cbd5e1",
+    "text_muted": "#94a3b8",
+    "border": "#24324b",
+    "border_subtle": "#1b2942",
+    "primary": "#60a5fa",
+    "primary_hover": "#3b82f6",
+    "primary_active": "#2563eb",
+    "on_primary": "#0b1220",
+    "focus_ring": "#60a5fa80"
+  }
+}

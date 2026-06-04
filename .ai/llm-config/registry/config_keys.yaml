@@ -1,0 +1,25 @@
+# LLM configuration keys registry (template)
+#
+# This file is an allow-list of LLM-related configuration keys / environment variables.
+# It is enforced by: `node .ai/skills/workflows/llm/llm-engineering/scripts/check-llm-config-keys.mjs`.
+
+version: 1
+
+keys:
+  # Add new keys here (UPPER_SNAKE_CASE recommended).
+  # Examples (replace with real keys in your project):
+  - LLM_DEFAULT_PROFILE
+  - LLM_PROVIDER_REGISTRY_PATH
+  - LLM_PROMPT_REGISTRY_PATH
+  - LLM_CREDENTIALS_RESOLVER
+
+# Prefixes that mark an environment/config key as LLM-related.
+# Keys that match these prefixes MUST be explicitly listed in `keys`.
+scope_prefixes:
+  - LLM_
+  # Common provider prefixes (optional; adjust per org)
+  - OPENAI_
+  - ANTHROPIC_
+  - AZURE_OPENAI_
+  - GOOGLE_
+  - GEMINI_

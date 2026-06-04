@@ -1,0 +1,19 @@
+{
+  "id": "backend",
+  "version": "1.0.0",
+  "description": "Backend development skills including architecture, APIs, middleware, and data patterns",
+  "includePrefixes": [
+    "backend/"
+  ],
+  "dependencies": [],
+  "scripts": {},
+  "metadata": {
+    "author": "skill-template-addon",
+    "tags": [
+      "backend",
+      "api",
+      "server"
+    ]
+  }
+}
+

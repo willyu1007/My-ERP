@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "updatedAt": "2025-12-25T00:00:00Z",
+  "metrics": true,
+  "logs": true,
+  "traces": true,
+  "platform": null
+}
+

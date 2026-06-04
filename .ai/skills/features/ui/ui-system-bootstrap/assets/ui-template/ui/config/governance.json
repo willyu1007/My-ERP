@@ -1,0 +1,57 @@
+{
+  "tailwind_policy": "B1-layout-only",
+  "theme_policy": "token-only",
+  "scan": {
+    "include_roots": ["src", "app", "pages", "components"],
+    "exclude_roots": ["node_modules", "dist", "build", ".next", ".ai", ".codex", "coverage"]
+  },
+  "tailwind": {
+    "allowed_utility_whitelist": ["sr-only", "truncate", "break-words", "break-all", "whitespace-nowrap"],
+    "disallowed_prefixes": [
+      "bg-", "text-", "from-", "via-", "to-", "decoration-",
+      "font-", "leading-", "tracking-",
+      "shadow", "rounded", "ring-", "outline-",
+      "border", "divide-",
+      "p-", "px-", "py-", "pt-", "pr-", "pb-", "pl-",
+      "m-", "mx-", "my-", "mt-", "mr-", "mb-", "ml-"
+    ],
+    "disallowed_substrings": ["[", "]", "#", "("]
+  },
+  "code_rules": {
+    "disallow_inline_style": true,
+    "disallow_hardcoded_color_literals": true,
+    "disallow_raw_box_shadow": true
+  },
+  "feature_css_rules": {
+    "disallow_properties": [
+      "color", "background", "background-color",
+      "font", "font-family", "font-size", "font-weight", "line-height",
+      "border-radius", "box-shadow",
+      "margin", "padding"
+    ]
+  },
+  "approvals": {
+    "enabled": true,
+    "approvals_dir": "ui/approvals",
+    "enforce_spec_approval": true,
+    "enforce_exception_approval": true,
+    "auto_baseline_if_missing": true
+  },
+  "tools": {
+    "eslint": {
+      "enabled": "auto",
+      "command": "npx eslint . --ext .ts,.tsx,.mjs,.js,.jsx --format json --output-file {out}",
+      "report": "eslint.json"
+    },
+    "stylelint": {
+      "enabled": "auto",
+      "command": "npx stylelint \"src/**/*.{css,scss}\" --formatter json --output-file {out}",
+      "report": "stylelint.json"
+    },
+    "playwright": {
+      "enabled": "auto",
+      "command": "npx playwright test",
+      "artifacts": ["playwright-report", "test-results"]
+    }
+  }
+}

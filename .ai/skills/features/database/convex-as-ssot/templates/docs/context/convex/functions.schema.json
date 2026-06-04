@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "convex-functions-contract-v1",
+  "type": "object",
+  "required": ["version", "updatedAt", "source", "functions"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source": {
+      "type": "object",
+      "required": ["kind", "path"],
+      "properties": {
+        "kind": { "type": "string" },
+        "path": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "functions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "functionId",
+          "exportName",
+          "kind",
+          "constructor",
+          "visibility",
+          "file",
+          "modulePath",
+          "runtime",
+          "auth",
+          "uses",
+          "tablesRead",
+          "tablesWritten"
+        ],
+        "properties": {
+          "functionId": { "type": "string" },
+          "exportName": { "type": "string" },
+          "kind": { "type": "string" },
+          "constructor": { "type": "string" },
+          "visibility": { "type": "string" },
+          "file": { "type": "string" },
+          "modulePath": { "type": "string" },
+          "runtime": { "type": "string" },
+          "argsValidator": {},
+          "returnsValidator": {},
+          "auth": {
+            "type": "object",
+            "properties": {
+              "kind": { "type": "string" }
+            },
+            "required": ["kind"],
+            "additionalProperties": true
+          },
+          "uses": {
+            "type": "object",
+            "additionalProperties": { "type": "boolean" }
+          },
+          "tablesRead": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "tablesWritten": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

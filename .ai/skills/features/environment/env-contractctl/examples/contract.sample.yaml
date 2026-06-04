@@ -1,0 +1,30 @@
+version: 1
+variables:
+  APP_ENV:
+    type: enum
+    enum: [dev, staging, prod]
+    required: true
+    default: dev
+    description: Deployment environment profile.
+  SERVICE_NAME:
+    type: string
+    required: true
+    default: demo-service
+    description: Service name for logs/metrics.
+  PORT:
+    type: int
+    required: true
+    default: 8000
+    description: HTTP port.
+  DATABASE_URL:
+    type: url
+    required: true
+    secret: true
+    secret_ref: db_url
+    description: Database connection URL.
+  FEATURE_X_ENABLED:
+    type: bool
+    required: false
+    default: false
+    scopes: [dev, staging]
+    description: Feature flag only allowed in non-prod.

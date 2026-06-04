@@ -1,0 +1,142 @@
+{
+  "version": 1,
+  "project": {
+    "name": "example-project",
+    "description": "Example project demonstrating all blueprint and feature options",
+    "domain": "E-commerce",
+    "primaryUsers": [
+      "customers",
+      "merchants",
+      "admins"
+    ]
+  },
+  "repo": {
+    "layout": "single",
+    "language": "typescript",
+    "packageManager": "pnpm"
+  },
+  "capabilities": {
+    "frontend": {
+      "enabled": true,
+      "framework": "react"
+    },
+    "backend": {
+      "enabled": true,
+      "framework": "express"
+    },
+    "api": {
+      "style": "rest",
+      "auth": "jwt"
+    },
+    "database": {
+      "enabled": true,
+      "kind": "convex"
+    },
+    "bpmn": {
+      "enabled": true,
+      "storage": "docs"
+    }
+  },
+  "quality": {
+    "testing": {
+      "unit": true,
+      "integration": true,
+      "e2e": true
+    },
+    "ci": {
+      "enabled": true
+    }
+  },
+  "skills": {
+    "packs": [
+      "workflows",
+      "backend",
+      "frontend",
+      "standards",
+      "context-core"
+    ]
+  },
+  "context": {
+    "enabled": true,
+    "mode": "contract",
+    "environments": [
+      "dev",
+      "staging",
+      "prod"
+    ]
+  },
+  "db": {
+    "enabled": true,
+    "kind": "convex",
+    "environments": [
+      "dev",
+      "staging",
+      "prod"
+    ],
+    "ssot": "convex"
+  },
+  "ci": {
+    "enabled": true,
+    "provider": "github",
+    "platform": "github-actions",
+    "features": [
+      "lint",
+      "test",
+      "build",
+      "security"
+    ]
+  },
+  "packaging": {
+    "enabled": true,
+    "containerize": true,
+    "targets": [
+      "services",
+      "jobs"
+    ],
+    "registry": "ghcr.io/${GITHUB_REPOSITORY}"
+  },
+  "deploy": {
+    "enabled": true,
+    "model": "k8s",
+    "environments": [
+      "dev",
+      "staging",
+      "prod"
+    ],
+    "k8s": {
+      "tool": "helm",
+      "namespaces": [
+        "app-dev",
+        "app-staging",
+        "app-prod"
+      ]
+    }
+  },
+  "release": {
+    "enabled": true,
+    "strategy": "semantic",
+    "changelog": true,
+    "branches": {
+      "main": "main",
+      "develop": "develop"
+    }
+  },
+  "observability": {
+    "enabled": true,
+    "metrics": true,
+    "logs": true,
+    "traces": true,
+    "platform": "prometheus"
+  },
+  "features": {
+    "contextAwareness": true,
+    "database": true,
+    "ui": true,
+    "environment": true,
+    "packaging": true,
+    "deployment": true,
+    "release": true,
+    "ci": true,
+    "observability": true
+  }
+}

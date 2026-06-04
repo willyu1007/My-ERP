@@ -1,0 +1,21 @@
+# Prompt templates registry (template)
+#
+# A prompt template is addressed by (prompt_template_id, version).
+# Versions are immutable: edits require a new version.
+
+version: 1
+
+templates:
+  # Example template entry
+  - prompt_template_id: example-summary
+    version: 1
+    description: Summarize input text with bullet points.
+    variables_schema:
+      type: object
+      properties:
+        tone:
+          type: string
+          enum: [neutral, formal]
+      required: [tone]
+    notes:
+      - Keep output under 10 bullets.

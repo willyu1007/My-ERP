@@ -1,0 +1,4 @@
+// {{agent_id}} - public module API
+import { runAgent } from './core/run.mjs';
+
+export { runAgent };

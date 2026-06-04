@@ -1,0 +1,146 @@
+import { nowIso } from './util.mjs';
+
+// Node.js 18+ is required for native fetch API
+const NODE_MAJOR = parseInt(process.version.slice(1), 10);
+if (NODE_MAJOR < 18) {
+  throw new Error(
+    `Node.js 18+ is required for this agent (native fetch API). ` +
+    `Current version: ${process.version}. Please upgrade Node.js.`
+  );
+}
+
+// Default LLM request timeout: 60 seconds
+const DEFAULT_LLM_TIMEOUT_MS = 60000;
+
+function requireEnv(name) {
+  const v = process.env[name];
+  if (!v) throw new Error(`Missing required env var: ${name}`);
+  return v;
+}
+
+function buildChatCompletionsPayload({ model, messages, tools, tool_choice, temperature, stream }) {
+  const payload = {
+    model,
+    messages,
+    stream: !!stream
+  };
+  if (typeof temperature === 'number') payload.temperature = temperature;
+  if (tools && Array.isArray(tools) && tools.length) payload.tools = tools;
+  if (tool_choice) payload.tool_choice = tool_choice;
+  return payload;
+}
+
+async function callChatCompletions({ baseUrl, apiKey, payload, onStreamDelta, timeoutMs }) {
+  const url = baseUrl.replace(/\/$/, '') + '/chat/completions';
+  const headers = {
+    'content-type': 'application/json'
+  };
+  if (apiKey) headers['authorization'] = `Bearer ${apiKey}`;
+
+  // Create abort controller for timeout
+  const controller = new AbortController();
+  const timeout = timeoutMs || Number(process.env.LLM_TIMEOUT_MS || DEFAULT_LLM_TIMEOUT_MS);
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  let res;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+  } catch (e) {
+    clearTimeout(timeoutId);
+    if (e && e.name === 'AbortError') {
+      throw new Error(`LLM request timed out after ${timeout}ms`);
+    }
+    throw e;
+  }
+  clearTimeout(timeoutId);
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => '');
+    throw new Error(`LLM error ${res.status}: ${txt}`);
+  }
+
+  if (!payload.stream) {
+    return await res.json();
+  }
+
+  // Streaming: parse SSE-like stream from OpenAI-compatible providers.
+  // NOTE: This only supports content deltas reliably (tool-call streaming varies across providers).
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+  let buffer = '';
+  let done = false;
+  let fullText = '';
+
+  while (!done) {
+    const { value, done: d } = await reader.read();
+    done = d;
+    if (value) buffer += decoder.decode(value, { stream: true });
+
+    // SSE events are separated by \n\n
+    let idx;
+    while ((idx = buffer.indexOf('\n\n')) !== -1) {
+      const eventBlock = buffer.slice(0, idx);
+      buffer = buffer.slice(idx + 2);
+
+      const lines = eventBlock.split('\n').map(l => l.trim()).filter(Boolean);
+      for (const line of lines) {
+        if (!line.startsWith('data:')) continue;
+        const data = line.slice('data:'.length).trim();
+        if (data === '[DONE]') return { stream_text: fullText };
+
+        try {
+          const json = JSON.parse(data);
+          const delta = json?.choices?.[0]?.delta?.content;
+          if (delta) {
+            fullText += delta;
+            if (onStreamDelta) onStreamDelta({ ts: nowIso(), delta });
+          }
+        } catch (e) {
+          // Ignore malformed chunk; providers sometimes send keepalive frames.
+        }
+      }
+    }
+  }
+
+  return { stream_text: fullText };
+}
+
+export function makeLLMClient({ base_url_env, api_key_env, timeout_ms }) {
+  const baseUrl = requireEnv(base_url_env);
+  const apiKey = api_key_env ? process.env[api_key_env] : undefined;
+  const timeoutMs = timeout_ms || Number(process.env.LLM_TIMEOUT_MS || DEFAULT_LLM_TIMEOUT_MS);
+
+  return {
+    async complete({ model, messages, tools, tool_choice, temperature }) {
+      const payload = buildChatCompletionsPayload({ model, messages, tools, tool_choice, temperature, stream: false });
+      const json = await callChatCompletions({ baseUrl, apiKey, payload, timeoutMs });
+      return json;
+    },
+    async stream({ model, messages, tools, tool_choice, temperature, onDelta }) {
+      const payload = buildChatCompletionsPayload({ model, messages, tools, tool_choice, temperature, stream: true });
+      // Streaming requests get longer timeout (2x default)
+      return await callChatCompletions({ baseUrl, apiKey, payload, onStreamDelta: onDelta, timeoutMs: timeoutMs * 2 });
+    },
+    // Health check: simple connectivity test
+    async healthCheck() {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const res = await fetch(baseUrl.replace(/\/$/, '') + '/models', {
+          method: 'GET',
+          headers: apiKey ? { 'authorization': `Bearer ${apiKey}` } : {},
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        return { ok: res.ok, status: res.status };
+      } catch (e) {
+        return { ok: false, error: e && e.message ? e.message : String(e) };
+      }
+    }
+  };
+}

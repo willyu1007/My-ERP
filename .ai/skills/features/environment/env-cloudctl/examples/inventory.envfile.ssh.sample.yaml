@@ -1,0 +1,30 @@
+version: 1
+env: staging
+provider: envfile
+runtime: remote
+injection:
+  env_file: ops/deploy/env-files/staging.env
+  target: "<deploy_dir>/staging.env"
+  transport: ssh
+  mode: copy
+  write:
+    sudo: true
+    chmod: "600"
+    remote_tmp_dir: "/tmp"
+  ssh:
+    # Prefer IaC outputs over committing hostnames:
+    hosts_file: ops/iac/handbook/outputs/hosts.txt
+    # Or hand-maintained hosts list:
+    # hosts: ["host-1.example", "host-2.example"]
+    #
+    # Connection settings (prefer ~/.ssh/config; do not commit private keys):
+    user: deploy
+    port: 22
+    options:
+      - "-o"
+      - "StrictHostKeyChecking=accept-new"
+    pre_commands:
+      - "systemctl is-active <service-name>"
+    post_commands:
+      - "systemctl restart <service-name>"
+notes: "SSH-based env-file injection (vendor-neutral). Apply requires --approve --approve-remote."

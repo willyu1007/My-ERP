@@ -1,0 +1,19 @@
+{
+  "ui_spec_version": "1.0.0",
+  "generated_at_utc": null,
+  "tailwind_policy": "B1-layout-only",
+  "theme_policy": "token-only",
+  "paths": {
+    "tokens": "ui/tokens/base.json",
+    "themes": "ui/tokens/themes/*.json",
+    "contract": "ui/contract/contract.json",
+    "styles_entry": "ui/styles/ui.css",
+    "governance_config": "ui/config/governance.json"
+  },
+  "locked_parameters": {
+    "contract_roles_count": 31,
+    "tokens_required_groups": ["color", "typography", "space", "radius", "shadow", "border", "motion", "z"],
+    "governance_gates": ["spec_validate", "code_audit", "tailwind_B1_audit", "feature_css_audit"]
+  },
+  "notes": "This file is generated. Do not hand-edit. Use ui-system-bootstrap and ui-governance-gate workflows."
+}

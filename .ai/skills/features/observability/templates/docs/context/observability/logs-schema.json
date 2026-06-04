@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "updatedAt": "2025-12-25T00:00:00Z",
+  "format": "json",
+  "levels": ["debug", "info", "warn", "error"],
+  "fields": [
+    {
+      "name": "timestamp",
+      "type": "string",
+      "format": "iso8601",
+      "required": true,
+      "description": "Log timestamp in ISO 8601 format"
+    },
+    {
+      "name": "level",
+      "type": "string",
+      "enum": ["debug", "info", "warn", "error"],
+      "required": true,
+      "description": "Log level"
+    },
+    {
+      "name": "message",
+      "type": "string",
+      "required": true,
+      "description": "Log message"
+    },
+    {
+      "name": "service",
+      "type": "string",
+      "required": true,
+      "description": "Service name"
+    },
+    {
+      "name": "trace_id",
+      "type": "string",
+      "required": false,
+      "description": "Distributed tracing ID"
+    },
+    {
+      "name": "span_id",
+      "type": "string",
+      "required": false,
+      "description": "Span ID within trace"
+    },
+    {
+      "name": "user_id",
+      "type": "string",
+      "required": false,
+      "description": "User identifier (if applicable)"
+    },
+    {
+      "name": "request_id",
+      "type": "string",
+      "required": false,
+      "description": "Request identifier"
+    }
+  ]
+}
+

@@ -1,0 +1,420 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { approxTokenCount, nowIso } from './util.mjs';
+
+// Very simple redaction helpers (extend as needed)
+function redactText(text, mode) {
+  const s = String(text || '');
+  if (mode === 'none') return s;
+  let out = s;
+  // Basic: redact emails + long digit sequences
+  out = out.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/ig, '<redacted_email>');
+  out = out.replace(/\b\d{6,}\b/g, '<redacted_number>');
+  if (mode === 'strict') {
+    // Strict: also redact URLs and anything that looks like a key
+    out = out.replace(/https?:\/\/\S+/ig, '<redacted_url>');
+    out = out.replace(/\b[A-Z0-9_-]{20,}\b/g, '<redacted_token>');
+  }
+  return out;
+}
+
+class InMemoryStore {
+  constructor({ ttl_seconds, max_items } = {}) {
+    this.map = new Map(); // key -> { value, updated_at, updated_at_ms }
+    this.ttlSeconds = Number.isFinite(ttl_seconds) && ttl_seconds > 0 ? ttl_seconds : 0;
+    this.maxItems = Number.isFinite(max_items) && max_items > 0 ? max_items : 0;
+  }
+  _isExpired(entry) {
+    if (!this.ttlSeconds) return false;
+    const ms = entry && typeof entry.updated_at_ms === 'number' ? entry.updated_at_ms : 0;
+    if (!ms) return false;
+    return (Date.now() - ms) > (this.ttlSeconds * 1000);
+  }
+  get(key) {
+    const entry = this.map.get(key);
+    if (!entry) return null;
+    if (this._isExpired(entry)) {
+      this.map.delete(key);
+      return null;
+    }
+    return entry;
+  }
+  set(key, value) {
+    const iso = nowIso();
+    this.map.set(key, { value, updated_at: iso, updated_at_ms: Date.now() });
+    this._enforceMaxItems();
+  }
+  delete(key) {
+    this.map.delete(key);
+  }
+  _enforceMaxItems() {
+    if (!this.maxItems) return;
+    if (this.map.size <= this.maxItems) return;
+
+    // Evict the oldest updated entry.
+    let oldestKey = null;
+    let oldestTs = Infinity;
+    for (const [k, v] of this.map.entries()) {
+      const ts = v && typeof v.updated_at_ms === 'number' ? v.updated_at_ms : 0;
+      if (ts < oldestTs) {
+        oldestTs = ts;
+        oldestKey = k;
+      }
+    }
+    if (oldestKey !== null) this.map.delete(oldestKey);
+  }
+}
+
+class FileStore {
+  constructor(dir, { ttl_seconds, max_items } = {}) {
+    this.dir = dir;
+    this.ttlSeconds = Number.isFinite(ttl_seconds) && ttl_seconds > 0 ? ttl_seconds : 0;
+    this.maxItems = Number.isFinite(max_items) && max_items > 0 ? max_items : 0;
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  _path(key) {
+    const safe = key.replace(/[^a-zA-Z0-9_.-]/g, '_');
+    return path.join(this.dir, safe + '.json');
+  }
+  _listFiles() {
+    try {
+      return fs.readdirSync(this.dir)
+        .filter(f => f.endsWith('.json'))
+        .map(f => {
+          const p = path.join(this.dir, f);
+          try {
+            const stat = fs.statSync(p);
+            return { path: p, mtime: stat.mtime.getTime() };
+          } catch (e) {
+            return null;
+          }
+        })
+        .filter(Boolean);
+    } catch (e) {
+      return [];
+    }
+  }
+  get(key) {
+    const p = this._path(key);
+    if (!fs.existsSync(p)) return null;
+    try {
+      const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
+      const updatedAt = raw && raw.updated_at ? Date.parse(raw.updated_at) : 0;
+      if (this.ttlSeconds && updatedAt && (Date.now() - updatedAt) > (this.ttlSeconds * 1000)) {
+        // Expired; delete file.
+        try { fs.unlinkSync(p); } catch (e) {}
+        return null;
+      }
+      return raw;
+    } catch (e) {
+      return null;
+    }
+  }
+  set(key, value) {
+    const p = this._path(key);
+    fs.writeFileSync(p, JSON.stringify({ value, updated_at: nowIso() }, null, 2));
+    this._enforceMaxItems();
+  }
+  delete(key) {
+    const p = this._path(key);
+    if (fs.existsSync(p)) fs.unlinkSync(p);
+  }
+  _enforceMaxItems() {
+    if (!this.maxItems) return;
+    const files = this._listFiles();
+    if (files.length <= this.maxItems) return;
+
+    // Sort by mtime ascending (oldest first)
+    files.sort((a, b) => a.mtime - b.mtime);
+
+    // Remove oldest files until we're under limit
+    const toRemove = files.length - this.maxItems;
+    for (let i = 0; i < toRemove; i++) {
+      try { fs.unlinkSync(files[i].path); } catch (e) {}
+    }
+  }
+}
+
+// Singleton in-memory store per process to ensure conversation persistence across requests.
+let GLOBAL_INMEMORY_STORE = null;
+
+function makeStore(conversationCfg) {
+  const storage = conversationCfg?.storage?.kind || 'none';
+  if (storage === 'none') return null;
+  if (storage === 'in_memory') {
+    if (!GLOBAL_INMEMORY_STORE) {
+      GLOBAL_INMEMORY_STORE = new InMemoryStore({
+        ttl_seconds: conversationCfg?.retention?.ttl_seconds,
+        max_items: conversationCfg?.retention?.max_items
+      });
+    }
+    return GLOBAL_INMEMORY_STORE;
+  }
+  if (storage === 'file') {
+    const dir = conversationCfg?.storage?.location || process.env.AGENT_CONVERSATION_DIR || './var/conversations';
+    return new FileStore(dir, {
+      ttl_seconds: conversationCfg?.retention?.ttl_seconds,
+      max_items: conversationCfg?.retention?.max_items
+    });
+  }
+  // kv_store/database are intentionally not implemented in the scaffold.
+  throw new Error(`Conversation storage kind not implemented: ${storage}`);
+}
+
+function clipByTurns(turns, maxTurns) {
+  if (!Number.isFinite(maxTurns) || maxTurns <= 0) return turns;
+  if (turns.length <= maxTurns) return turns;
+  return turns.slice(turns.length - maxTurns);
+}
+
+function clipByTokens(turns, maxTokens) {
+  if (!Number.isFinite(maxTokens) || maxTokens <= 0) return turns;
+  let out = [];
+  let total = 0;
+  for (let i = turns.length - 1; i >= 0; i--) {
+    const t = turns[i];
+    const cost = approxTokenCount(t.content);
+    if (total + cost > maxTokens) break;
+    out.push(t);
+    total += cost;
+  }
+  return out.reverse();
+}
+
+function normalizeTurns(turns, cfg) {
+  let out = turns.slice();
+  if (cfg?.max_turns) out = clipByTurns(out, cfg.max_turns);
+  if (cfg?.max_tokens) out = clipByTokens(out, cfg.max_tokens);
+  return out;
+}
+
+export class ConversationManager {
+  constructor({ manifest, llmClient, promptPack }) {
+    this.manifest = manifest;
+    this.cfg = manifest.conversation || { mode: 'no-need' };
+    this.llmClient = llmClient;
+    this.promptPack = promptPack;
+    this.store = makeStore(this.cfg);
+  }
+
+  _makeKey(runRequest, requestContext = {}) {
+    const scope = this.cfg.scope || 'per_request';
+    if (scope === 'per_request') return null;
+
+    const keyCfg = this.cfg.key || {};
+    if (keyCfg.source === 'header') {
+      const headers = requestContext && requestContext.headers ? requestContext.headers : {};
+      const h = {};
+      for (const [k, v] of Object.entries(headers || {})) h[String(k).toLowerCase()] = String(v);
+      const name = String(keyCfg.name || '').toLowerCase();
+      return (name ? h[name] : null) || runRequest?.conversation_id || null;
+    }
+    if (keyCfg.source === 'request_field') return runRequest?.[keyCfg.name] || runRequest?.conversation_id || null;
+    return runRequest?.conversation_id || null;
+  }
+
+  _loadState(key) {
+    if (!this.store || !key) return null;
+    const raw = this.store.get(key);
+    if (!raw) return null;
+    // raw format may differ by store; normalize
+    if (raw.value) return raw.value;
+    if (raw.value === '') return raw.value;
+    if (raw.summary_state || raw.turns) return raw;
+    if (raw.value && typeof raw.value === 'object') return raw.value;
+    return raw;
+  }
+
+  _saveState(key, state) {
+    if (!this.store || !key) return;
+    this.store.set(key, state);
+  }
+
+  getConversationMessages(runRequest, requestContext = {}) {
+    const mode = this.cfg.mode || 'no-need';
+    if (mode === 'no-need') return [];
+
+    const key = this._makeKey(runRequest, requestContext);
+    if (!key) return [];
+
+    const state = this._loadState(key) || {};
+
+    const redactionMode = this.cfg.redaction?.mode || 'none';
+
+    if (mode === 'buffer') {
+      const turns = normalizeTurns(state.turns || [], this.cfg.buffer || {});
+      return turns.map(t => ({ role: t.role, content: redactText(t.content, redactionMode) }));
+    }
+
+    if (mode === 'buffer_window') {
+      const w = this.cfg.buffer_window || {};
+      let turns = state.turns || [];
+      if (w.window_turns) turns = clipByTurns(turns, w.window_turns);
+      if (w.window_tokens) turns = clipByTokens(turns, w.window_tokens);
+      return turns.map(t => ({ role: t.role, content: redactText(t.content, redactionMode) }));
+    }
+
+    if (mode === 'summary') {
+      const summary = state.summary_state || '';
+      if (!summary) return [];
+      return [{ role: 'developer', content: `Conversation summary:\n${redactText(summary, redactionMode)}` }];
+    }
+
+    if (mode === 'summary_buffer') {
+      const summary = state.summary_state || '';
+      const w = this.cfg.summary_buffer || {};
+      let recent = state.recent_turns || [];
+      if (w.window_turns) recent = clipByTurns(recent, w.window_turns);
+      if (w.window_tokens) recent = clipByTokens(recent, w.window_tokens);
+
+      const msgs = [];
+      if (summary) msgs.push({ role: 'developer', content: `Conversation summary:\n${redactText(summary, redactionMode)}` });
+      for (const t of recent) msgs.push({ role: t.role, content: redactText(t.content, redactionMode) });
+      return msgs;
+    }
+
+    return [];
+  }
+
+  async recordTurn({ runRequest, userText, assistantText, interactive, requestContext = {} }) {
+    const mode = this.cfg.mode || 'no-need';
+    if (mode === 'no-need') return;
+
+    const key = this._makeKey(runRequest, requestContext);
+    if (!key) return;
+
+    const state = this._loadState(key) || {};
+    state.turns = state.turns || [];
+    state.recent_turns = state.recent_turns || [];
+    state.pending_turns = state.pending_turns || [];
+
+    const redactionMode = this.cfg.redaction?.mode || 'none';
+    const userTurn = { role: 'user', content: redactText(userText, redactionMode) };
+    const assistantTurn = { role: 'assistant', content: redactText(assistantText, redactionMode) };
+
+    if (mode === 'buffer') {
+      state.turns.push(userTurn, assistantTurn);
+      state.turns = normalizeTurns(state.turns, this.cfg.buffer || {});
+      this._saveState(key, state);
+      return;
+    }
+
+    if (mode === 'buffer_window') {
+      state.turns.push(userTurn, assistantTurn);
+      // Keep only window in storage for simplicity
+      const w = this.cfg.buffer_window || {};
+      let turns = state.turns;
+      if (w.window_turns) turns = clipByTurns(turns, w.window_turns);
+      if (w.window_tokens) turns = clipByTokens(turns, w.window_tokens);
+      state.turns = turns;
+      this._saveState(key, state);
+      return;
+    }
+
+    if (mode === 'summary') {
+      state.pending_turns.push(userTurn, assistantTurn);
+      this._saveState(key, state);
+      await this._maybeUpdateSummary({ key, state, interactive });
+      return;
+    }
+
+    if (mode === 'summary_buffer') {
+      // Keep recent window in recent_turns; overflow into pending_turns
+      state.recent_turns.push(userTurn, assistantTurn);
+      const w = this.cfg.summary_buffer || {};
+      // Move overflow by turns
+      if (w.window_turns && state.recent_turns.length > w.window_turns) {
+        const overflow = state.recent_turns.splice(0, state.recent_turns.length - w.window_turns);
+        state.pending_turns.push(...overflow);
+      }
+      // Move overflow by tokens (approx)
+      if (w.window_tokens) {
+        const clipped = clipByTokens(state.recent_turns, w.window_tokens);
+        if (clipped.length !== state.recent_turns.length) {
+          const overflowCount = state.recent_turns.length - clipped.length;
+          const overflow = state.recent_turns.splice(0, overflowCount);
+          state.pending_turns.push(...overflow);
+        }
+      }
+
+      this._saveState(key, state);
+      await this._maybeUpdateSummary({ key, state, interactive });
+      return;
+    }
+  }
+
+  async _maybeUpdateSummary({ key, state, interactive }) {
+    const sumCfg = this.cfg.summary || {};
+    const updateMethod = sumCfg.update_method || 'llm';
+    const policy = sumCfg.refresh_policy || 'threshold';
+
+    if (updateMethod !== 'llm') return; // heuristic not implemented in scaffold
+
+    const updateTiming = sumCfg.update_timing || (interactive ? 'async_post_turn' : 'after_turn');
+
+    const run = async () => {
+      const pending = state.pending_turns || [];
+      if (!pending.length) return;
+
+      // Optional: cooldown to avoid frequent summary refreshes.
+      state.summary_meta = state.summary_meta || {};
+      const lastAt = state.summary_meta.last_updated_at ? Date.parse(state.summary_meta.last_updated_at) : 0;
+      const thr = sumCfg.threshold || {};
+      const cooldownSeconds = Number.isFinite(thr.cooldown_seconds) ? thr.cooldown_seconds : 0;
+      if (cooldownSeconds && lastAt && (Date.now() - lastAt) < (cooldownSeconds * 1000)) {
+        return;
+      }
+
+      let should = false;
+      if (policy === 'every_turn') should = true;
+      if (policy === 'threshold') {
+        const maxTurns = thr.max_turns_since_update || 0;
+        const maxTokens = thr.max_tokens_since_update || 0;
+
+        if (maxTurns && pending.length >= maxTurns) should = true;
+        if (maxTokens) {
+          const tok = pending.reduce((acc, t) => acc + approxTokenCount(t.content), 0);
+          if (tok >= maxTokens) should = true;
+        }
+      }
+      if (policy === 'periodic') {
+        // Periodic refresh: time-based (default 60s) with optional overrides.
+        const periodic = sumCfg.periodic || {};
+        const everyTurns = Number.isFinite(periodic.every_n_turns) ? periodic.every_n_turns : 0;
+        const everySeconds = Number.isFinite(periodic.every_n_seconds) ? periodic.every_n_seconds : 60;
+
+        if (everyTurns && pending.length >= everyTurns) should = true;
+        if (!should && everySeconds) {
+          if (!lastAt) should = true;
+          else if ((Date.now() - lastAt) >= (everySeconds * 1000)) should = true;
+        }
+      }
+      if (!should) return;
+
+      const existing = state.summary_state || '';
+      const pendingText = pending.map(t => `${t.role}: ${t.content}`).join('\n');
+      const prompt = this.promptPack.summarizer || 'Summarize the conversation.';
+      const messages = [
+        { role: 'system', content: prompt },
+        { role: 'user', content: `Existing summary:\n${existing}\n\nNew turns:\n${pendingText}` }
+      ];
+
+      const modelProfile = this.manifest?.model?.summarizer || this.manifest?.model?.primary;
+      const modelName = modelProfile?.model;
+      const temperature = modelProfile?.params?.temperature ?? 0.0;
+
+      const json = await this.llmClient.complete({ model: modelName, messages, temperature });
+      const out = json?.choices?.[0]?.message?.content || '';
+      state.summary_state = out;
+      state.pending_turns = [];
+      state.summary_meta.last_updated_at = nowIso();
+      this._saveState(key, state);
+    };
+
+    if (updateTiming === 'async_post_turn') {
+      setImmediate(() => run().catch(() => {}));
+      return;
+    }
+    await run();
+  }
+}

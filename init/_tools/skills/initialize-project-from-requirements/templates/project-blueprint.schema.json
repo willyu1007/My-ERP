@@ -1,0 +1,593 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Project Blueprint",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "version",
+    "project",
+    "repo",
+    "db"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "project": {
+      "type": "object",
+      "required": [
+        "name",
+        "description"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 5
+        },
+        "domain": {
+          "type": "string"
+        },
+        "primaryUsers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "repo": {
+      "type": "object",
+      "required": [
+        "layout",
+        "language",
+        "packageManager"
+      ],
+      "properties": {
+        "layout": {
+          "type": "string",
+          "enum": [
+            "single",
+            "monorepo"
+          ]
+        },
+        "language": {
+          "type": "string",
+          "enum": [
+            "typescript",
+            "javascript",
+            "python",
+            "go",
+            "c",
+            "cpp",
+            "c-xmake",
+            "cpp-xmake",
+            "react-native",
+            "java",
+            "kotlin",
+            "dotnet",
+            "rust",
+            "ruby",
+            "php",
+            "other"
+          ]
+        },
+        "packageManager": {
+          "type": "string",
+          "enum": [
+            "npm",
+            "pnpm",
+            "yarn",
+            "pip",
+            "poetry",
+            "pipenv",
+            "uv",
+            "go",
+            "maven",
+            "gradle",
+            "dotnet",
+            "xmake",
+            "cargo",
+            "bundler",
+            "composer",
+            "other"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "frontend": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "framework": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "backend": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "framework": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "api": {
+          "type": "object",
+          "properties": {
+            "style": {
+              "type": "string",
+              "enum": [
+                "rest",
+                "graphql",
+                "rpc",
+                "none"
+              ]
+            },
+            "auth": {
+              "type": "string",
+              "enum": [
+                "none",
+                "session",
+                "jwt",
+                "oauth2",
+                "api-key",
+                "other"
+              ]
+            }
+          },
+          "additionalProperties": true
+        },
+        "database": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "none",
+                "postgres",
+                "mysql",
+                "sqlite",
+                "mssql",
+                "mongodb",
+                "dynamodb",
+                "convex",
+                "other"
+              ]
+            },
+            "orm": {
+              "type": "string"
+            },
+            "migrationStrategy": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "bpmn": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "storage": {
+              "type": "string",
+              "enum": [
+                "none",
+                "docs",
+                "bpmn-files"
+              ]
+            }
+          },
+          "additionalProperties": true
+        }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "testing": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "ci": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "devops": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "DevOps / operations preferences (may influence suggested packs/scaffold).",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "containerize": {
+              "type": "boolean",
+              "description": "Prefer container-based packaging."
+            },
+            "packaging": {
+              "type": "boolean",
+              "description": "Need packaging pipeline/scaffold."
+            },
+            "deployment": {
+              "type": "boolean",
+              "description": "Need deployment pipeline/scaffold."
+            }
+          }
+        }
+      }
+    },
+    "skills": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "packs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "workflows",
+              "backend",
+              "frontend",
+              "standards",
+              "testing",
+              "context-core"
+            ]
+          },
+          "description": "Skill packs to enable (must exist under .ai/skills/_meta/packs/)."
+        }
+      }
+    },
+    "features": {
+      "type": "object",
+      "description": "Optional feature flags. When enabled, init will materialize the corresponding templates into the repo (e.g., ops/, db/, docs/context/) and run the relevant control scripts (Node under .ai/scripts and/or Python under .ai/skills/features/**/scripts).",
+      "properties": {
+        "contextAwareness": {
+          "type": "boolean",
+          "description": "Enable the context-awareness feature (API/DB/BPMN contracts for LLM)."
+        },
+        "database": {
+          "type": "boolean",
+          "description": "Enable the database feature (DB schema SSOT scaffolding; behavior depends on db.ssot)."
+        },
+        "ui": {
+          "type": "boolean",
+          "description": "Enable the UI feature (UI SSOT + UI context contract scaffolding)."
+        },
+        "environment": {
+          "type": "boolean",
+          "description": "Enable the environment feature (env contract SSOT scaffolding + generated non-secret artifacts)."
+        },
+        "packaging": {
+          "type": "boolean",
+          "description": "Enable the packaging feature (container/artifact packaging)."
+        },
+        "deployment": {
+          "type": "boolean",
+          "description": "Enable the deployment feature (multi-environment deployment)."
+        },
+        "release": {
+          "type": "boolean",
+          "description": "Enable the release feature (version and changelog management)."
+        },
+        "ci": {
+          "type": "boolean",
+          "description": "Enable the CI feature (CI templates + conventions; requires ci.provider)."
+        },
+        "observability": {
+          "type": "boolean",
+          "description": "Enable the observability feature (metrics/logs/traces contracts)."
+        }
+      },
+      "additionalProperties": true
+    },
+    "context": {
+      "type": "object",
+      "description": "Context management configuration (effective when context-awareness feature is enabled).",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Context management config flag (does not install the feature)."
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "contract",
+            "snapshot"
+          ],
+          "description": "Context collection mode."
+        },
+        "environments": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of environment names (e.g., dev, staging, prod)."
+        }
+      },
+      "additionalProperties": true
+    },
+    "db": {
+      "type": "object",
+      "description": "Database configuration. Always include db.enabled and db.ssot; when db.ssot is not none, enable both features.database and features.contextAwareness. Other fields apply depending on ssot (none/repo-prisma/database/convex). Convex bootstraps a repo-root convex/ scaffold by default, or the configured db.source.path location when provided; init/sync/verify all follow that resolved path.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "postgres",
+            "mysql",
+            "sqlite",
+            "mssql",
+            "mongodb",
+            "dynamodb",
+            "convex",
+            "other"
+          ]
+        },
+        "environments": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Database environments (e.g., dev, staging, prod)."
+        },
+        "migrationTool": {
+          "type": "string",
+          "description": "Migration tool preference (e.g., prisma, knex, flyway)."
+        },
+        "ssot": {
+          "type": "string",
+          "enum": [
+            "none",
+            "repo-prisma",
+            "database",
+            "convex"
+          ],
+          "description": "Database schema SSOT mode. none: unmanaged; repo-prisma: prisma/schema.prisma; database: real DB with repo mirrors; convex: configured Convex schema source + Convex function surface (default scaffold: convex/schema.ts)."
+        }
+      },
+      "additionalProperties": true,
+      "required": [
+        "ssot",
+        "enabled"
+      ]
+    },
+    "ci": {
+      "type": "object",
+      "description": "CI configuration (used for CI planning and documentation).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "provider": {
+          "type": "string",
+          "enum": [
+            "github",
+            "gitlab"
+          ],
+          "description": "Primary CI provider SSOT (required when features.ci=true)."
+        },
+        "platform": {
+          "type": "string",
+          "enum": [
+            "github-actions",
+            "gitlab-ci",
+            "jenkins",
+            "other"
+          ],
+          "description": "Primary CI platform."
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "lint",
+              "test",
+              "build",
+              "security",
+              "release",
+              "deploy"
+            ]
+          },
+          "description": "CI features to enable."
+        }
+      },
+      "additionalProperties": true
+    },
+    "packaging": {
+      "type": "object",
+      "description": "Packaging configuration (effective when packaging feature is enabled).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "containerize": {
+          "type": "boolean",
+          "description": "Use container-based packaging."
+        },
+        "targets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "services",
+              "jobs",
+              "apps"
+            ]
+          },
+          "description": "Types of artifacts to package."
+        },
+        "registry": {
+          "type": "string",
+          "description": "Container registry URL pattern."
+        }
+      },
+      "additionalProperties": true
+    },
+    "deploy": {
+      "type": "object",
+      "description": "Deployment configuration (effective when deployment feature is enabled).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "model": {
+          "type": "string",
+          "enum": [
+            "k8s",
+            "serverless",
+            "vm",
+            "paas",
+            "other"
+          ],
+          "description": "Deployment model."
+        },
+        "environments": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Deployment environments (e.g., dev, staging, prod)."
+        },
+        "k8s": {
+          "type": "object",
+          "description": "Kubernetes-specific configuration (when model is k8s).",
+          "properties": {
+            "tool": {
+              "type": "string",
+              "enum": [
+                "helm",
+                "kustomize",
+                "manifests"
+              ]
+            },
+            "namespaces": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "release": {
+      "type": "object",
+      "description": "Release configuration (effective when release feature is enabled).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "strategy": {
+          "type": "string",
+          "enum": [
+            "semantic",
+            "calendar",
+            "manual"
+          ],
+          "description": "Versioning strategy."
+        },
+        "changelog": {
+          "type": "boolean",
+          "description": "Auto-generate changelog."
+        },
+        "branches": {
+          "type": "object",
+          "description": "Branch configuration for releases.",
+          "properties": {
+            "main": {
+              "type": "string"
+            },
+            "develop": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "observability": {
+      "type": "object",
+      "description": "Observability configuration (effective when observability feature is enabled).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "metrics": {
+          "type": "boolean",
+          "description": "Enable metrics instrumentation contracts."
+        },
+        "logs": {
+          "type": "boolean",
+          "description": "Enable structured logging contracts."
+        },
+        "traces": {
+          "type": "boolean",
+          "description": "Enable distributed tracing contracts."
+        },
+        "platform": {
+          "type": "string",
+          "description": "Observability platform hint (e.g., prometheus, datadog, cloudwatch)."
+        }
+      },
+      "additionalProperties": true
+    },
+    "devops": {
+      "type": "object",
+      "description": "Legacy DevOps scaffolding switches. Prefer using specific features instead.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "packaging": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": true
+        },
+        "deploy": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

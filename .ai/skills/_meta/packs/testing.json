@@ -1,0 +1,25 @@
+{
+  "id": "testing",
+  "version": "1.0.0",
+  "description": "Automated testing skills including unit/integration/e2e practices, test tooling, and CI verification",
+  "includePrefixes": [
+    "testing/"
+  ],
+  "dependencies": [
+    "workflows",
+    "standards"
+  ],
+  "scripts": {},
+  "metadata": {
+    "author": "skill-template-addon",
+    "tags": [
+      "testing",
+      "automation",
+      "qa",
+      "ci",
+      "unit-test",
+      "integration-test",
+      "e2e"
+    ]
+  }
+}

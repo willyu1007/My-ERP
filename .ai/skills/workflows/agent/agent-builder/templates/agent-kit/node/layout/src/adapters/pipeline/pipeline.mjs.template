@@ -1,0 +1,44 @@
+import fs from 'node:fs';
+import { runAgent } from '../../core/run.mjs';
+
+function parseArgs(argv) {
+  const args = argv.slice(2);
+  const out = {};
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === '--input') out.input = args[++i];
+    else if (a === '--output') out.output = args[++i];
+  }
+  return out;
+}
+
+async function readStdin() {
+  const chunks = [];
+  for await (const c of process.stdin) chunks.push(c);
+  return Buffer.concat(chunks).toString('utf8');
+}
+
+async function main() {
+  const args = parseArgs(process.argv);
+  let txt = '';
+  if (args.input) txt = fs.readFileSync(args.input, 'utf8');
+  else txt = await readStdin();
+
+  let req = {};
+  try { req = JSON.parse(txt); } catch (e) {
+    process.stderr.write(String(e && e.message ? e.message : e) + '\n');
+    process.exit(1);
+  }
+
+  const result = await runAgent(req, { responseMode: 'blocking' });
+  const outTxt = JSON.stringify(result.ok ? result.response : result.error, null, 2);
+
+  if (args.output) fs.writeFileSync(args.output, outTxt);
+  else process.stdout.write(outTxt + '\n');
+
+  process.exit(result.ok ? 0 : 1);
+}
+
+// ESM entry point detection
+const isMain = process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'));
+if (isMain) main();

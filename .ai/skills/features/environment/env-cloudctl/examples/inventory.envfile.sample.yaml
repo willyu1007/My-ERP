@@ -1,0 +1,12 @@
+version: 1
+env: staging
+provider: envfile
+runtime: remote
+injection:
+  env_file: ops/deploy/env-files/staging.env
+  target: "<deploy_dir>/staging.env"
+  transport: local
+  mode: copy
+  write:
+    chmod: "600"
+notes: "Env-file injection on deploy machine (vendor-neutral)."

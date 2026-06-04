@@ -1,0 +1,9 @@
+export function agentError({ contract_version, code, message, retryable, details }) {
+  return {
+    contract_version,
+    code,
+    message,
+    retryable: !!retryable,
+    details: details || {}
+  };
+}

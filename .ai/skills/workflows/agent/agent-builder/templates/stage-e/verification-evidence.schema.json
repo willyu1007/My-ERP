@@ -1,0 +1,138 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Verification Evidence",
+  "description": "Structured verification evidence generated during Stage E of agent-builder.",
+  "type": "object",
+  "required": [
+    "agent_id",
+    "verified_at",
+    "scenarios",
+    "summary"
+  ],
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "description": "Agent identifier"
+    },
+    "agent_name": {
+      "type": "string",
+      "description": "Agent display name"
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO timestamp of verification"
+    },
+    "repo_root": {
+      "type": "string",
+      "description": "Repository root path"
+    },
+    "agent_module_path": {
+      "type": "string",
+      "description": "Path to agent module"
+    },
+    "scenarios": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/scenario_result"
+      }
+    },
+    "summary": {
+      "$ref": "#/$defs/summary"
+    },
+    "environment": {
+      "type": "object",
+      "description": "Environment metadata",
+      "properties": {
+        "node_version": { "type": "string" },
+        "platform": { "type": "string" },
+        "workdir": { "type": "string" }
+      }
+    }
+  },
+  "$defs": {
+    "scenario_result": {
+      "type": "object",
+      "required": ["title", "priority", "status", "checks"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Scenario title from acceptance.scenarios"
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["P0", "P1", "P2"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["passed", "failed", "skipped"],
+          "description": "Scenario execution result"
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/check_result"
+          }
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Scenario execution duration"
+        },
+        "error": {
+          "type": "object",
+          "description": "Error details if failed",
+          "properties": {
+            "message": { "type": "string" },
+            "stack": { "type": "string" }
+          }
+        }
+      }
+    },
+    "check_result": {
+      "type": "object",
+      "required": ["check", "result"],
+      "properties": {
+        "check": {
+          "type": "string",
+          "description": "Description of what was checked"
+        },
+        "result": {
+          "type": "boolean",
+          "description": "Whether check passed"
+        },
+        "actual": {
+          "type": "string",
+          "description": "Actual value or state observed"
+        },
+        "expected": {
+          "type": "string",
+          "description": "Expected value or state"
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["total", "passed", "failed", "skipped"],
+      "properties": {
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "passed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "skipped": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}
+

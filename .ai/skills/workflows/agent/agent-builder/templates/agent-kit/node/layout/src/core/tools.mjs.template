@@ -1,0 +1,103 @@
+// Tool scaffolding (implement in Stage D)
+import { agentError } from './errors.mjs';
+
+/**
+ * Tool implementations registry.
+ * 
+ * Users can register tool implementations here in Stage D:
+ * 
+ * @example
+ * import { toolImplementations } from './tools.mjs';
+ * toolImplementations['my_tool'] = async (input, context) => {
+ *   // context contains: { manifest, contract_version, logger }
+ *   return { ok: true, output: { result: 'success' } };
+ * };
+ */
+export const toolImplementations = {
+  // Register tool implementations here:
+  // 'tool_id': async (input, context) => { return { ok: true, output: ... }; }
+};
+
+function getToolSpecs(manifest) {
+  const tools = manifest?.tools?.tools || [];
+  return tools;
+}
+
+export function getToolDefinitionsForLLM(manifest) {
+  // OpenAI chat-completions tool format (function tools).
+  // We generate minimal definitions; fill in descriptions and schemas in Stage D as needed.
+  const specs = getToolSpecs(manifest);
+  return specs.map(t => ({
+    type: 'function',
+    function: {
+      name: t.id,
+      description: t.usage_guidelines || `Tool: ${t.id}`,
+      parameters: { type: 'object', additionalProperties: true }
+    }
+  }));
+}
+
+function requireApprovalIfNeeded({ manifest, toolSpec, contract_version }) {
+  const policy = manifest?.security?.side_effect_policy || 'writes_require_approval';
+  const approvals = manifest?.security?.approvals || [];
+
+  if (toolSpec.side_effect_level === 'read_only') return null;
+
+  if (policy === 'read_only_only') {
+    return agentError({
+      contract_version,
+      code: 'side_effect_disallowed',
+      message: `Tool ${toolSpec.id} is not allowed under side_effect_policy=read_only_only.`,
+      retryable: false,
+      details: { tool_id: toolSpec.id, side_effect_level: toolSpec.side_effect_level }
+    });
+  }
+
+  if (policy === 'writes_require_approval') {
+    // We do not implement a UI approval flow in the scaffold.
+    // Instead, return an explicit error so the host workflow can request approval.
+    return agentError({
+      contract_version,
+      code: 'approval_required',
+      message: `Approval required to invoke tool ${toolSpec.id} (${toolSpec.side_effect_level}).`,
+      retryable: false,
+      details: { tool_id: toolSpec.id, side_effect_level: toolSpec.side_effect_level, approvals }
+    });
+  }
+
+  return null;
+}
+
+export async function executeTool({ manifest, toolId, input, contract_version, context }) {
+  const toolSpec = getToolSpecs(manifest).find(t => t.id === toolId);
+  if (!toolSpec) {
+    return { ok: false, error: agentError({ contract_version, code: 'tool_not_found', message: `Unknown tool: ${toolId}`, retryable: false }) };
+  }
+
+  const approvalErr = requireApprovalIfNeeded({ manifest, toolSpec, contract_version });
+  if (approvalErr) return { ok: false, error: approvalErr };
+
+  // Check for registered implementation
+  const impl = toolImplementations[toolId];
+  if (impl) {
+    try {
+      return await impl(input, { manifest, contract_version, toolSpec, ...(context || {}) });
+    } catch (e) {
+      return { ok: false, error: agentError({
+        contract_version,
+        code: 'tool_exception',
+        message: `Tool ${toolId} threw an exception: ${e && e.message ? e.message : String(e)}`,
+        retryable: false,
+        details: { tool_id: toolId }
+      })};
+    }
+  }
+
+  // No implementation found
+  return { ok: false, error: agentError({
+    contract_version,
+    code: 'tool_not_implemented',
+    message: `Tool ${toolId} is scaffolded but not implemented yet. Register implementation in toolImplementations.`,
+    retryable: false
+  })};
+}

@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "token_version": "1.0.0",
+    "name": "base",
+    "description": "Base UI tokens (default values). Theme files may override subsets, primarily color.*."
+  },
+  "color": {
+    "bg": "#ffffff",
+    "surface": "#ffffff",
+    "surface_elevated": "#f9fafb",
+    "text_primary": "#111827",
+    "text_secondary": "#374151",
+    "text_muted": "#6b7280",
+    "border": "#e5e7eb",
+    "border_subtle": "#f3f4f6",
+    "primary": "#2563eb",
+    "primary_hover": "#1d4ed8",
+    "primary_active": "#1e40af",
+    "on_primary": "#ffffff",
+    "danger": "#dc2626",
+    "on_danger": "#ffffff",
+    "success": "#16a34a",
+    "on_success": "#ffffff",
+    "warning": "#d97706",
+    "on_warning": "#111827",
+    "focus_ring": "#2563eb66"
+  },
+  "typography": {
+    "font_family": {
+      "sans": "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji",
+      "mono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace"
+    },
+    "size": {
+      "caption": "12px",
+      "body": "14px",
+      "body_lg": "16px",
+      "h3": "16px",
+      "h2": "20px",
+      "h1": "24px"
+    },
+    "line_height": {
+      "caption": "16px",
+      "body": "20px",
+      "heading": "28px"
+    },
+    "weight": {
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700
+    }
+  },
+  "space": {
+    "0": "0px",
+    "1": "4px",
+    "2": "8px",
+    "3": "12px",
+    "4": "16px",
+    "5": "24px",
+    "6": "32px",
+    "7": "40px",
+    "8": "48px"
+  },
+  "radius": {
+    "sm": "6px",
+    "md": "10px",
+    "lg": "14px",
+    "full": "999px"
+  },
+  "shadow": {
+    "none": "none",
+    "sm": "0 1px 2px #0000000D",
+    "md": "0 6px 16px #00000014"
+  },
+  "border": {
+    "width": {
+      "sm": "1px"
+    }
+  },
+  "sizing": {
+    "modal": {
+      "sm": "420px",
+      "md": "560px",
+      "lg": "720px"
+    },
+    "textarea": {
+      "min_height": "120px"
+    }
+  },
+  "motion": {
+    "duration_fast": "120ms",
+    "duration_normal": "180ms",
+    "ease_standard": "cubic-bezier(0.2, 0, 0, 1)"
+  },
+  "z": {
+    "dropdown": 1000,
+    "modal": 1100,
+    "toast": 1200
+  }
+}

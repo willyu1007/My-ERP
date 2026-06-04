@@ -1,0 +1,23 @@
+{
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/resources",
+      "auth": "required | optional | unknown",
+      "request": {
+        "params": {},
+        "query": {},
+        "bodyShapeNotes": "e.g., { name: string, tags?: string[] }"
+      },
+      "response": {
+        "successStatus": 201,
+        "successShapeNotes": "e.g., { data: { id, name } }"
+      },
+      "examples": {
+        "valid": { "name": "example" },
+        "invalid": { "name": "" }
+      },
+      "notes": "Any assumptions or open questions."
+    }
+  ]
+}

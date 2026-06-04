@@ -1,0 +1,169 @@
+# GitHub Actions template (starting point)
+# - Uses canonical pnpm scripts for each suite
+# - Uploads suite artifacts even on failure
+#
+# - Optional: run `node .ai/skills/features/ci/scripts/ctl-ci.mjs init` to create `ci/config.json` metadata
+#
+# NOTE: Adjust Node version, secrets, and which jobs are PR-gated for your repo.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  governance-lint:
+    name: Governance Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run governance lint
+        run: node .ai/skills/features/ci/scripts/ci-verify.mjs --suite governance
+
+  api-context:
+    name: API Context Verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run API context verification
+        run: node .ai/skills/features/ci/scripts/ci-verify.mjs --suite api-context
+
+  api-newman:
+    name: API (Newman)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Enable corepack (pnpm)
+        run: corepack enable
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Run API tests
+        run: node .ai/skills/features/ci/scripts/ci-verify.mjs --suite api
+        env:
+          BASE_URL: ${{ secrets.API_BASE_URL }}
+          API_TOKEN: ${{ secrets.API_TOKEN }}
+
+      - name: Upload API artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-api-newman
+          path: artifacts/newman
+
+  web-playwright:
+    name: Web (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Enable corepack (pnpm)
+        run: corepack enable
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Playwright E2E
+        run: node .ai/skills/features/ci/scripts/ci-verify.mjs --suite web-playwright
+        env:
+          BASE_URL: ${{ secrets.WEB_BASE_URL }}
+
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-web-playwright
+          path: artifacts/playwright
+
+  perf-k6-smoke:
+    name: Perf (k6 smoke)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Recommended: keep k6 smoke in PR; heavier perf suites should be scheduled.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Enable corepack (pnpm)
+        run: corepack enable
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Run k6 smoke
+        run: node .ai/skills/features/ci/scripts/ci-verify.mjs --suite perf-k6-smoke
+        env:
+          BASE_URL: ${{ secrets.API_BASE_URL }}
+          API_TOKEN: ${{ secrets.API_TOKEN }}
+
+      - name: Upload k6 artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-perf-k6
+          path: artifacts/k6
+
+  # Optional: Cypress job (enable only if you gate on Cypress)
+  # web-cypress:
+  #   name: Web (Cypress)
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 30
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: "20"
+  #         cache: "pnpm"
+  #     - run: corepack enable
+  #     - run: pnpm install --frozen-lockfile
+  #     - run: pnpm test:e2e:cypress
+  #       env:
+  #         WEB_BASE_URL: ${{ secrets.WEB_BASE_URL }}
+  #     - if: always()
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: artifacts-web-cypress
+  #         path: artifacts/cypress

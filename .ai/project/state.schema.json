@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Project State",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "createdAt",
+    "updatedAt",
+    "context"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "createdAt": {
+      "type": "string",
+      "description": "ISO 8601 timestamp"
+    },
+    "updatedAt": {
+      "type": "string",
+      "description": "ISO 8601 timestamp"
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "contract",
+            "snapshot"
+          ],
+          "description": "contract = authoritative files; snapshot = generated from source"
+        },
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "features": {
+      "type": "object",
+      "description": "Feature flags or enabled capabilities",
+      "additionalProperties": {
+        "type": "boolean"
+      }
+    },
+    "custom": {
+      "type": "object",
+      "description": "Custom project-specific state",
+      "additionalProperties": true
+    }
+  }
+}
+

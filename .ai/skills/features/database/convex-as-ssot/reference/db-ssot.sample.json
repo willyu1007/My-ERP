@@ -1,0 +1,16 @@
+{
+  "policy": {
+    "managedPaths": "fixed-defaults-v1"
+  },
+  "db": {
+    "ssot": "convex",
+    "source": {
+      "kind": "convex-schema",
+      "path": "convex/schema.ts"
+    },
+    "contracts": {
+      "dbSchema": "docs/context/db/schema.json",
+      "convexFunctions": "docs/context/convex/functions.json"
+    }
+  }
+}

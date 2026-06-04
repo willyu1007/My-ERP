@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "ssot": {
+    "mode": "database",
+    "source": {
+      "kind": "database",
+      "path": ""
+    }
+  },
+  "database": {
+    "kind": "relational",
+    "dialect": "generic",
+    "name": "",
+    "schemas": []
+  },
+  "enums": [],
+  "tables": [],
+  "notes": "DB mirror skeleton. Populate via: node .ai/skills/features/database/sync-code-schema-from-db/scripts/ctl-db.mjs import-prisma"
+}

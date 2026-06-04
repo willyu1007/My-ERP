@@ -1,0 +1,25 @@
+# Production environment configuration
+
+environment: prod
+
+# Common settings
+replicas: 3
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+# Production-specific settings
+debug: false
+logLevel: warn
+
+# Autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+

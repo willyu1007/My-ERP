@@ -1,0 +1,156 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Init State",
+  "description": "Tracks the progress of the 3-stage initialization conversation",
+  "type": "object",
+  "required": ["version", "stage", "stage-a"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "language": {
+      "type": "string",
+      "enum": ["en", "zh"],
+      "description": "Default language for init-generated human docs (single language; do not mix within one init run)."
+    },
+    "llm": {
+      "type": "object",
+      "description": "LLM-managed metadata (not used for pipeline stage gating).",
+      "properties": {
+        "language": {
+          "type": "string",
+          "description": "User-facing docs language (free-form; may be more than zh/en)."
+        }
+      }
+    },
+    "stage": {
+      "type": "string",
+      "enum": ["A", "B", "C", "complete"],
+      "description": "Current stage of initialization"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO timestamp when init state was created"
+    },
+    "stage-a": {
+      "type": "object",
+      "description": "Stage A: Requirements interview progress",
+      "properties": {
+        "mustAsk": {
+          "type": "object",
+          "description": "MUST-ask questions (all required before Stage A completion)",
+          "properties": {
+            "terminologyAlignment": { "$ref": "#/$defs/questionState" },
+            "onePurpose": { "$ref": "#/$defs/questionState" },
+            "userRoles": { "$ref": "#/$defs/questionState" },
+            "mustRequirements": { "$ref": "#/$defs/questionState" },
+            "outOfScope": { "$ref": "#/$defs/questionState" },
+            "userJourneys": { "$ref": "#/$defs/questionState" },
+            "constraints": { "$ref": "#/$defs/questionState" },
+            "successMetrics": { "$ref": "#/$defs/questionState" }
+          },
+          "required": ["terminologyAlignment", "onePurpose", "userRoles", "mustRequirements", "outOfScope", "userJourneys", "constraints", "successMetrics"]
+        },
+        "docsWritten": {
+          "type": "object",
+          "description": "Stage A document drafts written",
+          "properties": {
+            "requirements": { "type": "boolean" },
+            "nfr": { "type": "boolean" },
+            "glossary": { "type": "boolean" },
+            "riskQuestions": { "type": "boolean" }
+          }
+        },
+        "validated": {
+          "type": "boolean",
+          "description": "check-docs passed"
+        },
+        "docsFingerprint": {
+          "type": "string",
+          "description": "SHA-256 fingerprint of Stage A docs at the last successful check-docs (normalized newlines)."
+        },
+        "userApproved": {
+          "type": "boolean",
+          "description": "User explicitly approved Stage A outputs"
+        }
+      }
+    },
+    "stage-b": {
+      "type": "object",
+      "description": "Stage B: Blueprint generation progress",
+      "properties": {
+        "drafted": { "type": "boolean" },
+        "validated": { "type": "boolean" },
+        "blueprintFingerprint": {
+          "type": "string",
+          "description": "SHA-256 fingerprint of the blueprint at the last successful validate (canonical JSON)."
+        },
+        "packsReviewed": { "type": "boolean" },
+        "packsReviewedFingerprint": {
+          "type": "string",
+          "description": "SHA-256 fingerprint of the blueprint when packs were reviewed/confirmed."
+        },
+        "userApproved": { "type": "boolean" },
+        "approvedBlueprintFingerprint": {
+          "type": "string",
+          "description": "SHA-256 fingerprint of the blueprint at Stage B approval time."
+        }
+      }
+    },
+    "stage-c": {
+      "type": "object",
+      "description": "Stage C: Scaffold/config generation/skills sync progress",
+      "properties": {
+        "scaffoldApplied": { "type": "boolean" },
+        "configsGenerated": { "type": "boolean" },
+        "manifestUpdated": { "type": "boolean" },
+        "wrappersSynced": { "type": "boolean" },
+        "appliedBlueprintFingerprint": {
+          "type": "string",
+          "description": "SHA-256 fingerprint of the blueprint used for the last successful apply."
+        },
+        "appliedProviders": {
+          "type": "string",
+          "description": "Providers used for the last successful apply (e.g. both/codex/claude)."
+        },
+        "skillRetentionReviewed": { "type": "boolean" },
+        "skillRetentionTablePath": {
+          "type": "string",
+          "description": "Path to the skill retention table used for confirmation (repo-relative)."
+        },
+        "skillRetentionTableFingerprint": {
+          "type": "string",
+          "description": "SHA-256 fingerprint of the skill retention table at confirmation time (normalized newlines)."
+        },
+        "userApproved": { "type": "boolean" }
+      }
+    },
+    "history": {
+      "type": "array",
+      "description": "Conversation checkpoints for audit",
+      "items": {
+        "type": "object",
+        "properties": {
+          "timestamp": { "type": "string", "format": "date-time" },
+          "event": { "type": "string" },
+          "details": { "type": "string" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "questionState": {
+      "type": "object",
+      "properties": {
+        "asked": { "type": "boolean" },
+        "answered": { "type": "boolean" },
+        "writtenTo": { 
+          "type": ["string", "null"],
+          "description": "Which doc file this answer was written to"
+        }
+      }
+    }
+  }
+}

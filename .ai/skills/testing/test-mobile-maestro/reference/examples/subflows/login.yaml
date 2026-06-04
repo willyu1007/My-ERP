@@ -1,0 +1,56 @@
+# Reusable Login Subflow
+#
+# A reusable subflow for logging in. Can be included in other flows.
+# Usage in main flow:
+#   - runFlow: subflows/login.yaml
+#
+# Required environment variables:
+# - TEST_USER: Test account email
+# - TEST_PASS: Test account password
+
+appId: com.myapp.example
+
+---
+
+# Ensure we're on login screen
+- assertVisible:
+    id: "login-screen"
+    timeout: 5000
+    optional: true
+
+# Navigate to login if needed
+- runFlow:
+    when:
+      notVisible:
+        id: "login-screen"
+    commands:
+      - tapOn:
+          id: "login-button"
+      - assertVisible:
+          id: "login-screen"
+
+# Fill credentials
+- clearText:
+    id: "email-input"
+
+- inputText:
+    id: "email-input"
+    text: ${TEST_USER}
+
+- clearText:
+    id: "password-input"
+
+- inputText:
+    id: "password-input"
+    text: ${TEST_PASS}
+
+- hideKeyboard
+
+# Submit
+- tapOn:
+    id: "submit-button"
+
+# Verify login success
+- assertVisible:
+    id: "home-screen"
+    timeout: 15000

@@ -1,0 +1,32 @@
+export function checkAuth({ manifest, reqHeaders }) {
+  const auth = manifest?.api?.auth || { kind: 'none' };
+  const kind = auth.kind || 'none';
+
+  if (kind === 'none') return { ok: true };
+  if (kind === 'internal_gateway') return { ok: true }; // assumed handled upstream
+
+  const apiKey = auth.env_var ? process.env[auth.env_var] : null;
+  if (!apiKey) {
+    const allowMissing = String(process.env.AUTH_ALLOW_MISSING_KEY || '').toLowerCase() === 'true'
+      || String(process.env.NODE_ENV || '').toLowerCase() === 'development';
+    if (allowMissing) return { ok: true };
+    return {
+      ok: false,
+      status: 503,
+      code: 'auth_misconfigured',
+      message: `Auth misconfigured: missing env var ${auth.env_var || '<<unset>>'}`
+    };
+  }
+
+  // Accept either Authorization: Bearer <key> or x-api-key: <key>
+  const h = {};
+  for (const [k, v] of Object.entries(reqHeaders || {})) h[k.toLowerCase()] = String(v);
+
+  const authHeader = h['authorization'] || '';
+  const xApiKey = h['x-api-key'] || '';
+  const token = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.slice(7).trim() : '';
+
+  if (token === apiKey || xApiKey === apiKey) return { ok: true };
+
+  return { ok: false, status: 401, message: 'Unauthorized' };
+}

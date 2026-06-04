@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "ssot": {
+    "mode": "none",
+    "source": {
+      "kind": "none",
+      "path": ""
+    }
+  },
+  "database": {
+    "kind": "relational",
+    "dialect": "generic",
+    "name": "",
+    "schemas": []
+  },
+  "enums": [],
+  "tables": [],
+  "notes": "LLM contract file (normalized-db-schema-v2). Do NOT hand-edit. Update via: node .ai/scripts/ctl-db-ssot.mjs sync-to-context"
+}

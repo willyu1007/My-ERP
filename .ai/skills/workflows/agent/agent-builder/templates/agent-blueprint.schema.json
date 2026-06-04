@@ -1,0 +1,1919 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Agent Blueprint",
+  "description": "Single source of truth for scaffolding a production-embedded agent (API + worker/sdk/cron/pipeline).",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "kind",
+    "version",
+    "meta",
+    "agent",
+    "scope",
+    "integration",
+    "interfaces",
+    "api",
+    "schemas",
+    "contracts",
+    "model",
+    "configuration",
+    "conversation",
+    "budgets",
+    "data_flow",
+    "observability",
+    "security",
+    "acceptance",
+    "deliverables"
+  ],
+  "properties": {
+    "kind": {
+      "type": "string",
+      "const": "agent_blueprint"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "generated_at"
+      ],
+      "properties": {
+        "generated_at": {
+          "type": "string",
+          "description": "ISO timestamp"
+        },
+        "run_id": {
+          "type": "string"
+        },
+        "generator": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "agent": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id",
+        "name",
+        "summary",
+        "owners"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "owners": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "type",
+              "id"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "person",
+                  "team",
+                  "service"
+                ]
+              },
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "contact": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "in_scope",
+        "out_of_scope",
+        "definition_of_done"
+      ],
+      "properties": {
+        "in_scope": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "out_of_scope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "definition_of_done": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "integration": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "primary",
+        "attach",
+        "trigger",
+        "target",
+        "upstream_contract_ref",
+        "downstream_contract_ref",
+        "failure_contract",
+        "rollback_or_disable"
+      ],
+      "properties": {
+        "primary": {
+          "type": "string",
+          "enum": [
+            "api"
+          ]
+        },
+        "attach": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "worker",
+              "sdk",
+              "cron",
+              "pipeline"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "trigger": {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "sync_request",
+                "async_event",
+                "scheduled",
+                "manual",
+                "batch"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "target": {
+          "type": "object",
+          "required": [
+            "kind",
+            "name"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "service",
+                "repo_module",
+                "pipeline_step",
+                "queue",
+                "topic",
+                "job",
+                "function",
+                "other"
+              ]
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "details": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "upstream_contract_ref": {
+          "$ref": "#/$defs/schemaRef"
+        },
+        "downstream_contract_ref": {
+          "$ref": "#/$defs/schemaRef"
+        },
+        "failure_contract": {
+          "type": "object",
+          "required": [
+            "mode"
+          ],
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "propagate_error",
+                "return_fallback",
+                "enqueue_retry"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "rollback_or_disable": {
+          "type": "object",
+          "required": [
+            "method"
+          ],
+          "properties": {
+            "method": {
+              "type": "string",
+              "enum": [
+                "feature_flag",
+                "config_toggle",
+                "route_switch",
+                "deployment_rollback"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        }
+      }
+    },
+    "interfaces": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/interface"
+      }
+    },
+    "api": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "protocol",
+        "base_path",
+        "timeout_budget_ms",
+        "routes",
+        "auth",
+        "degradation"
+      ],
+      "properties": {
+        "protocol": {
+          "type": "string",
+          "enum": [
+            "http"
+          ]
+        },
+        "base_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timeout_budget_ms": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "routes": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "method",
+              "path",
+              "request_schema_ref",
+              "response_schema_ref",
+              "error_schema_ref"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "enum": [
+                  "run",
+                  "health"
+                ]
+              },
+              "method": {
+                "type": "string",
+                "enum": [
+                  "get",
+                  "post",
+                  "put",
+                  "patch",
+                  "delete"
+                ]
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "request_schema_ref": {
+                "$ref": "#/$defs/schemaRef"
+              },
+              "response_schema_ref": {
+                "$ref": "#/$defs/schemaRef"
+              },
+              "error_schema_ref": {
+                "$ref": "#/$defs/schemaRef"
+              },
+              "notes": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": true
+          },
+          "allOf": [
+            {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "run"
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            },
+            {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "health"
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          ]
+        },
+        "auth": {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "none",
+                "api_key",
+                "bearer_token",
+                "oauth2",
+                "mtls",
+                "internal_gateway"
+              ]
+            },
+            "env_var": {
+              "type": "string"
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "degradation": {
+          "type": "object",
+          "required": [
+            "mode"
+          ],
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "none",
+                "return_fallback",
+                "return_unavailable",
+                "route_to_worker"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "max_request_size_bytes": {
+          "type": "integer",
+          "minimum": 1024,
+          "description": "Maximum HTTP/WebSocket request body size in bytes (default: 1MB)"
+        }
+      }
+    },
+    "schemas": {
+      "type": "object",
+      "description": "Inline JSON Schemas for contracts.",
+      "required": [
+        "RunRequest",
+        "RunResponse",
+        "AgentError"
+      ],
+      "additionalProperties": {
+        "type": "object"
+      },
+      "properties": {
+        "RunRequest": {
+          "type": "object"
+        },
+        "RunResponse": {
+          "type": "object"
+        },
+        "AgentError": {
+          "type": "object"
+        },
+        "RunEvent": {
+          "type": "object"
+        }
+      }
+    },
+    "contracts": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "version",
+        "compatibility_policy"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "compatibility_policy": {
+          "type": "string",
+          "enum": [
+            "strict",
+            "additive_only",
+            "backward_compatible"
+          ]
+        },
+        "deprecation_window_days": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "primary"
+      ],
+      "properties": {
+        "primary": {
+          "$ref": "#/$defs/modelProfile"
+        },
+        "fallback": {
+          "$ref": "#/$defs/modelProfile"
+        },
+        "summarizer": {
+          "$ref": "#/$defs/modelProfile"
+        },
+        "strategy": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "degradation_mode": {
+              "type": "string",
+              "enum": [
+                "none",
+                "fallback_model",
+                "reduced_reasoning",
+                "return_unavailable"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "env_vars"
+      ],
+      "properties": {
+        "env_vars": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/envVar"
+          }
+        },
+        "config_files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "path",
+              "description"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "conversation": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "no-need",
+            "buffer",
+            "buffer_window",
+            "summary",
+            "summary_buffer"
+          ]
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "per_request",
+            "per_conversation",
+            "per_user",
+            "per_tenant"
+          ]
+        },
+        "key": {
+          "type": "object",
+          "properties": {
+            "source": {
+              "type": "string",
+              "enum": [
+                "request_field",
+                "header"
+              ]
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "storage": {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "none",
+                "in_memory",
+                "file",
+                "kv_store",
+                "database"
+              ]
+            },
+            "location": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "retention": {
+          "type": "object",
+          "properties": {
+            "ttl_seconds": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "max_items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": true
+        },
+        "redaction": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "none",
+                "basic",
+                "strict"
+              ]
+            }
+          },
+          "additionalProperties": true
+        },
+        "buffer": {
+          "type": "object",
+          "properties": {
+            "max_turns": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "max_tokens": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": true
+        },
+        "buffer_window": {
+          "type": "object",
+          "properties": {
+            "window_turns": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "window_tokens": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": true
+        },
+        "summary": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "update_method": {
+              "type": "string",
+              "enum": [
+                "llm",
+                "heuristic"
+              ]
+            },
+            "update_timing": {
+              "type": "string",
+              "enum": [
+                "after_turn",
+                "async_post_turn"
+              ]
+            },
+            "refresh_policy": {
+              "type": "string",
+              "enum": [
+                "every_turn",
+                "threshold",
+                "periodic"
+              ]
+            },
+            "threshold": {
+              "type": "object",
+              "properties": {
+                "max_turns_since_update": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "max_tokens_since_update": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "cooldown_seconds": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "additionalProperties": true
+            },
+            "max_summary_tokens": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "model_profile": {
+              "type": "string",
+              "description": "Optional profile name or reference"
+            }
+          }
+        },
+        "summary_buffer": {
+          "type": "object",
+          "properties": {
+            "window_turns": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "window_tokens": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": true
+        }
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "latency_ms",
+        "throughput"
+      ],
+      "properties": {
+        "latency_ms": {
+          "type": "object",
+          "properties": {
+            "p50": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "p95": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "timeout_budget_ms": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": true
+        },
+        "throughput": {
+          "type": "object",
+          "properties": {
+            "rps": {
+              "type": "number",
+              "minimum": 0
+            },
+            "concurrency": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": true
+        },
+        "tokens": {
+          "type": "object",
+          "properties": {
+            "max_input_tokens": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "max_output_tokens": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": true
+        },
+        "cost": {
+          "type": "object",
+          "properties": {
+            "max_usd_per_task": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": true
+        }
+      }
+    },
+    "data_flow": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "data_classes",
+        "llm_egress"
+      ],
+      "properties": {
+        "data_classes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "PII",
+              "confidential",
+              "internal",
+              "public",
+              "unknown"
+            ]
+          }
+        },
+        "llm_egress": {
+          "type": "object",
+          "required": [
+            "what_is_sent"
+          ],
+          "properties": {
+            "what_is_sent": {
+              "type": "string",
+              "minLength": 1
+            },
+            "redaction": {
+              "type": "string"
+            },
+            "allowed": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": true
+        },
+        "retention": {
+          "type": "object",
+          "properties": {
+            "ttl_seconds": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        }
+      }
+    },
+    "observability": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "logs"
+      ],
+      "properties": {
+        "logs": {
+          "type": "object",
+          "required": [
+            "required_fields"
+          ],
+          "properties": {
+            "required_fields": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string"
+              }
+            },
+            "correlation_id_field": {
+              "type": "string"
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "metrics": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "tracing": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "alerts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "condition": {
+                "type": "string"
+              },
+              "severity": {
+                "type": "string",
+                "enum": [
+                  "low",
+                  "medium",
+                  "high",
+                  "critical"
+                ]
+              },
+              "owner": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "security": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "side_effect_policy"
+      ],
+      "properties": {
+        "side_effect_policy": {
+          "type": "string",
+          "enum": [
+            "read_only_only",
+            "writes_require_approval",
+            "writes_allowed"
+          ]
+        },
+        "approvals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "mode"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "human_required"
+                ]
+              },
+              "applies_to": {
+                "type": "object",
+                "properties": {
+                  "tool_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "side_effect_level": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "read_only",
+                        "write",
+                        "destructive"
+                      ]
+                    }
+                  }
+                },
+                "additionalProperties": true
+              },
+              "notes": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "tools": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "tools": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/tool"
+          }
+        },
+        "max_steps": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "description": "Maximum number of tool loop iterations (default: 5)"
+        }
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "scenarios"
+      ],
+      "properties": {
+        "scenarios": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "required": [
+              "title",
+              "given",
+              "when",
+              "then",
+              "expected_output_checks",
+              "priority"
+            ],
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "given": {
+                "type": "string",
+                "minLength": 1
+              },
+              "when": {
+                "type": "string",
+                "minLength": 1
+              },
+              "then": {
+                "type": "string",
+                "minLength": 1
+              },
+              "expected_output_checks": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "kind": {
+                "type": "string",
+                "description": "Optional explicit scenario kind. If omitted, the verifier will infer the kind from title/when.",
+                "enum": [
+                  "http_health",
+                  "http_run",
+                  "http_conversation_debug",
+                  "ws_streaming",
+                  "sse_streaming",
+                  "pipeline",
+                  "cron",
+                  "worker",
+                  "sdk"
+                ]
+              },
+              "priority": {
+                "type": "string",
+                "enum": [
+                  "P0",
+                  "P1",
+                  "P2"
+                ]
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "deliverables": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "agent_module_path",
+        "docs_path",
+        "registry_path",
+        "core_adapter_separation"
+      ],
+      "properties": {
+        "agent_module_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "docs_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "registry_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "core_adapter_separation": {
+          "type": "string",
+          "enum": [
+            "required"
+          ]
+        }
+      }
+    },
+    "worker": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "source",
+        "execution",
+        "retry",
+        "idempotency",
+        "failure"
+      ],
+      "properties": {
+        "source": {
+          "type": "object",
+          "required": [
+            "kind",
+            "name"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "file_queue",
+                "queue",
+                "topic",
+                "task_table",
+                "cron",
+                "webhook"
+              ]
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "execution": {
+          "type": "object",
+          "required": [
+            "max_concurrency",
+            "timeout_ms"
+          ],
+          "properties": {
+            "max_concurrency": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "timeout_ms": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": true
+        },
+        "retry": {
+          "type": "object",
+          "required": [
+            "max_attempts",
+            "backoff"
+          ],
+          "properties": {
+            "max_attempts": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "backoff": {
+              "type": "string",
+              "enum": [
+                "fixed",
+                "exponential",
+                "exponential_jitter"
+              ]
+            }
+          },
+          "additionalProperties": true
+        },
+        "idempotency": {
+          "type": "object",
+          "required": [
+            "strategy"
+          ],
+          "properties": {
+            "strategy": {
+              "type": "string",
+              "enum": [
+                "none",
+                "header",
+                "payload_field",
+                "hash_payload",
+                "external_key"
+              ]
+            },
+            "key_ref": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "failure": {
+          "type": "object",
+          "required": [
+            "dead_letter",
+            "alert_on"
+          ],
+          "properties": {
+            "dead_letter": {
+              "type": "object",
+              "required": [
+                "kind"
+              ],
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "none",
+                    "queue",
+                    "topic",
+                    "table",
+                    "directory"
+                  ]
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "alert_on": {
+              "type": "string",
+              "enum": [
+                "always",
+                "after_retries",
+                "never"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        }
+      }
+    },
+    "sdk": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "language",
+        "package",
+        "exports",
+        "compatibility"
+      ],
+      "properties": {
+        "language": {
+          "type": "string",
+          "enum": [
+            "typescript",
+            "python",
+            "go",
+            "java",
+            "dotnet"
+          ]
+        },
+        "package": {
+          "type": "object",
+          "required": [
+            "name",
+            "version"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": true
+        },
+        "exports": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "input_schema_ref",
+              "output_schema_ref",
+              "error_schema_ref"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "input_schema_ref": {
+                "$ref": "#/$defs/schemaRef"
+              },
+              "output_schema_ref": {
+                "$ref": "#/$defs/schemaRef"
+              },
+              "error_schema_ref": {
+                "$ref": "#/$defs/schemaRef"
+              },
+              "notes": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "compatibility": {
+          "type": "object",
+          "required": [
+            "semver",
+            "breaking_change_policy"
+          ],
+          "properties": {
+            "semver": {
+              "type": "string",
+              "enum": [
+                "strict",
+                "relaxed"
+              ]
+            },
+            "breaking_change_policy": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": true
+        }
+      }
+    },
+    "cron": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "schedule",
+        "input",
+        "output"
+      ],
+      "properties": {
+        "schedule": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Cron expression or schedule descriptor"
+        },
+        "timezone": {
+          "type": "string"
+        },
+        "input": {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "env_json",
+                "file",
+                "none"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "output": {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "stdout",
+                "file",
+                "none"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        }
+      }
+    },
+    "pipeline": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "context",
+        "input_channel",
+        "output_channel"
+      ],
+      "properties": {
+        "context": {
+          "type": "string",
+          "enum": [
+            "ci",
+            "etl",
+            "data_pipeline",
+            "build",
+            "deploy",
+            "other"
+          ]
+        },
+        "input_channel": {
+          "type": "string",
+          "enum": [
+            "stdin",
+            "file"
+          ]
+        },
+        "output_channel": {
+          "type": "string",
+          "enum": [
+            "stdout",
+            "file"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "prompting": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "complexity_tier": {
+          "type": "string",
+          "enum": [
+            "tier1",
+            "tier2",
+            "tier3"
+          ]
+        },
+        "examples_strategy": {
+          "type": "string"
+        },
+        "prompt_modules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "operations": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "schemaRef": {
+      "type": "string",
+      "pattern": "^#/schemas/[A-Za-z0-9_]+$"
+    },
+    "envVar": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "name",
+        "description",
+        "required",
+        "sensitivity",
+        "example_placeholder"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "sensitivity": {
+          "type": "string",
+          "enum": [
+            "public",
+            "internal",
+            "secret"
+          ]
+        },
+        "example_placeholder": {
+          "type": "string"
+        }
+      }
+    },
+    "modelProfile": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "provider",
+        "model"
+      ],
+      "properties": {
+        "provider": {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "openai",
+                "openai_compatible",
+                "azure_openai",
+                "internal_gateway",
+                "local"
+              ]
+            },
+            "base_url_env": {
+              "type": "string"
+            },
+            "api_key_env": {
+              "type": "string"
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reasoning_profile": {
+          "type": "string"
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "interface": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "type",
+        "entrypoint",
+        "request_schema_ref",
+        "response_schema_ref",
+        "error_schema_ref",
+        "response_mode",
+        "exposure_level"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "http",
+            "worker",
+            "sdk",
+            "cron",
+            "pipeline",
+            "cli"
+          ]
+        },
+        "entrypoint": {
+          "type": "string",
+          "minLength": 1
+        },
+        "request_schema_ref": {
+          "$ref": "#/$defs/schemaRef"
+        },
+        "response_schema_ref": {
+          "$ref": "#/$defs/schemaRef"
+        },
+        "error_schema_ref": {
+          "$ref": "#/$defs/schemaRef"
+        },
+        "response_mode": {
+          "type": "string",
+          "enum": [
+            "blocking",
+            "streaming",
+            "async"
+          ]
+        },
+        "exposure_level": {
+          "type": "string",
+          "enum": [
+            "none",
+            "progress",
+            "debug"
+          ]
+        },
+        "ui": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "contract_notes": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "streaming": {
+          "type": "object",
+          "properties": {
+            "protocol": {
+              "type": "string",
+              "enum": [
+                "websocket",
+                "sse",
+                "chunked_jsonl"
+              ]
+            },
+            "event_schema_ref": {
+              "$ref": "#/$defs/schemaRef"
+            }
+          },
+          "additionalProperties": true
+        }
+      }
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id",
+        "kind",
+        "side_effect_level",
+        "input_schema_ref",
+        "output_schema_ref",
+        "error_schema_ref",
+        "timeouts",
+        "retry",
+        "idempotency",
+        "audit"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "http_api",
+            "database",
+            "queue",
+            "filesystem",
+            "mcp_server",
+            "internal_service",
+            "other"
+          ]
+        },
+        "side_effect_level": {
+          "type": "string",
+          "enum": [
+            "read_only",
+            "write",
+            "destructive"
+          ]
+        },
+        "input_schema_ref": {
+          "$ref": "#/$defs/schemaRef"
+        },
+        "output_schema_ref": {
+          "$ref": "#/$defs/schemaRef"
+        },
+        "error_schema_ref": {
+          "$ref": "#/$defs/schemaRef"
+        },
+        "timeouts": {
+          "type": "object",
+          "required": [
+            "timeout_ms"
+          ],
+          "properties": {
+            "timeout_ms": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": true
+        },
+        "retry": {
+          "type": "object",
+          "required": [
+            "max_attempts",
+            "backoff"
+          ],
+          "properties": {
+            "max_attempts": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "backoff": {
+              "type": "string",
+              "enum": [
+                "fixed",
+                "exponential",
+                "exponential_jitter"
+              ]
+            }
+          },
+          "additionalProperties": true
+        },
+        "idempotency": {
+          "type": "object",
+          "required": [
+            "strategy"
+          ],
+          "properties": {
+            "strategy": {
+              "type": "string",
+              "enum": [
+                "none",
+                "header",
+                "payload_field",
+                "hash_payload",
+                "external_key"
+              ]
+            },
+            "key_ref": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "auth": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "none",
+                "api_key",
+                "bearer_token",
+                "oauth2",
+                "mtls"
+              ]
+            },
+            "env_var": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "audit": {
+          "type": "object",
+          "required": [
+            "required"
+          ],
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "log_fields": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": true
+        },
+        "usage_guidelines": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "integration": {
+            "properties": {
+              "attach": {
+                "contains": {
+                  "const": "worker"
+                }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "worker"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "integration": {
+            "properties": {
+              "attach": {
+                "contains": {
+                  "const": "sdk"
+                }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "sdk"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "integration": {
+            "properties": {
+              "attach": {
+                "contains": {
+                  "const": "cron"
+                }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "cron"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "integration": {
+            "properties": {
+              "attach": {
+                "contains": {
+                  "const": "pipeline"
+                }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "pipeline"
+        ]
+      }
+    }
+  ]
+}

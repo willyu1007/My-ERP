@@ -1,0 +1,276 @@
+import crypto from 'node:crypto';
+
+// Minimal, dependency-free WebSocket implementation.
+//
+// Supported:
+// - Server-side upgrade handshake
+// - Receiving masked text frames (client -> server)
+// - Sending unmasked text frames (server -> client)
+// - Ping/Pong
+// - Close
+//
+// Limitations (acceptable for scaffold use):
+// - Does not implement permessage-deflate
+// - Does not support fragmented frames
+// - Expects client messages to be text frames
+
+function sha1Base64(input) {
+  return crypto.createHash('sha1').update(input).digest('base64');
+}
+
+function buildAcceptValue(secWebSocketKey) {
+  return sha1Base64(secWebSocketKey + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11');
+}
+
+function writeHttpUpgradeResponse(socket, secWebSocketAccept) {
+  const lines = [
+    'HTTP/1.1 101 Switching Protocols',
+    'Upgrade: websocket',
+    'Connection: Upgrade',
+    `Sec-WebSocket-Accept: ${secWebSocketAccept}`,
+    '',
+    ''
+  ];
+  socket.write(lines.join('\r\n'));
+}
+
+function writeHttpErrorResponse(socket, statusCode, statusText, body) {
+  const bodyStr = body ? JSON.stringify(body) : '';
+  const lines = [
+    `HTTP/1.1 ${statusCode} ${statusText}`,
+    'Content-Type: application/json',
+    `Content-Length: ${Buffer.byteLength(bodyStr)}`,
+    'Connection: close',
+    '',
+    bodyStr
+  ];
+  socket.write(lines.join('\r\n'));
+}
+
+function encodeTextFrame(text) {
+  const payload = Buffer.from(String(text), 'utf8');
+  const len = payload.length;
+
+  let header;
+  if (len < 126) {
+    header = Buffer.alloc(2);
+    header[0] = 0x81; // FIN + text
+    header[1] = len;  // no mask
+    return Buffer.concat([header, payload]);
+  }
+  if (len < 65536) {
+    header = Buffer.alloc(4);
+    header[0] = 0x81;
+    header[1] = 126;
+    header.writeUInt16BE(len, 2);
+    return Buffer.concat([header, payload]);
+  }
+
+  // 64-bit length
+  header = Buffer.alloc(10);
+  header[0] = 0x81;
+  header[1] = 127;
+  // write big-endian 64-bit length; JS supports up to 2^53-1 safely.
+  header.writeBigUInt64BE(BigInt(len), 2);
+  return Buffer.concat([header, payload]);
+}
+
+function encodeCloseFrame() {
+  return Buffer.from([0x88, 0x00]);
+}
+
+function encodePongFrame(payload) {
+  const p = payload ? Buffer.from(payload) : Buffer.alloc(0);
+  const len = p.length;
+  if (len < 126) {
+    const header = Buffer.from([0x8A, len]);
+    return Buffer.concat([header, p]);
+  }
+  const header = Buffer.alloc(4);
+  header[0] = 0x8A;
+  header[1] = 126;
+  header.writeUInt16BE(len, 2);
+  return Buffer.concat([header, p]);
+}
+
+// Default max WebSocket message size: 1MB
+const DEFAULT_MAX_WS_MESSAGE_SIZE = 1 * 1024 * 1024;
+
+function tryParseFrame(buffer, maxPayloadSize = DEFAULT_MAX_WS_MESSAGE_SIZE) {
+  if (!buffer || buffer.length < 2) return null;
+
+  const b0 = buffer[0];
+  const b1 = buffer[1];
+  const fin = (b0 & 0x80) !== 0;
+  const opcode = b0 & 0x0f;
+  const masked = (b1 & 0x80) !== 0;
+  let payloadLen = (b1 & 0x7f);
+  let offset = 2;
+
+  if (!fin) {
+    return { error: 'fragmented_frames_not_supported' };
+  }
+
+  if (payloadLen === 126) {
+    if (buffer.length < offset + 2) return null;
+    payloadLen = buffer.readUInt16BE(offset);
+    offset += 2;
+  } else if (payloadLen === 127) {
+    if (buffer.length < offset + 8) return null;
+    const big = buffer.readBigUInt64BE(offset);
+    const n = Number(big);
+    if (!Number.isFinite(n)) return { error: 'payload_too_large' };
+    payloadLen = n;
+    offset += 8;
+  }
+
+  // Check max payload size
+  if (maxPayloadSize && payloadLen > maxPayloadSize) {
+    return { error: 'payload_too_large' };
+  }
+
+  const maskLen = masked ? 4 : 0;
+  const frameLen = offset + maskLen + payloadLen;
+  if (buffer.length < frameLen) return null;
+
+  let payload = buffer.slice(offset + maskLen, frameLen);
+
+  if (masked) {
+    const mask = buffer.slice(offset, offset + 4);
+    const out = Buffer.alloc(payloadLen);
+    for (let i = 0; i < payloadLen; i++) {
+      out[i] = payload[i] ^ mask[i % 4];
+    }
+    payload = out;
+  }
+
+  const rest = buffer.slice(frameLen);
+  return {
+    frame: { opcode, payload, masked },
+    rest
+  };
+}
+
+class WebSocketConnection {
+  constructor(socket, { maxMessageSize = DEFAULT_MAX_WS_MESSAGE_SIZE } = {}) {
+    this.socket = socket;
+    this._buffer = Buffer.alloc(0);
+    this._messageHandlers = [];
+    this._closeHandlers = [];
+    this._isClosed = false;
+    this._maxMessageSize = maxMessageSize;
+
+    socket.on('data', (chunk) => {
+      if (this._isClosed) return;
+      this._buffer = Buffer.concat([this._buffer, chunk]);
+      this._drain();
+    });
+
+    socket.on('close', () => {
+      this._isClosed = true;
+      for (const h of this._closeHandlers) {
+        try { h(); } catch (e) {}
+      }
+    });
+
+    socket.on('error', () => {
+      // Ignore socket errors in scaffold
+    });
+  }
+
+  onMessage(handler) {
+    if (typeof handler === 'function') this._messageHandlers.push(handler);
+  }
+
+  onClose(handler) {
+    if (typeof handler === 'function') this._closeHandlers.push(handler);
+  }
+
+  sendText(text) {
+    if (this._isClosed) return;
+    try {
+      this.socket.write(encodeTextFrame(text));
+    } catch (e) {
+      // Ignore send errors
+    }
+  }
+
+  sendJson(obj) {
+    this.sendText(JSON.stringify(obj));
+  }
+
+  close() {
+    if (this._isClosed) return;
+    this._isClosed = true;
+    try { this.socket.write(encodeCloseFrame()); } catch (e) {}
+    try { this.socket.end(); } catch (e) {}
+  }
+
+  _drain() {
+    while (true) {
+      const parsed = tryParseFrame(this._buffer, this._maxMessageSize);
+      if (!parsed) return;
+      if (parsed.error) {
+        this.close();
+        return;
+      }
+      this._buffer = parsed.rest;
+      const frame = parsed.frame;
+
+      // opcode 0x1: text, 0x8: close, 0x9: ping, 0xA: pong
+      if (frame.opcode === 0x8) {
+        this.close();
+        return;
+      }
+
+      if (frame.opcode === 0x9) {
+        // ping -> pong
+        try { this.socket.write(encodePongFrame(frame.payload)); } catch (e) {}
+        continue;
+      }
+
+      if (frame.opcode === 0x1) {
+        const text = frame.payload.toString('utf8');
+        for (const h of this._messageHandlers) {
+          try { h(text); } catch (e) {}
+        }
+      }
+    }
+  }
+}
+
+export function createWebSocketServer({ server, pathname, authenticate, onConnection, maxMessageSize }) {
+  if (!server) throw new Error('createWebSocketServer requires server');
+  if (!pathname) throw new Error('createWebSocketServer requires pathname');
+
+  server.on('upgrade', (req, socket) => {
+    try {
+      const u = new URL(req.url || '/', 'http://localhost');
+      if (u.pathname !== pathname) {
+        socket.destroy();
+        return;
+      }
+
+      if (authenticate && !authenticate(req)) {
+        // Return HTTP 401 before closing so clients can distinguish auth failure from network error
+        writeHttpErrorResponse(socket, 401, 'Unauthorized', { error: 'unauthorized', message: 'WebSocket authentication failed' });
+        socket.destroy();
+        return;
+      }
+
+      const key = req.headers['sec-websocket-key'];
+      if (!key) {
+        socket.destroy();
+        return;
+      }
+
+      const accept = buildAcceptValue(String(key));
+      writeHttpUpgradeResponse(socket, accept);
+
+      const conn = new WebSocketConnection(socket, { maxMessageSize: maxMessageSize || DEFAULT_MAX_WS_MESSAGE_SIZE });
+      if (onConnection) onConnection(conn, req);
+    } catch (e) {
+      try { socket.destroy(); } catch (err) {}
+    }
+  });
+}

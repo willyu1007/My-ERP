@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Environment Registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "updatedAt",
+    "environments"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "updatedAt": {
+      "type": "string",
+      "description": "ISO 8601 timestamp"
+    },
+    "environments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "id",
+          "description"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,30}[a-z0-9]$|^[a-z0-9]$",
+            "description": "Environment identifier (e.g., dev, staging, prod)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description"
+          },
+          "database": {
+            "type": "object",
+            "properties": {
+              "writable": {
+                "type": "boolean",
+                "description": "Whether AI can propose write operations"
+              },
+              "migrations": {
+                "oneOf": [
+                  { "type": "boolean" },
+                  { "type": "string", "enum": ["review-required", "change-request"] }
+                ],
+                "description": "Migration policy"
+              },
+              "seedData": {
+                "type": "boolean",
+                "description": "Whether seed data operations are allowed"
+              }
+            }
+          },
+          "secrets": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "type": "string",
+                "description": "Where secrets come from (e.g., .env.local, vault://path)"
+              },
+              "notes": {
+                "type": "string"
+              }
+            }
+          },
+          "deployment": {
+            "type": "object",
+            "properties": {
+              "allowed": {
+                "type": "boolean",
+                "description": "Whether deployment to this environment is allowed"
+              },
+              "approval": {
+                "type": "string",
+                "enum": ["none", "optional", "required"],
+                "description": "Approval requirement level"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

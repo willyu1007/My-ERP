@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "generatedAt": "",
+  "sourceOpenapi": "docs/context/api/openapi.yaml",
+  "sourceChecksumSha256": "",
+  "stats": {
+    "totalEndpoints": 0,
+    "byTag": {}
+  },
+  "endpoints": []
+}

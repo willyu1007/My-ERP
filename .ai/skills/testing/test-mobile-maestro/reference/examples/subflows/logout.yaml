@@ -1,0 +1,42 @@
+# Reusable Logout Subflow
+#
+# A reusable subflow for logging out. Can be included in other flows.
+# Usage in main flow:
+#   - runFlow: subflows/logout.yaml
+
+appId: com.myapp.example
+
+---
+
+# Navigate to settings/profile
+- tapOn:
+    id: "settings-tab"
+    optional: true
+
+- tapOn:
+    id: "profile-button"
+    optional: true
+
+# Find and tap logout button
+- scrollUntilVisible:
+    element:
+      id: "logout-button"
+    direction: DOWN
+    timeout: 10000
+
+- tapOn:
+    id: "logout-button"
+
+# Confirm logout if dialog appears
+- runFlow:
+    when:
+      visible:
+        id: "confirm-dialog"
+    commands:
+      - tapOn:
+          id: "confirm-button"
+
+# Verify logged out (login screen visible)
+- assertVisible:
+    id: "login-screen"
+    timeout: 5000

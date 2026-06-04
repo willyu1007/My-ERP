@@ -1,0 +1,46 @@
+#!/bin/sh
+#
+# Git commit-msg hook for commit message validation.
+#
+# Validates commit messages follow conventional format:
+#   <type>(<scope>): <subject>
+#
+# Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
+#
+# Install: node .githooks/install.mjs
+# Uninstall: node .githooks/install.mjs --uninstall
+#
+
+COMMIT_MSG_FILE="$1"
+COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
+
+# Skip merge commits
+if echo "$COMMIT_MSG" | grep -q '^Merge '; then
+  exit 0
+fi
+
+# Skip fixup/squash commits
+if echo "$COMMIT_MSG" | grep -qE '^(fixup|squash)! '; then
+  exit 0
+fi
+
+# Validate conventional commit format
+# Pattern: type(scope): subject OR type: subject
+PATTERN='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9-]+\))?: .{1,}'
+
+if ! echo "$COMMIT_MSG" | head -1 | grep -qE "$PATTERN"; then
+  echo "[hook] Invalid commit message format."
+  echo ""
+  echo "Expected: <type>(<scope>): <subject>"
+  echo "Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert"
+  echo ""
+  echo "Examples:"
+  echo "  feat(auth): add login page"
+  echo "  fix: resolve null pointer exception"
+  echo "  docs(readme): update installation guide"
+  echo ""
+  echo "Your message: $(head -1 "$COMMIT_MSG_FILE")"
+  exit 1
+fi
+
+exit 0

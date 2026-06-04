@@ -1,0 +1,22 @@
+# LLM providers registry (template)
+#
+# This file is a human-reviewable SSOT for provider identifiers and their default capabilities.
+# Your production system may store this in a DB/config service; keep `provider_id` stable.
+
+version: 1
+
+providers:
+  # Example entry (replace with real values in your project)
+  - provider_id: example-provider
+    display_name: Example Provider
+    auth:
+      type: api_key
+      # credential_ref is resolved at runtime by your secrets manager integration.
+      credential_ref_required: true
+    capabilities:
+      - chat
+      - embeddings
+    defaults:
+      timeout_ms: 60000
+      max_retries: 1
+      supports_streaming: true

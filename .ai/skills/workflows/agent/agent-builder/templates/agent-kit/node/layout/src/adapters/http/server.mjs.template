@@ -1,0 +1,314 @@
+import http from 'node:http';
+import url from 'node:url';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { runAgent } from '../../core/run.mjs';
+import { readJson, nowIso } from '../../core/util.mjs';
+import { agentError } from '../../core/errors.mjs';
+import { checkAuth } from './auth.mjs';
+import { createWebSocketServer } from './ws.mjs';
+import { makeLLMClient } from '../../core/llm.mjs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+function loadManifest() {
+  const p = path.join(__dirname, '..', '..', '..', 'config', 'agent.manifest.json');
+  return readJson(p);
+}
+
+function jsonResponse(res, status, obj) {
+  const body = JSON.stringify(obj);
+  res.writeHead(status, { 'content-type': 'application/json', 'content-length': Buffer.byteLength(body) });
+  res.end(body);
+}
+
+function httpStatusFromAgentError(err) {
+  const code = String(err && err.code ? err.code : '');
+  if (code === 'invalid_request') return 400;
+  if (code === 'invalid_json') return 400;
+  if (code === 'request_too_large') return 413;
+  if (code === 'unauthorized') return 401;
+  if (code === 'forbidden') return 403;
+  if (code === 'approval_required') return 409;
+  if (code === 'tool_not_found') return 400;
+  if (code === 'tool_not_implemented') return 501;
+  if (code === 'side_effect_disallowed') return 403;
+  if (code === 'agent_disabled') return 503;
+  if (code === 'unavailable') return 503;
+  if (code === 'upstream_timeout') return 504;
+  return 500;
+}
+
+function mkAgentError(manifest, code, message, retryable, details) {
+  const contractVersion = manifest?.contracts?.version || '1.0.0';
+  return agentError({
+    contract_version: contractVersion,
+    code,
+    message,
+    retryable: !!retryable,
+    details: details || {}
+  });
+}
+
+// Default max request body size: 1MB
+const DEFAULT_MAX_BODY_SIZE = 1 * 1024 * 1024;
+
+async function readJsonBody(req, maxSize = DEFAULT_MAX_BODY_SIZE) {
+  const chunks = [];
+  let totalSize = 0;
+  for await (const c of req) {
+    totalSize += c.length;
+    if (maxSize && totalSize > maxSize) {
+      throw new Error('request_too_large');
+    }
+    chunks.push(c);
+  }
+  const text = Buffer.concat(chunks).toString('utf8');
+  if (!text) return {};
+  return JSON.parse(text);
+}
+
+function shouldDegrade(manifest) {
+  // Simple hook: operator can force degraded mode via env.
+  return String(process.env.AGENT_DEGRADED || '').toLowerCase() === 'true';
+}
+
+function routeToWorker(runRequest) {
+  const inputDir = process.env.AGENT_WORKER_INPUT_DIR;
+  if (!inputDir) throw new Error('AGENT_WORKER_INPUT_DIR not set for route_to_worker.');
+  fs.mkdirSync(inputDir, { recursive: true });
+  const file = path.join(inputDir, `${runRequest.request_id}.json`);
+  fs.writeFileSync(file, JSON.stringify(runRequest, null, 2));
+  return file;
+}
+
+export function start() {
+  const manifest = loadManifest();
+  const basePath = manifest?.api?.base_path || '{{api_base_path}}';
+  const port = Number(process.env.PORT || 8080);
+
+  const server = http.createServer(async (req, res) => {
+    const parsed = url.parse(req.url, true);
+    const pathname = parsed.pathname || '/';
+    const method = String(req.method || 'GET').toLowerCase();
+
+    // Health (fixed name)
+    // Supports ?deep=true query param for LLM connectivity check
+    if (method === 'get' && pathname === basePath + '/health') {
+      const deepCheck = parsed.query && (parsed.query.deep === 'true' || parsed.query.deep === '1');
+
+      const healthResponse = {
+        status: 'ok',
+        ts: nowIso(),
+        agent_id: manifest?.agent?.id,
+        checks: {}
+      };
+
+      // Deep check: verify LLM connectivity
+      if (deepCheck) {
+        try {
+          const modelProfile = manifest?.model?.primary;
+          const llmClient = makeLLMClient({
+            base_url_env: modelProfile?.provider?.base_url_env || 'LLM_BASE_URL',
+            api_key_env: modelProfile?.provider?.api_key_env || 'LLM_API_KEY'
+          });
+          const llmHealth = await llmClient.healthCheck();
+          healthResponse.checks.llm = llmHealth.ok ? 'ok' : 'error';
+          if (!llmHealth.ok) {
+            healthResponse.status = 'degraded';
+            healthResponse.checks.llm_error = llmHealth.error || `status ${llmHealth.status}`;
+          }
+        } catch (e) {
+          healthResponse.status = 'degraded';
+          healthResponse.checks.llm = 'error';
+          healthResponse.checks.llm_error = e && e.message ? e.message : String(e);
+        }
+      }
+
+      const httpStatus = healthResponse.status === 'ok' ? 200 : 503;
+      return jsonResponse(res, httpStatus, healthResponse);
+    }
+
+    // Auth (skip for health)
+    const authRes = checkAuth({ manifest, reqHeaders: req.headers });
+    if (!authRes.ok) {
+      const code = authRes.code || 'unauthorized';
+      const err = mkAgentError(manifest, code, authRes.message || 'Unauthorized', false, {});
+      return jsonResponse(res, authRes.status || httpStatusFromAgentError(err), err);
+    }
+
+    // Blocking run endpoint
+    if (method === 'post' && pathname === basePath + '/run') {
+      try {
+        let body;
+        try {
+          const maxBodySize = manifest?.api?.max_request_size_bytes || DEFAULT_MAX_BODY_SIZE;
+          body = await readJsonBody(req, maxBodySize);
+        } catch (e) {
+          if (e && e.message === 'request_too_large') {
+            const err = mkAgentError(manifest, 'request_too_large', 'Request body exceeds maximum allowed size.', false, {});
+            return jsonResponse(res, 413, err);
+          }
+          const err = mkAgentError(manifest, 'invalid_json', 'Invalid JSON body.', false, {});
+          return jsonResponse(res, 400, err);
+        }
+        const requestContext = { headers: req.headers || {} };
+
+        // Degradation handling
+        const deg = manifest?.api?.degradation?.mode || 'none';
+        if (shouldDegrade(manifest) && deg === 'route_to_worker') {
+          const queuedFile = routeToWorker(body);
+          return jsonResponse(res, 202, { status: 'queued', request_id: body.request_id, queued_file: queuedFile });
+        }
+        if (shouldDegrade(manifest) && deg === 'return_unavailable') {
+          const err = mkAgentError(manifest, 'unavailable', 'Service unavailable (degraded).', true, { request_id: body.request_id });
+          return jsonResponse(res, 503, err);
+        }
+
+        const result = await runAgent(body, { responseMode: 'blocking', requestContext });
+        if (!result.ok) {
+          const status = httpStatusFromAgentError(result.error);
+          return jsonResponse(res, status, result.error);
+        }
+        return jsonResponse(res, 200, result.response);
+      } catch (e) {
+        const err = mkAgentError(manifest, 'exception', String(e && e.message ? e.message : e), false, {});
+        return jsonResponse(res, 500, err);
+      }
+    }
+
+    // SSE streaming endpoint
+    if (method === 'post' && pathname === basePath + '/run/stream') {
+      try {
+        let body;
+        try {
+          const maxBodySize = manifest?.api?.max_request_size_bytes || DEFAULT_MAX_BODY_SIZE;
+          body = await readJsonBody(req, maxBodySize);
+        } catch (e) {
+          if (e && e.message === 'request_too_large') {
+            const err = mkAgentError(manifest, 'request_too_large', 'Request body exceeds maximum allowed size.', false, {});
+            return jsonResponse(res, 413, err);
+          }
+          const err = mkAgentError(manifest, 'invalid_json', 'Invalid JSON body.', false, {});
+          return jsonResponse(res, 400, err);
+        }
+        const requestContext = { headers: req.headers || {} };
+
+        // SSE headers
+        res.writeHead(200, {
+          'content-type': 'text/event-stream',
+          'cache-control': 'no-cache',
+          'connection': 'keep-alive'
+        });
+
+        const emitEvent = (evt) => {
+          try {
+            res.write(`data: ${JSON.stringify(evt)}\n\n`);
+          } catch (e) {}
+        };
+
+        try {
+          const result = await runAgent(body, { responseMode: 'streaming', emitEvent, requestContext });
+          if (!result.ok) {
+            // NOTE: runAgent emits the final event for successful runs.
+            // For validation/contract failures, we emit an error event here.
+            emitEvent({ type: 'error', timestamp: nowIso(), data: result.error });
+          }
+        } catch (e) {
+          emitEvent({ type: 'error', timestamp: nowIso(), data: { code: 'exception', message: String(e && e.message ? e.message : e) } });
+        }
+
+        res.write('data: [DONE]\n\n');
+        res.end();
+        return;
+      } catch (e) {
+        const err = mkAgentError(manifest, 'exception', String(e && e.message ? e.message : e), false, {});
+        return jsonResponse(res, 500, err);
+      }
+    }
+
+    const notFound = mkAgentError(manifest, 'not_found', 'Route not found.', false, { path: pathname, method });
+    return jsonResponse(res, 404, notFound);
+  });
+
+  // WebSocket streaming (dependency-free implementation)
+  createWebSocketServer({
+    server,
+    pathname: basePath + '/ws',
+    maxMessageSize: manifest?.api?.max_request_size_bytes || DEFAULT_MAX_BODY_SIZE,
+    authenticate: (req) => {
+      const authRes = checkAuth({ manifest, reqHeaders: req.headers });
+      return !!authRes.ok;
+    },
+    onConnection: (ws, req) => {
+      ws.onMessage(async (text) => {
+        let runRequest;
+        try {
+          runRequest = JSON.parse(String(text));
+        } catch (e) {
+          ws.sendJson({ type: 'error', timestamp: nowIso(), data: { code: 'invalid_json', message: 'Invalid JSON' } });
+          return;
+        }
+
+        const requestContext = { headers: req.headers || {} };
+
+        const emitEvent = (evt) => {
+          try { ws.sendJson(evt); } catch (e) {}
+        };
+
+        try {
+          const result = await runAgent(runRequest, { responseMode: 'streaming', emitEvent, requestContext });
+          if (!result.ok) {
+            // NOTE: runAgent emits the final event for successful runs.
+            emitEvent({ type: 'error', timestamp: nowIso(), data: result.error });
+            return;
+          }
+        } catch (e) {
+          emitEvent({ type: 'error', timestamp: nowIso(), data: { code: 'exception', message: String(e && e.message ? e.message : e) } });
+        }
+      });
+    }
+  });
+
+  server.listen(port, () => {
+    console.log(`[{{agent_id}}] HTTP server listening on :${port} base_path=${basePath}`);
+    console.log(`[{{agent_id}}] SSE streaming at http://localhost:${port}${basePath}/run/stream`);
+    console.log(`[{{agent_id}}] WebSocket streaming at ws://localhost:${port}${basePath}/ws`);
+  });
+
+  // Graceful shutdown
+  let isShuttingDown = false;
+  const shutdown = (signal) => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+    console.log(`[{{agent_id}}] Received ${signal}, shutting down gracefully...`);
+
+    // Stop accepting new connections
+    server.close((err) => {
+      if (err) {
+        console.error(`[{{agent_id}}] Error during shutdown:`, err);
+        process.exit(1);
+      }
+      console.log(`[{{agent_id}}] Server closed successfully`);
+      process.exit(0);
+    });
+
+    // Force exit after timeout (default 30s)
+    const forceExitTimeout = Number(process.env.SHUTDOWN_TIMEOUT_MS || 30000);
+    setTimeout(() => {
+      console.error(`[{{agent_id}}] Forced shutdown after ${forceExitTimeout}ms`);
+      process.exit(1);
+    }, forceExitTimeout).unref();
+  };
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+
+  return server;
+}
+
+// ESM entry point detection
+const isMain = process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'));
+if (isMain) start();

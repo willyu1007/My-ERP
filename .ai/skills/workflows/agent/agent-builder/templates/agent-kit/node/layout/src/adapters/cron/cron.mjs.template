@@ -1,0 +1,39 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { runAgent } from '../../core/run.mjs';
+
+function readInput() {
+  const envJson = process.env.AGENT_CRON_INPUT_JSON;
+  const inputFile = process.env.AGENT_CRON_INPUT_FILE;
+
+  if (envJson) return JSON.parse(envJson);
+  if (inputFile) return JSON.parse(fs.readFileSync(inputFile, 'utf8'));
+
+  // Default empty request (will fail validation)
+  return {};
+}
+
+function writeOutput(obj) {
+  const outFile = process.env.AGENT_CRON_OUTPUT_FILE;
+  const txt = JSON.stringify(obj, null, 2);
+  if (outFile) {
+    fs.mkdirSync(path.dirname(outFile), { recursive: true });
+    fs.writeFileSync(outFile, txt);
+    return;
+  }
+  process.stdout.write(txt + '\n');
+}
+
+async function main() {
+  const req = readInput();
+  const result = await runAgent(req, { responseMode: 'blocking' });
+  if (!result.ok) {
+    writeOutput(result.error);
+    process.exit(1);
+  }
+  writeOutput(result.response);
+}
+
+// ESM entry point detection
+const isMain = process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'));
+if (isMain) main();

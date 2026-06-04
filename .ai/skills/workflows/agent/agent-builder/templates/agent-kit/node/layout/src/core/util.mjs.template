@@ -1,0 +1,26 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
+export function readJson(filePath) {
+  const txt = fs.readFileSync(filePath, 'utf8');
+  return JSON.parse(txt);
+}
+
+export function safeReadJson(filePath, fallback = null) {
+  try { return readJson(filePath); } catch (e) { return fallback; }
+}
+
+export function writeJson(filePath, obj) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, JSON.stringify(obj, null, 2) + '\n', 'utf8');
+}
+
+export function approxTokenCount(text) {
+  // Rough heuristic: ~4 chars per token (English-ish). Adjust if needed.
+  if (!text) return 0;
+  return Math.ceil(String(text).length / 4);
+}
+
+export function nowIso() {
+  return new Date().toISOString();
+}

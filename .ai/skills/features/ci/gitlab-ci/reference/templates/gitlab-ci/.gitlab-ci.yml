@@ -1,0 +1,136 @@
+# GitLab CI template (starting point)
+# - Uses canonical pnpm scripts for each suite
+# - Uploads suite artifacts even on failure
+#
+# - Optional: run `node .ai/skills/features/ci/scripts/ctl-ci.mjs init` to create `ci/config.json` metadata
+#
+# NOTE: Adjust Node version, variables, and which jobs are MR-gated for your repo.
+
+stages:
+  - governance
+  - test
+  - perf
+
+variables:
+  NODE_VERSION: "20"
+
+# Cache configuration anchor
+.cache-config: &cache-config
+  key:
+    files:
+      - pnpm-lock.yaml
+  paths:
+    - .pnpm-store/
+  policy: pull-push
+
+# Base job template
+.node-setup: &node-setup
+  image: node:${NODE_VERSION}
+  before_script:
+    - corepack enable
+    - pnpm config set store-dir .pnpm-store
+    - pnpm install --frozen-lockfile
+
+governance-lint:
+  stage: governance
+  image: node:${NODE_VERSION}
+  timeout: 5 minutes
+  script:
+    - node .ai/skills/features/ci/scripts/ci-verify.mjs --suite governance
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+api-context:
+  stage: governance
+  image: node:${NODE_VERSION}
+  timeout: 10 minutes
+  script:
+    - node .ai/skills/features/ci/scripts/ci-verify.mjs --suite api-context
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+api-newman:
+  <<: *node-setup
+  stage: test
+  timeout: 20 minutes
+  cache:
+    <<: *cache-config
+  script:
+    - node .ai/skills/features/ci/scripts/ci-verify.mjs --suite api
+  variables:
+    BASE_URL: ${API_BASE_URL}
+    API_TOKEN: ${API_TOKEN}
+  artifacts:
+    when: always
+    paths:
+      - artifacts/newman/
+    expire_in: 7 days
+    reports:
+      junit: artifacts/newman/junit.xml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+web-playwright:
+  <<: *node-setup
+  stage: test
+  timeout: 30 minutes
+  cache:
+    <<: *cache-config
+  script:
+    - node .ai/skills/features/ci/scripts/ci-verify.mjs --suite web-playwright
+  variables:
+    BASE_URL: ${WEB_BASE_URL}
+  artifacts:
+    when: always
+    paths:
+      - artifacts/playwright/
+    expire_in: 7 days
+    reports:
+      junit: artifacts/playwright/junit.xml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+perf-k6-smoke:
+  <<: *node-setup
+  stage: perf
+  timeout: 20 minutes
+  # Recommended: keep k6 smoke in MR; heavier perf suites should be scheduled.
+  cache:
+    <<: *cache-config
+  script:
+    - node .ai/skills/features/ci/scripts/ci-verify.mjs --suite perf-k6-smoke
+  variables:
+    BASE_URL: ${API_BASE_URL}
+    API_TOKEN: ${API_TOKEN}
+  artifacts:
+    when: always
+    paths:
+      - artifacts/k6/
+    expire_in: 7 days
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# Optional: Cypress job (enable only if you gate on Cypress)
+# web-cypress:
+#   <<: *node-setup
+#   stage: test
+#   timeout: 30 minutes
+#   cache:
+#     <<: *cache-config
+#   script:
+#     - pnpm test:e2e:cypress
+#   variables:
+#     WEB_BASE_URL: ${WEB_BASE_URL}
+#   artifacts:
+#     when: always
+#     paths:
+#       - artifacts/cypress/
+#     expire_in: 7 days
+#   rules:
+#     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+#     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

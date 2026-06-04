@@ -1,0 +1,6 @@
+version: 1
+env: staging
+provider: mockcloud
+runtime: mock
+region: local
+notes: "Mock provider for offline tests. Replace with real provider adapter."

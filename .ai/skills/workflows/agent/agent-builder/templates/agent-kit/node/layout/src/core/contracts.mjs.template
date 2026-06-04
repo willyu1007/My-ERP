@@ -1,0 +1,68 @@
+import path from 'node:path';
+import fs from 'node:fs';
+import { agentError } from './errors.mjs';
+
+function loadSchema(schemaDir, name) {
+  const p = path.join(schemaDir, `${name}.schema.json`);
+  const txt = fs.readFileSync(p, 'utf8');
+  return JSON.parse(txt);
+}
+
+function validateRequired(schema, obj) {
+  // Minimal validation: required fields + additionalProperties:false check.
+  const errors = [];
+
+  if (!schema || typeof schema !== 'object') return { ok: true, errors };
+
+  const t = schema.type;
+  if (t === 'object') {
+    if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
+      errors.push(`Expected object.`);
+      return { ok: false, errors };
+    }
+    const req = Array.isArray(schema.required) ? schema.required : [];
+    for (const k of req) {
+      if (!(k in obj)) errors.push(`Missing required field: ${k}`);
+    }
+    if (schema.additionalProperties === false) {
+      const allowed = new Set(Object.keys(schema.properties || {}));
+      for (const k of Object.keys(obj)) {
+        if (!allowed.has(k)) errors.push(`Unexpected field: ${k}`);
+      }
+    }
+  }
+  return { ok: errors.length === 0, errors };
+}
+
+export function makeValidators({ schemaDir }) {
+  const schemas = {
+    RunRequest: loadSchema(schemaDir, 'RunRequest'),
+    RunResponse: loadSchema(schemaDir, 'RunResponse'),
+    AgentError: loadSchema(schemaDir, 'AgentError'),
+    RunEvent: fs.existsSync(path.join(schemaDir, 'RunEvent.schema.json')) ? loadSchema(schemaDir, 'RunEvent') : null
+  };
+
+  function validateRunRequest(obj) {
+    return validateRequired(schemas.RunRequest, obj);
+  }
+  function validateRunResponse(obj) {
+    return validateRequired(schemas.RunResponse, obj);
+  }
+
+  function errorFromValidation(contract_version, validationErrors) {
+    return agentError({
+      contract_version,
+      code: 'invalid_request',
+      message: 'Request failed schema validation',
+      retryable: false,
+      details: { validationErrors }
+    });
+  }
+
+  return {
+    schemas,
+    validateRunRequest,
+    validateRunResponse,
+    errorFromValidation
+  };
+}
