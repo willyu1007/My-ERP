@@ -1,0 +1,31 @@
+# Development Environment Configuration
+# Copy this file to dev.yaml and fill in actual values
+
+environment: dev
+description: Local development environment
+
+database:
+  host: ${DB_HOST:-localhost}
+  port: ${DB_PORT:-5432}
+  name: ${DB_NAME:-app_dev}
+  user: ${DB_USER:-dev_user}
+  # password: use DB_PASSWORD env var
+
+api:
+  baseUrl: ${API_BASE_URL:-http://localhost:3000}
+  timeout: ${API_TIMEOUT:-30000}
+
+gateway:
+  rateLimit:
+    enabled: false
+  auth:
+    provider: ${AUTH_PROVIDER:-local}
+
+logging:
+  level: debug
+  format: pretty
+
+features:
+  debugMode: true
+  mockServices: true
+

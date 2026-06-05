@@ -1,0 +1,155 @@
+{
+  "version": 1,
+  "project": {
+    "name": "my-erp",
+    "description": "可嵌入 My-Chat 生态的模块化智能 ERP 平台；v1 聚焦财务模块（会计总账 + 出纳资金），组织级 + 邀请制 + 严格权限，按角色组织工作流。",
+    "domain": "ERP / Finance (会计核算 + 出纳资金)",
+    "primaryUsers": [
+      "accountant",
+      "cashier",
+      "finance-manager",
+      "admin",
+      "viewer"
+    ]
+  },
+  "repo": {
+    "layout": "monorepo",
+    "language": "typescript",
+    "packageManager": "pnpm"
+  },
+  "capabilities": {
+    "frontend": {
+      "enabled": true,
+      "framework": "next",
+      "uiKit": "tailwind + radix/shadcn + tanstack-table",
+      "design": "morethan-tokens"
+    },
+    "backend": {
+      "enabled": true,
+      "framework": "nestjs"
+    },
+    "api": {
+      "style": "rest",
+      "auth": "oauth2",
+      "contract": "openapi-codegen"
+    },
+    "database": {
+      "enabled": true,
+      "kind": "postgres",
+      "orm": "prisma",
+      "migrationStrategy": "prisma-migrate"
+    },
+    "bpmn": {
+      "enabled": true,
+      "storage": "docs"
+    }
+  },
+  "quality": {
+    "testing": {
+      "unit": true,
+      "integration": true,
+      "e2e": false,
+      "framework": "vitest"
+    },
+    "ci": {
+      "enabled": true
+    }
+  },
+  "db": {
+    "enabled": true,
+    "kind": "postgres",
+    "ssot": "repo-prisma",
+    "migrationTool": "prisma",
+    "environments": [
+      "dev",
+      "staging",
+      "prod"
+    ]
+  },
+  "context": {
+    "enabled": true,
+    "mode": "contract",
+    "environments": [
+      "dev",
+      "staging",
+      "prod"
+    ]
+  },
+  "ci": {
+    "enabled": true,
+    "provider": "github",
+    "platform": "github-actions",
+    "features": [
+      "lint",
+      "test",
+      "build",
+      "security"
+    ]
+  },
+  "observability": {
+    "enabled": true,
+    "metrics": true,
+    "logs": true,
+    "traces": true,
+    "platform": "opentelemetry",
+    "export": "aliyun-arms-sls"
+  },
+  "features": {
+    "contextAwareness": true,
+    "database": true,
+    "ui": true,
+    "environment": true,
+    "observability": true,
+    "ci": true,
+    "packaging": false,
+    "deployment": false,
+    "release": false
+  },
+  "skills": {
+    "packs": [
+      "workflows",
+      "backend",
+      "frontend",
+      "standards",
+      "testing",
+      "context-core"
+    ]
+  },
+  "stackDecisions": {
+    "note": "Stage B 技术栈/功能选型对齐（对齐 My-Chat）。详见 START-HERE 与 docs/project/overview 归档。",
+    "runtime": "Node>=20, TypeScript 5, ESM",
+    "money": "Prisma Decimal + Postgres NUMERIC + decimal.js（禁用 float）",
+    "queue": "BullMQ + Redis（apps/workers：OCR/报表/事件分发）",
+    "auth": "Logto/OIDC + Logto Organizations（承载组织/成员/邀请，DP25）",
+    "authz": "CASL（RBAC + 操作级 + 账套级行级条件）",
+    "validation": "zod（共享契约）+ NestJS DTO",
+    "i18n": "next-intl（中文为主）",
+    "secrets": "阿里云 KMS / Secrets Manager",
+    "observability": "OpenTelemetry → 阿里云 ARMS/SLS"
+  },
+  "functional": {
+    "accountingEngine": "自研复式记账领域引擎（强测试覆盖）",
+    "reports": "可配置报表模板（科目→报表行映射；BS/IS/CF）",
+    "approvalEngine": "ERP 自研可配置策略引擎（多级+金额阈值），状态机归 ERP；My-Chat 作为审批交互面（Web+移动端+dashboard），经回调 API 写回",
+    "ocr": "通义/Dashscope 视觉（复用 My-Chat llm）+ OCR 适配接口（可切换专用票据 OCR）",
+    "importExport": "exceljs（Excel）+ pdfmake（PDF/打印）+ 凭证导入校验"
+  },
+  "integration": {
+    "identity": "Logto SSO（组织/成员/邀请来源）",
+    "eventsOut": "ERP Postgres outbox → worker 经 HTTP Webhook 推 My-Chat 摄入端；出站用 HMAC 签名保完整性",
+    "approvalsIn": "My-Chat 审批卡片 → 回调 ERP API 记录决策；入站用 Logto M2M(client credentials) 鉴权、最小必要",
+    "isolation": "DP24 强隔离：广播事件/卡片不含金额明细；审批详情按需鉴权拉取，不落入 My-Chat 持久层/检索",
+    "dependency": "需 My-Chat 侧提供审批卡片 UI（Web+移动端）+ 事件摄入端 + 回调对接"
+  },
+  "architecture": {
+    "tenancy": "应用层作用域（CASL + 仓储强制 ledgerBookId/orgId）+ Postgres RLS 双保险（B1）",
+    "realtime": "SSE / 轮询（B2；不使用 Convex，遵守 DP24 隔离，财务数据不入生态投影层）",
+    "immutability": "审计 + 凭证/账簿 append-only（无 UPDATE/DELETE；作废/红冲走新增），B4",
+    "archive": "会计档案（凭证/账簿/报表导出件）定期归档至对象存储(OSS)，满足约 30 年/年报永久留存（B4）",
+    "buildOrchestration": "plain pnpm workspace（对齐 My-Chat，不引 Turborepo/Nx）",
+    "infra": "独立 Postgres database + 独立 Redis（生产实例形态随 ops 后置）",
+    "moneyPrecision": "金额 2 位小数；单价/汇率 4 位",
+    "ids": "UUID 主键 + 业务可读序列号（凭证号按账套+期间）",
+    "apiVersioning": "/v1；账套作用域经令牌声明/请求头"
+  }
+}

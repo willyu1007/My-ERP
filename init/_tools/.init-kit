@@ -1,3 +1,0 @@
-This file marks the `init/` directory as an initialization kit.
-
-Automation (for example `cleanup-init`) MUST refuse to delete `init/` unless this marker exists.

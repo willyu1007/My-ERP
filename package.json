@@ -1,0 +1,22 @@
+{
+  "name": "my-erp",
+  "version": "0.1.0",
+  "description": "可嵌入 My-Chat 生态的模块化智能 ERP 平台；v1 聚焦财务模块（会计总账 + 出纳资金），组织级 + 邀请制 + 严格权限，按角色组织工作流。",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "build": "echo \"Add build script\"",
+    "dev": "echo \"Add dev script\"",
+    "lint": "echo \"Add lint script\"",
+    "test": "echo \"Add test script\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}
+

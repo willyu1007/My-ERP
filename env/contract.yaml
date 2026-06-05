@@ -1,0 +1,18 @@
+version: 1
+variables:
+  APP_ENV:
+    type: enum
+    enum: [dev, staging, prod]
+    required: true
+    default: dev
+    description: Deployment environment profile.
+  SERVICE_NAME:
+    type: string
+    required: true
+    default: your-service
+    description: Service name (logical).
+  PORT:
+    type: int
+    required: true
+    default: 8000
+    description: Service listen port.

@@ -6,7 +6,8 @@
     "backend/",
     "frontend/",
     "testing/",
-    "features/"
+    "features/",
+    "features/context-awareness"
   ],
   "includeSkills": [],
   "excludeSkills": []

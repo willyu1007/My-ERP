@@ -1,11 +1,18 @@
 {
   "version": 1,
   "createdAt": "2025-12-25T14:14:14Z",
-  "updatedAt": "2026-02-08T04:43:30.342Z",
+  "updatedAt": "2026-06-05T08:20:57.628Z",
   "context": {
     "mode": "contract",
     "enabled": true
   },
-  "features": {},
+  "features": {
+    "contextAwareness": true,
+    "database": true,
+    "ui": true,
+    "environment": true,
+    "ci": true,
+    "observability": true
+  },
   "custom": {}
 }

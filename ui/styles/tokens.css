@@ -1,0 +1,84 @@
+/* GENERATED FILE. DO NOT EDIT BY HAND.
+ * Source: ui/tokens/base.json + ui/tokens/themes/*.json
+ */
+@layer tokens {
+  :root {
+    --ui-border-width-sm: 1px;
+    --ui-color-bg: #ffffff;
+    --ui-color-border: #e5e7eb;
+    --ui-color-border_subtle: #f3f4f6;
+    --ui-color-danger: #dc2626;
+    --ui-color-focus_ring: #2563eb66;
+    --ui-color-on_danger: #ffffff;
+    --ui-color-on_primary: #ffffff;
+    --ui-color-on_success: #ffffff;
+    --ui-color-on_warning: #111827;
+    --ui-color-primary: #2563eb;
+    --ui-color-primary_active: #1e40af;
+    --ui-color-primary_hover: #1d4ed8;
+    --ui-color-success: #16a34a;
+    --ui-color-surface: #ffffff;
+    --ui-color-surface_elevated: #f9fafb;
+    --ui-color-text_muted: #6b7280;
+    --ui-color-text_primary: #111827;
+    --ui-color-text_secondary: #374151;
+    --ui-color-warning: #d97706;
+    --ui-motion-duration_fast: 120ms;
+    --ui-motion-duration_normal: 180ms;
+    --ui-motion-ease_standard: cubic-bezier(0.2, 0, 0, 1);
+    --ui-radius-full: 999px;
+    --ui-radius-lg: 14px;
+    --ui-radius-md: 10px;
+    --ui-radius-sm: 6px;
+    --ui-shadow-md: 0 6px 16px #00000014;
+    --ui-shadow-none: none;
+    --ui-shadow-sm: 0 1px 2px #0000000D;
+    --ui-sizing-modal-lg: 720px;
+    --ui-sizing-modal-md: 560px;
+    --ui-sizing-modal-sm: 420px;
+    --ui-sizing-textarea-min_height: 120px;
+    --ui-space-0: 0px;
+    --ui-space-1: 4px;
+    --ui-space-2: 8px;
+    --ui-space-3: 12px;
+    --ui-space-4: 16px;
+    --ui-space-5: 24px;
+    --ui-space-6: 32px;
+    --ui-space-7: 40px;
+    --ui-space-8: 48px;
+    --ui-typography-font_family-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
+    --ui-typography-font_family-sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji;
+    --ui-typography-line_height-body: 20px;
+    --ui-typography-line_height-caption: 16px;
+    --ui-typography-line_height-heading: 28px;
+    --ui-typography-size-body: 14px;
+    --ui-typography-size-body_lg: 16px;
+    --ui-typography-size-caption: 12px;
+    --ui-typography-size-h1: 24px;
+    --ui-typography-size-h2: 20px;
+    --ui-typography-size-h3: 16px;
+    --ui-typography-weight-bold: 700;
+    --ui-typography-weight-medium: 500;
+    --ui-typography-weight-regular: 400;
+    --ui-typography-weight-semibold: 600;
+    --ui-z-dropdown: 1000;
+    --ui-z-modal: 1100;
+    --ui-z-toast: 1200;
+  }
+
+  :root[data-theme="default.dark"] {
+    --ui-color-bg: #0b1220;
+    --ui-color-border: #24324b;
+    --ui-color-border_subtle: #1b2942;
+    --ui-color-focus_ring: #60a5fa80;
+    --ui-color-on_primary: #0b1220;
+    --ui-color-primary: #60a5fa;
+    --ui-color-primary_active: #2563eb;
+    --ui-color-primary_hover: #3b82f6;
+    --ui-color-surface: #0f172a;
+    --ui-color-surface_elevated: #111c33;
+    --ui-color-text_muted: #94a3b8;
+    --ui-color-text_primary: #e5e7eb;
+    --ui-color-text_secondary: #cbd5e1;
+  }
+}

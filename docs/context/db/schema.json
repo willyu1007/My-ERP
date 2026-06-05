@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "updatedAt": "2026-06-05T08:20:57.676Z",
+  "ssot": {
+    "mode": "repo-prisma",
+    "source": {
+      "kind": "prisma-schema",
+      "path": "prisma/schema.prisma"
+    }
+  },
+  "database": {
+    "kind": "relational",
+    "dialect": "generic",
+    "name": "",
+    "schemas": []
+  },
+  "enums": [],
+  "tables": [],
+  "notes": "Missing prisma schema at prisma/schema.prisma. Create it, then re-run ctl-db-ssot."
+}

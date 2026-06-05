@@ -1,0 +1,74 @@
+{
+  "ui_spec_version": "1.0.0",
+  "generated_at_utc": "2026-06-05T08:20:57Z",
+  "tailwind_policy": "B1-layout-only",
+  "theme_policy": "token-only",
+  "paths": {
+    "tokens": "ui/tokens/base.json",
+    "themes": "ui/tokens/themes/*.json",
+    "contract": "ui/contract/contract.json",
+    "styles_entry": "ui/styles/ui.css",
+    "governance_config": "ui/config/governance.json"
+  },
+  "locked_parameters": {
+    "contract_roles_count": 31,
+    "tokens_required_groups": [
+      "color",
+      "typography",
+      "space",
+      "radius",
+      "shadow",
+      "border",
+      "motion",
+      "z"
+    ],
+    "governance_gates": [
+      "spec_validate",
+      "code_audit",
+      "tailwind_B1_audit",
+      "feature_css_audit"
+    ]
+  },
+  "themes": [
+    "default.dark",
+    "default.light"
+  ],
+  "roles": [
+    "alert",
+    "avatar",
+    "badge",
+    "breadcrumb",
+    "button",
+    "card",
+    "checkbox",
+    "divider",
+    "empty-state",
+    "field",
+    "form",
+    "grid",
+    "icon-button",
+    "input",
+    "link",
+    "list",
+    "modal",
+    "nav",
+    "page",
+    "radio",
+    "section",
+    "select",
+    "stack",
+    "switch",
+    "tab",
+    "table",
+    "tabs",
+    "text",
+    "textarea",
+    "toast",
+    "toolbar"
+  ],
+  "notes": {
+    "tailwind_boundary": "Tailwind is allowed for layout only; do not use it for color/typography/radius/shadow/spacing.",
+    "global_vs_feature_css": "Global UI lives in ui/styles (layers reset/tokens/contract). Feature CSS must stay in @layer feature and must not define visual tokens.",
+    "change_policy": "Theme changes are token-only. Contract expansion requires RFC + approval."
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "updatedAt": "2026-06-05T08:20:57.652Z",
+  "mode": "repo-prisma",
+  "policy": {
+    "managedPaths": "fixed-defaults-v1"
+  },
+  "paths": {
+    "prismaSchema": "prisma/schema.prisma",
+    "dbSchemaTables": "db/schema/tables.json",
+    "dbContextContract": "docs/context/db/schema.json",
+    "convexSchema": "convex/schema.ts",
+    "convexFunctionsContract": "docs/context/convex/functions.json"
+  },
+  "db": {
+    "ssot": "repo-prisma",
+    "kind": "postgres",
+    "source": {
+      "kind": "prisma-schema",
+      "path": "prisma/schema.prisma"
+    },
+    "contracts": {
+      "dbSchema": "docs/context/db/schema.json",
+      "convexFunctions": null
+    },
+    "generated": {
+      "typesDir": null
+    }
+  }
+}

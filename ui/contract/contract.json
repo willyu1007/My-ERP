@@ -1,0 +1,230 @@
+{
+  "meta": {
+    "contract_version": "1.0.0",
+    "description": "UI style contract for data-ui based rendering. Roles and enumerations are intentionally small and stable. Expand only via approved RFC.",
+    "tailwind_policy": "B1-layout-only",
+    "theme_policy": "token-only"
+  },
+  "roles": {
+    "page": {
+      "attrs": {
+        "layout": ["app", "auth", "settings"],
+        "density": ["comfortable", "compact"]
+      },
+      "slots": ["header", "content", "footer", "aside"]
+    },
+    "section": {
+      "attrs": {
+        "variant": ["default", "subtle"],
+        "padding": ["none", "sm", "md", "lg"]
+      },
+      "slots": ["header", "content", "footer"]
+    },
+    "toolbar": {
+      "attrs": {
+        "align": ["start", "between", "end"],
+        "wrap": ["wrap", "nowrap"]
+      },
+      "slots": ["start", "center", "end"]
+    },
+    "stack": {
+      "attrs": {
+        "direction": ["row", "col"],
+        "gap": ["0", "1", "2", "3", "4", "5"],
+        "align": ["start", "center", "end", "stretch"],
+        "justify": ["start", "center", "between", "end"],
+        "wrap": ["wrap", "nowrap"]
+      },
+      "slots": []
+    },
+    "grid": {
+      "attrs": {
+        "cols": ["1", "2", "3", "4", "6", "12"],
+        "gap": ["0", "1", "2", "3", "4", "5"]
+      },
+      "slots": []
+    },
+    "card": {
+      "attrs": {
+        "variant": ["default", "outlined"],
+        "padding": ["sm", "md", "lg"],
+        "elevation": ["none", "sm", "md"]
+      },
+      "slots": ["header", "body", "footer"]
+    },
+    "divider": {
+      "attrs": {
+        "orientation": ["horizontal", "vertical"],
+        "tone": ["default", "subtle"]
+      },
+      "slots": []
+    },
+    "text": {
+      "attrs": {
+        "variant": ["body", "caption", "label", "h3", "h2", "h1"],
+        "tone": ["primary", "secondary", "muted", "danger"]
+      },
+      "slots": []
+    },
+    "link": {
+      "attrs": {
+        "variant": ["default", "subtle"],
+        "tone": ["primary", "neutral"]
+      },
+      "slots": []
+    },
+    "button": {
+      "attrs": {
+        "variant": ["primary", "secondary", "ghost", "danger"],
+        "size": ["sm", "md", "lg"],
+        "state": ["default", "loading", "disabled"]
+      },
+      "slots": []
+    },
+    "icon-button": {
+      "attrs": {
+        "variant": ["ghost", "secondary"],
+        "size": ["sm", "md"],
+        "state": ["default", "disabled"]
+      },
+      "slots": []
+    },
+    "input": {
+      "attrs": {
+        "size": ["sm", "md", "lg"],
+        "state": ["default", "error", "disabled"]
+      },
+      "slots": []
+    },
+    "textarea": {
+      "attrs": {
+        "size": ["sm", "md", "lg"],
+        "state": ["default", "error", "disabled"]
+      },
+      "slots": []
+    },
+    "select": {
+      "attrs": {
+        "size": ["sm", "md", "lg"],
+        "state": ["default", "error", "disabled"]
+      },
+      "slots": []
+    },
+    "checkbox": {
+      "attrs": {
+        "size": ["sm", "md"],
+        "state": ["default", "disabled"]
+      },
+      "slots": []
+    },
+    "radio": {
+      "attrs": {
+        "size": ["sm", "md"],
+        "state": ["default", "disabled"]
+      },
+      "slots": []
+    },
+    "switch": {
+      "attrs": {
+        "size": ["sm", "md"],
+        "state": ["default", "disabled"]
+      },
+      "slots": []
+    },
+    "form": {
+      "attrs": {
+        "layout": ["vertical", "horizontal"],
+        "density": ["comfortable", "compact"]
+      },
+      "slots": ["actions"]
+    },
+    "field": {
+      "attrs": {
+        "state": ["default", "error", "disabled"]
+      },
+      "slots": ["label", "control", "help", "error"]
+    },
+    "table": {
+      "attrs": {
+        "density": ["comfortable", "compact"],
+        "variant": ["default", "striped"]
+      },
+      "slots": []
+    },
+    "list": {
+      "attrs": {
+        "density": ["comfortable", "compact"],
+        "variant": ["plain", "rows", "cards"]
+      },
+      "slots": []
+    },
+    "badge": {
+      "attrs": {
+        "tone": ["neutral", "success", "warning", "danger", "info"],
+        "variant": ["solid", "subtle"]
+      },
+      "slots": []
+    },
+    "alert": {
+      "attrs": {
+        "tone": ["info", "success", "warning", "danger"],
+        "variant": ["subtle", "solid"]
+      },
+      "slots": ["title", "body", "actions"]
+    },
+    "toast": {
+      "attrs": {
+        "tone": ["info", "success", "warning", "danger"],
+        "variant": ["subtle", "solid"]
+      },
+      "slots": ["title", "body", "actions"]
+    },
+    "modal": {
+      "attrs": {
+        "size": ["sm", "md", "lg"],
+        "state": ["open", "closed"]
+      },
+      "slots": ["header", "body", "footer"]
+    },
+    "tabs": {
+      "attrs": {
+        "variant": ["line", "pill"],
+        "size": ["sm", "md"]
+      },
+      "slots": []
+    },
+    "tab": {
+      "attrs": {
+        "state": ["active", "inactive", "disabled"]
+      },
+      "slots": []
+    },
+    "nav": {
+      "attrs": {
+        "variant": ["sidebar", "top"],
+        "state": ["default", "collapsed"]
+      },
+      "slots": []
+    },
+    "breadcrumb": {
+      "attrs": {
+        "size": ["sm", "md"]
+      },
+      "slots": []
+    },
+    "empty-state": {
+      "attrs": {
+        "variant": ["default", "compact"],
+        "tone": ["neutral", "info"]
+      },
+      "slots": ["icon", "title", "body", "actions"]
+    },
+    "avatar": {
+      "attrs": {
+        "size": ["sm", "md", "lg"],
+        "shape": ["circle", "rounded"]
+      },
+      "slots": []
+    }
+  }
+}

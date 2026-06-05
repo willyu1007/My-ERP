@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "theme": "default.light",
+    "extends": "base",
+    "description": "Default light theme overrides. Keep changes primarily in color.*."
+  },
+  "color": {
+    "bg": "#ffffff",
+    "surface": "#ffffff",
+    "surface_elevated": "#f9fafb",
+    "text_primary": "#111827",
+    "text_secondary": "#374151",
+    "text_muted": "#6b7280",
+    "border": "#e5e7eb",
+    "border_subtle": "#f3f4f6"
+  }
+}

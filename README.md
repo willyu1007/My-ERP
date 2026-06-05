@@ -1,72 +1,35 @@
-# AI-Friendly Repository Template (Addon)
+# My-ERP
 
-This repository is a starter template for building **LLM-first** codebases with:
+可嵌入 **My-Chat 生态**的**模块化智能 ERP 平台**。采用可插拔架构，**财务是第一个模块**，后续按需扩展（采购、库存、销售、HR…）。**v1 聚焦财务**：服务会计（总账核算）与出纳（资金管理）。
 
-- **Single Source of Truth (SSOT)** skills under `.ai/skills/`
-- Generated provider wrappers under `.codex/skills/` and `.claude/skills/`
-- A **verifiable, 3-stage initialization pipeline** under `init/`
-- An **addon-style Feature system** that injects project lifecycle capabilities on demand during Stage C
+> 技术栈与目录结构请直接看仓库（`package.json`、`prisma/`、`apps/`、`packages/`、`docs/context/`）。本文件只讲**为什么这样设计**与**不可违背的全局原则**。
 
-## Quick start
+## 核心原则（差异化、不可违背）
 
-| For | Action |
-|-----|--------|
-| **AI Assistants** | Read `init/AGENTS.md` and run the Stage A/B/C pipeline |
-| **Humans** | Read `init/README.md` and follow the steps |
+1. **财务正确、可审计** — 借贷必平；单据只作废/红冲、绝不静默删除；过账结账走事务；金额用 Decimal 绝不用浮点。
+2. **合规留存** — 操作审计 ≥1 年；会计档案（凭证账簿 ~30 年、年报永久）append-only + 对象存储归档，禁止删除。
+3. **组织级 + 邀请制 + 严格权限** — 财务属组织/团队，账套归组织；成员仅邀请加入；账套级隔离（应用层 + Postgres RLS 双保险）+ 操作级授权；职责分离（制单≠审核、付款发起≠审批）。
+4. **不实际划款** — v1 仅登记/审批/对账，不接支付通道。
+5. **按角色组织工作流** — 每个角色一套「待办/任务」工作流，而非线性管道；能力以模块注册接入平台。
+6. **与生态强隔离** — 财务明细绝不进入 My-Chat 的检索/推荐/论坛；只向生态暴露通知元数据 + 审批回写。
 
-## Repository layout (high-level)
+## My-Chat 是什么 · 责任边界
 
-```
-init/                         # Project bootstrap kit (Stage A/B/C)
-  README.md
-  AGENTS.md
-  _tools/                     # Shipped init tools/docs (skills, stages, feature docs)
-  _work/                      # Runtime artifacts (created during init)
+- **My-Chat**：个人优先的 AI 聊天/协作生态（**独立产品与代码库**），提供统一身份（Logto）、组织/成员，以及聊天、通知、移动端等面向用户的触达面。
+- **My-ERP** 是可嵌入该生态的**独立 ERP 服务**：拥有财务的全部真相源与自己的数据库/权限/审计；**复用** My-Chat 身份，但**独立部署、独立数据库**。
+- **边界**：身份与面向用户的触达面归生态，财务核算与数据归 ERP；财务明细不进入生态检索/推荐，ERP 只向生态暴露通知与审批回写。
+- 跨项目的对接协议（事件/回调等）属协作细节，不在本仓库文档展开。
 
-.ai/
-  skills/                     # SSOT skills (edit here only)
-  scripts/                    # `sync-skills.mjs` (generates provider wrappers)
+## 给 AI 助手
 
-.codex/skills/                # Generated wrappers (DO NOT EDIT)
-.claude/skills/               # Generated wrappers (DO NOT EDIT)
+- 动手前先读根 **`AGENTS.md`** 的 *Hard constraints*（全局硬约束）。
+- 决策与需求的单一事实源：`docs/project/overview/`（init 归档）与 `docs/context/`（API/DB/术语等契约）。
 
-dev-docs/                     # Complex task documentation
-```
+## SSOT + 技能 wrapper 规则
 
-## Key rules (SSOT + wrappers)
-
-- **MUST** edit skills only in `.ai/skills/`.
-- **MUST NOT** edit `.codex/skills/` or `.claude/skills/` directly.
-- After changing `.ai/skills/`, regenerate wrappers:
+- 技能**只在 `.ai/skills/` 编辑**；`.codex/skills/`、`.claude/skills/` 是生成产物，**不要手改**。
+- 改完 `.ai/skills/` 后重新生成 wrapper：
 
 ```bash
 node .ai/scripts/sync-skills.mjs --scope current --providers both --mode reset --yes
 ```
-
-## Pointers
-
-- Initialization: `init/README.md`
-- AI assistant rules: `AGENTS.md` and `init/AGENTS.md`
-- Skill authoring standard: `.ai/skills/standards/documentation-guidelines/SKILL.md`
-- Documentation standard: `.ai/skills/standards/documentation-guidelines/SKILL.md`
-
-
-## Optional features (addon template)
-
-This is the **addon** edition of the template. It does not use a top-level `addons/` directory; optional capabilities are materialized as Features during init **Stage C** based on `init/_work/project-blueprint.json`:
-
-- Feature toggles: `features.*` (see `init/_tools/feature-docs/README.md`)
-- Assets live under `.ai/skills/features/**/templates` and `.ai/scripts/ctl-*.mjs`
-- Stage C `apply` copies templates (copy-if-missing by default) and runs `ctl-*.mjs init`
-- Feature set covers project lifecycle domains such as context, database, UI, environment, IaC, packaging, deployment, release, CI, and observability
-
-Example:
-
-```json
-{
-  "features": { "contextAwareness": true },
-  "context": { "mode": "contract" }
-}
-```
-
-`context.*` is configuration only and does not enable the feature by itself.

@@ -1,0 +1,41 @@
+# Production Environment Configuration
+# Copy this file to prod.yaml and fill in actual values
+# CAUTION: Production configuration - handle with care
+
+environment: prod
+description: Production environment
+
+database:
+  host: ${DB_HOST}
+  port: ${DB_PORT:-5432}
+  name: ${DB_NAME:-app_prod}
+  user: ${DB_USER}
+  # password: use secrets manager
+  ssl: true
+  poolSize: ${DB_POOL_SIZE:-20}
+
+api:
+  baseUrl: ${API_BASE_URL}
+  timeout: ${API_TIMEOUT:-30000}
+
+gateway:
+  rateLimit:
+    enabled: true
+    requestsPerMinute: ${RATE_LIMIT:-1000}
+  auth:
+    provider: ${AUTH_PROVIDER}
+    jwksUri: ${JWKS_URI}
+
+logging:
+  level: warn
+  format: json
+
+features:
+  debugMode: false
+  mockServices: false
+
+# Production-specific settings
+scaling:
+  minReplicas: ${MIN_REPLICAS:-2}
+  maxReplicas: ${MAX_REPLICAS:-10}
+
