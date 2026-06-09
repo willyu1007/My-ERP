@@ -69,3 +69,21 @@
 
 **遗留 TODO（W2a）**
 - 科目详情页 / 增删改 / 停用末级校验（待真实 API，M1 P2）。
+
+## W2b — 账簿（试算平衡 + 明细账）（完成）
+
+**改了什么**（全部在 `apps/web/src`）
+- `lib/finance/types.ts`：新增 `OpeningBalance`（期初余额）。
+- `lib/finance/fixtures.ts`：新增 `OPENING_BALANCES`（启用期期初，借 285000 = 贷 285000，平衡）。
+- `lib/finance/ledger.ts`（**纯函数，无 fixture 依赖、整数分、零浮点**）：`computeTrialBalance` + `computeAccountLedger`（仅 `status==='posted'` 计入；期末余额按净额符号定借/贷，不依赖声明方向）；导出派生 VM 类型。
+- `lib/finance/ledger.test.ts`：5 项（三栏借=贷、totals 数值、非过账排除、工商银行运行余额 698800、未知科目返回 null）。
+- `lib/finance/data-source.ts`：新增 `getTrialBalance()` / `getAccountLedger(code)`（seam：本地派生 → 后续后端 P4 同形状）。
+- `app/(workbench)/finance/ledger/`：`page.tsx`（server, force-dynamic）= 试算平衡表（期初/本期/期末三栏 + 合计行 + 三栏平衡 Badge + stats；科目 → 明细账）；`[code]/page.tsx` = 科目明细账（期初/逐笔运行余额/期末，凭证号回链 voucher 详情）。
+
+**决策**
+- 账簿报表为**派生数据**，computation 留在纯 `ledger.ts`，由 data-source 包装暴露——切真接口时改为后端计算、前端只取（与凭证/科目同一 seam 纪律）。
+- 试算平衡表/明细账为 server 组件（纯展示 + Link 钻取），无需 client。
+- 期末余额按净额符号判借/贷（声明 direction 仅信息性），符合复式记账。
+
+**遗留 TODO（W2b）**
+- 期间筛选 / 总账（汇总账）视图 / 导出；期初建账录入（M1 P5）。

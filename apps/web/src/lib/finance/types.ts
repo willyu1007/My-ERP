@@ -71,6 +71,13 @@ export interface VoucherVM {
   readonly attachments: number;
 }
 
+/** 期初余额（启用期建账）。借/贷二选一，全部期初合计须借贷平衡。 */
+export interface OpeningBalance {
+  readonly accountCode: string;
+  readonly debit: string | null;
+  readonly credit: string | null;
+}
+
 /* ---------- 中文标签与 tone 映射（领域语义留在财务层） ---------- */
 
 export const ACCOUNT_CATEGORY_LABELS: Record<AccountCategory, string> = {

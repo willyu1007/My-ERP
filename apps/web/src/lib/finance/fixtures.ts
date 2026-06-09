@@ -9,6 +9,7 @@ import type {
   AccountDirection,
   AccountVM,
   AuxType,
+  OpeningBalance,
   VoucherLineVM,
   VoucherStatus,
   VoucherVM,
@@ -179,3 +180,11 @@ const SEEDS: readonly VoucherSeed[] = [
 ];
 
 export const VOUCHERS: readonly VoucherVM[] = SEEDS.map(buildVoucher);
+
+// 启用期期初余额（演示）。借方合计 285000 = 贷方合计 285000，借贷平衡。
+export const OPENING_BALANCES: readonly OpeningBalance[] = [
+  { accountCode: '1001', debit: '5000.00', credit: null },
+  { accountCode: '100201', debit: '200000.00', credit: null },
+  { accountCode: '1601', debit: '80000.00', credit: null },
+  { accountCode: '4001', debit: null, credit: '285000.00' },
+];

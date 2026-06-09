@@ -42,3 +42,15 @@
 | 运行时 | `next start` → `curl :3200` | ✓ 科目树渲染（银行存款▸工商/建设银行（停用）、应交增值税、生产成本、客户/部门 aux、科目总数/末级 stats）；`v-001` 改挂工商银行仍「借贷平衡」；accounts/vouchers/new 均 200 |
 
 要点：层级表以「编码=树序 + 名称缩进」呈现，编码列不可排序以守树序；制单下拉仅末级且启用科目；科目读取走 data-source seam。
+
+## W2b — 账簿（试算平衡 + 明细账）— 2026-06-10
+
+| 验证项 | 命令 | 结果 |
+|---|---|---|
+| 类型检查 | `pnpm --filter @my-erp/web typecheck` | ✓ 通过 |
+| 单测 | `pnpm test` | ✓ 15 passed（新增 `ledger.test.ts` 5 项：三栏借=贷、totals、非过账排除、运行余额、未知科目）|
+| Lint / governance | `pnpm lint` · `node scripts/ui-governance-guard.mjs` | ✓ 无告警；guard 23 feature 文件 token-only |
+| 构建 | `pnpm --filter @my-erp/web build` | ✓ `/finance/ledger` 与 `/finance/ledger/[code]` 均 `ƒ` |
+| 运行时 | `next start` → `curl :3200` | ✓ 试算平衡表渲染（工商银行/实收资本/管理费用，合计 785,000.00）；`/finance/ledger/100201` 明细账（期初/期末、运行余额 698,800.00、凭证号回链）；账簿各路由 200；坏科目码 → 404 |
+
+要点：账簿报表为派生数据，computation 在纯 `ledger.ts`（整数分、无浮点），经 data-source seam 暴露；期末余额按净额符号定借/贷。

@@ -7,7 +7,8 @@
  * TODO(P1–P5): const api = createApiClient(getRequestScope());
  *              return api.vouchers.list({ ledgerBookId });   // scoped + RLS-backed
  */
-import { ACCOUNTS, VOUCHERS } from './fixtures';
+import { ACCOUNTS, OPENING_BALANCES, VOUCHERS } from './fixtures';
+import { computeAccountLedger, computeTrialBalance, type AccountLedger, type TrialBalance } from './ledger';
 import type { AccountVM, VoucherVM } from './types';
 
 export async function listVouchers(): Promise<readonly VoucherVM[]> {
@@ -20,4 +21,14 @@ export async function getVoucher(id: string): Promise<VoucherVM | null> {
 
 export async function listAccounts(): Promise<readonly AccountVM[]> {
   return ACCOUNTS;
+}
+
+// Ledger reports are derived locally from fixtures today; the real backend
+// computes them server-side (post → balances) and returns the same shapes (P4).
+export async function getTrialBalance(): Promise<TrialBalance> {
+  return computeTrialBalance(ACCOUNTS, VOUCHERS, OPENING_BALANCES);
+}
+
+export async function getAccountLedger(code: string): Promise<AccountLedger | null> {
+  return computeAccountLedger(code, ACCOUNTS, VOUCHERS, OPENING_BALANCES);
 }
