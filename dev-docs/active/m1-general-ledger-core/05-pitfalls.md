@@ -29,6 +29,18 @@
 - 修复：集成测试与生产都以**非特权、非属主**应用角色连库（`myerp_app`，仅 GRANT SELECT/INSERT）；迁移/seed 用特权角色。`ENABLE RLS`（非属主即受策略约束）即可，无需 FORCE。
 - 预防：RLS 设计必须区分「迁移/管理特权角色」与「应用非特权角色」；验证 RLS 一定以应用角色连，别用 postgres/超级用户测。
 
+### 自定义 GUC 在 SET LOCAL 结束后回落为空串而非 NULL → `::uuid` 报错（P1a）
+- 症状：无作用域查询 org 表报 `invalid input syntax for type uuid: ""`；P0b 的 audit 表（按 TEXT 比较）却没事。
+- 根因：自定义 GUC（`app.current_org`）一旦在会话里被 `set_config(...,true)`（SET LOCAL）设过，事务结束回落到 reset 值 = **空串 `''`**（不是 NULL）；策略里 `current_setting('app.current_org', true)::uuid` 遇到 `''::uuid` → 报错。TEXT 列比较 `= ''`（无匹配）则安全，所以 audit 表（ledger_book_id TEXT）没暴露。
+- 修复：uuid 类型的作用域键一律 `NULLIF(current_setting('app.current_org', true), '')::uuid`（空串→NULL→比较为 NULL→隐藏行，无错）。
+- 预防：RLS 策略里对 uuid 列做 GUC 比较必须 `NULLIF(...,'')`；别假设未设的自定义 GUC 是 NULL。
+
+### Prisma `create`（INSERT…RETURNING）在 RLS 下写「读作用域外」的行 → RETURNING 被 SELECT 策略挡 → 报错（P1a）
+- 症状：在 `withOrgScope`（未设 `app.current_ledger`）里写审计 → 500；同样的 `appendAuditRecordTx` 在 `withLedgerScope` 里却正常（P0b）。
+- 根因：Prisma `.create()` 发 `INSERT … RETURNING`；RLS 下 RETURNING 受 **SELECT 策略**约束。审计的 SELECT 策略按 `app.current_ledger` 过滤，而 org 级动作里该 GUC 为空 → 刚插入的行（ledger_book_id=新账套 id）被 SELECT 策略隐藏 → RETURNING 取不到 → 报错。
+- 修复：审计写入改用 `createMany`（`INSERT` 无 RETURNING，不触发 SELECT 策略）；审计本就不需要回读插入行。
+- 预防：RLS 表上若可能在「读作用域外」写入，用无 RETURNING 的写法（createMany / `$executeRaw`）；凡 `INSERT…RETURNING` 都要确保插入行对当前作用域可见。
+
 ## 预判（来自硬约束，避免踩坑）
 - 金额禁用浮点：聚合/比较一律走 Decimal；测试覆盖分/厘进位。
 - RLS 会话变量必须在连接归还前清理，避免连接池串租户。

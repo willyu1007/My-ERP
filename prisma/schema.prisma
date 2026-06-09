@@ -34,3 +34,55 @@ model AuditRecord {
   @@index([entityType, entityId])
   @@map("audit_record")
 }
+
+// ---- P1: organization / membership / ledger book (platform tenancy) ----
+// Two-level scoping: these platform tables are ORG-scoped (RLS by app.current_org);
+// financial rows (accounts/vouchers, P2+) are LEDGER-scoped (RLS by app.current_ledger).
+
+/// An organization owns ledger books and members (邀请制加入，账套归组织).
+model Organization {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  memberships Membership[]
+  ledgerBooks LedgerBook[]
+
+  @@map("organization")
+}
+
+/// A user's role in an organization — the single source of truth for RBAC.
+/// One membership per (org, user); invitation-only (P1b).
+model Membership {
+  id        String   @id @default(uuid()) @db.Uuid
+  orgId     String   @map("org_id") @db.Uuid
+  userId    String   @map("user_id")
+  role      String
+  email     String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, userId])
+  @@index([userId])
+  @@map("membership")
+}
+
+/// A ledger book (账套) under an organization. Org-scoped platform entity; its
+/// financial rows are ledger-scoped by this id. baseCurrency 2dp; fiscalYear =
+/// 启用年度; periodStructure "12+1" = 自然年 12 期 + 年结期.
+model LedgerBook {
+  id              String   @id @default(uuid()) @db.Uuid
+  orgId           String   @map("org_id") @db.Uuid
+  name            String
+  baseCurrency    String   @map("base_currency")
+  fiscalYear      Int      @map("fiscal_year")
+  periodStructure String   @default("12+1") @map("period_structure")
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@map("ledger_book")
+}

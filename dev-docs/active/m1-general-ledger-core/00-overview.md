@@ -4,9 +4,10 @@
 My-ERP 已完成初始化（脚手架 + 契约），但尚无任何财务领域实现。M1 要落地**总账核心闭环**与平台底座，使会计能完成「建科目 → 制单 → 审核 → 过账 → 余额/账簿 → 期初建账」的最小可用闭环。
 
 ## Status
-- **P0b done / P1 next** —— P0a（平台骨架）+ P0b（认证/授权/RLS/审计底座）均实现并验证（见 04-verification）。在 `main` 上实现（用户指示不另开分支）。
-- P0b 落地：`IdentityProvider`+mock（HS256 dev token / jsonwebtoken）、NestJS `AuthGuard`（401）+ CASL `PermissionGuard`（403，操作级 post/reverse/approve）、Postgres RLS 基线（`audit_record` + 非特权应用角色 + `withLedgerScope`/`SET LOCAL app.current_ledger`）、append-only 审计、结构化日志 + tracing seam。**取舍**：完整 OTel SDK 与 testcontainers 推迟（无 Docker，集成测试用本机 PG）。
-- Next concrete step：P1 —— Organization/Membership/Role/Invitation/LedgerBook 模型 + 邀请流 + RBAC 落库 + 账套 CRUD + 账套级隔离（真实业务表接 RLS）。
+- **P1a done / P1b next** —— P0a（骨架）+ P0b（认证/授权/RLS/审计底座）+ P1a（组织/成员/账套 + 两级作用域）均实现并验证（见 04-verification）。在 `main` 上实现（不另开分支）。
+- P0b：mock 身份、`AuthGuard`/CASL `PermissionGuard`、`audit_record` RLS（`withLedgerScope`）、审计、结构化日志 + tracing seam。OTel SDK / testcontainers 推迟。
+- P1a：`Organization`/`Membership`/`LedgerBook` 模型 + 迁移；**两级作用域**（平台表按 `app.current_org` RLS、财务表按 `app.current_ledger`）；`withOrgScope`；**角色落库**（Membership = RBAC SSOT，token 不再带 roles，`AuthGuard` 解析 membership → 角色 → CASL；无 membership → 403）；账套 CRUD（org 作用域，`ledger_book` 含 `WITH CHECK` 防跨组织写）。
+- Next concrete step：P1b —— Invitation 模型 + 状态机（待接受/已接受/撤销/过期）+ 邀请流（发起/接受/撤销）+ 禁止自助加入 + 成员/角色管理。
 
 ## Goal
 组织/账套/邀请权限底座 + 会计科目体系 + 记账凭证（借贷平衡/审核/过账/红冲）+ 期初建账 + 科目余额与试算平衡，全程合规可审计。

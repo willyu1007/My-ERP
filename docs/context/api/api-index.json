@@ -1,12 +1,13 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-09T23:23:49.385Z",
+  "generatedAt": "2026-06-09T23:47:43.961Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "17b993b55e5b2e86f1ab4b02445e5e6691d5e34cd94ce900358ea65bc73eaafe",
+  "sourceChecksumSha256": "0355202da97ff9faf7911fb1e72badb96491ab3fa7d6cbbd20a214e2ea193286",
   "stats": {
-    "totalEndpoints": 3,
+    "totalEndpoints": 4,
     "byTag": {
       "system": 1,
+      "organization": 1,
       "ledger-books": 2
     }
   },
@@ -38,10 +39,10 @@
     },
     {
       "method": "GET",
-      "path": "/v1/ledger-books",
-      "operationId": "listLedgerBooks",
-      "summary": "List ledger books in the caller's scope (P0b skeleton)",
-      "tag": "ledger-books",
+      "path": "/v1/organization",
+      "operationId": "getCurrentOrganization",
+      "summary": "The caller's current organization (org-scoped)",
+      "tag": "organization",
       "auth": "bearer",
       "input": {
         "params": [],
@@ -51,10 +52,34 @@
       "output": {
         "successStatus": 200,
         "coreFields": [
-          "ledgerBookId",
-          "roles",
-          "recentAuditCount"
+          "id",
+          "name",
+          "createdAt"
         ]
+      },
+      "errors": [
+        401,
+        403
+      ],
+      "example": {
+        "curl": "curl -X GET '/v1/organization' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/ledger-books",
+      "operationId": "listLedgerBooks",
+      "summary": "List ledger books in the caller's organization",
+      "tag": "ledger-books",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": []
       },
       "errors": [
         401,
@@ -66,29 +91,45 @@
     },
     {
       "method": "POST",
-      "path": "/v1/ledger-books/post-check",
-      "operationId": "postCheckLedgerBooks",
-      "summary": "Operation-level authz demo (requires 过账 / post Voucher)",
+      "path": "/v1/ledger-books",
+      "operationId": "createLedgerBook",
+      "summary": "Create a ledger book (账套) — admin/supervisor only",
       "tag": "ledger-books",
       "auth": "bearer",
       "input": {
         "params": [],
         "query": [],
-        "body": null
+        "body": {
+          "required": [
+            "name",
+            "baseCurrency",
+            "fiscalYear"
+          ],
+          "optional": [
+            "periodStructure"
+          ]
+        }
       },
       "output": {
-        "successStatus": 200,
+        "successStatus": 201,
         "coreFields": [
-          "ok",
-          "actor"
+          "id",
+          "orgId",
+          "name",
+          "baseCurrency",
+          "fiscalYear",
+          "periodStructure",
+          "active",
+          "createdAt"
         ]
       },
       "errors": [
+        400,
         401,
         403
       ],
       "example": {
-        "curl": "curl -X POST '/v1/ledger-books/post-check' -H 'Authorization: Bearer <token>'"
+        "curl": "curl -X POST '/v1/ledger-books' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"name\":\"<name>\",\"baseCurrency\":\"<baseCurrency>\",\"fiscalYear\":\"<fiscalYear>\"}'"
       }
     }
   ]

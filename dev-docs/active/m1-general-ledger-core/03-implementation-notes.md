@@ -43,4 +43,23 @@
 **遗留 TODO（P0b）**
 - 完整 OTel SDK（spans→ARMS/SLS）；CI 的 PG service container（让 RLS 集成测试在 CI 跑而非跳过）。
 - 生产 DB 角色分离落地（迁移用特权角色、应用用非特权 `myerp_app`）写入 env/部署文档。
-- P1 真实业务表（LedgerBook/Account/Voucher…）逐表接 RLS + WITH CHECK（跨租户写防护）。
+
+## P1a — 组织/成员/账套 + 两级作用域（完成）
+
+**决策（实现期落定）**
+- **两级作用域**：平台表（organization/membership/ledger_book）按 `app.current_org` RLS；财务表（account/voucher，P2+）按 `app.current_ledger`。`withOrgScope` 与 `withLedgerScope` 并列。
+- **角色落库（D2）**：token 只带 `userId/orgId/ledgerBookId`（+ 可选 email），**roles 从 Membership 解析**（RBAC SSOT）。platform `Identity` 拆为 `Principal`（token）+ `Identity`（+roles）；`IdentityProvider.verify → Principal`；apps/api `MembershipIdentityResolver`（`withOrgScope` 查 membership）；`AuthGuard` 验签→principal→解析 identity（无 membership → 403）。
+- **org 创建归生态**：Organization/Membership 由特权 sync/seed 写入（My-Chat/Logto 拥有组织；成员经 P1b 邀请），故 app-facing 策略 organization/membership 仅 SELECT；`ledger_book` 为 ERP 自有 → 完整 CRUD 策略 + `WITH CHECK` 防跨组织写。
+- 账套 CRUD 校验用手写 parse（不引 class-validator）。
+
+**改了什么**
+- Prisma：`Organization`/`Membership(@@unique[orgId,userId])`/`LedgerBook(baseCurrency/fiscalYear/periodStructure)`；迁移 `20260610130000_p1a_org_membership_ledger`（migrate diff 生成 DDL + RLS 策略，org GUC 用 `NULLIF(current_setting(...),'')::uuid` 防空串）。`db:sync-context` 刷新。
+- `packages/db`：`withOrgScope` + 仓储（`getOrganizationTx`/`listMembershipRolesTx`/`listLedgerBooksTx`/`createLedgerBookTx`，返回领域型）；`appendAuditRecord(Tx)` 改用 `createMany`（无 RETURNING，见 pitfalls）。
+- `packages/platform`：`Principal`/`Identity` 拆分、`isRole`；ability 增 `Organization` subject + supervisor 可 create/update LedgerBook。
+- `apps/api`：`identity-resolver.ts`（`IDENTITY_RESOLVER` + `MembershipIdentityResolver`）；`AuthGuard` 接 resolver；`OrganizationController`（GET 当前组织）；`LedgerBooksController` 重写为真实 CRUD（GET 列表 / POST 创建，审计）；app.module 接线。
+- 契约：openapi 改为 organization + ledger-books CRUD（去 post-check）；api-index 刷新（4 endpoints）。
+
+**遗留 TODO（P1a）**
+- 生产/部署文档：DB 角色分离 + 各表 GRANT（迁移不含 GRANT，env 设置时执行）。
+- AccountingPeriod 表（期间行）随 P3/P5 落地（当前 LedgerBook 仅存 periodStructure 字段）。
+- P1b：Invitation。

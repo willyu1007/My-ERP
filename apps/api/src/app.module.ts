@@ -3,10 +3,11 @@ import { AuthModule } from './auth/auth.module';
 import { HealthController } from './health/health.controller';
 import { HealthService } from './health/health.service';
 import { LedgerBooksController } from './ledger-books/ledger-books.controller';
+import { OrganizationController } from './organization/organization.controller';
 
 @Module({
   imports: [AuthModule],
-  controllers: [HealthController, LedgerBooksController],
+  controllers: [HealthController, OrganizationController, LedgerBooksController],
   providers: [HealthService],
 })
 export class AppModule {}

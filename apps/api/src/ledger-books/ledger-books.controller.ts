@@ -1,5 +1,5 @@
-import { Controller, Get, HttpCode, Post, UseGuards } from '@nestjs/common';
-import { appendAuditRecordTx, listAuditEntriesTx, withLedgerScope } from '@my-erp/db';
+import { BadRequestException, Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { appendAuditRecordTx, createLedgerBookTx, listLedgerBooksTx, withOrgScope } from '@my-erp/db';
 import { withSpan, type Identity } from '@my-erp/platform';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentIdentity } from '../auth/current-identity.decorator';
@@ -7,10 +7,30 @@ import { RequirePermission } from '../auth/permission.decorator';
 import { PermissionGuard } from '../auth/permission.guard';
 import { TraceId } from '../auth/trace-id.decorator';
 
+interface CreateLedgerBookBody {
+  name: string;
+  baseCurrency: string;
+  fiscalYear: number;
+  periodStructure?: string;
+}
+
+function parseCreateBody(body: unknown): CreateLedgerBookBody {
+  const b = (body ?? {}) as Record<string, unknown>;
+  if (typeof b.name !== 'string' || b.name.trim() === '') throw new BadRequestException('name is required');
+  if (typeof b.baseCurrency !== 'string' || b.baseCurrency.trim() === '') {
+    throw new BadRequestException('baseCurrency is required');
+  }
+  if (typeof b.fiscalYear !== 'number' || !Number.isInteger(b.fiscalYear)) {
+    throw new BadRequestException('fiscalYear must be an integer');
+  }
+  const result: CreateLedgerBookBody = { name: b.name, baseCurrency: b.baseCurrency, fiscalYear: b.fiscalYear };
+  if (typeof b.periodStructure === 'string') result.periodStructure = b.periodStructure;
+  return result;
+}
+
 /**
- * Example protected resource (P0b skeleton — real LedgerBook CRUD lands in P1).
- * Demonstrates the full stack: authn (AuthGuard) → authz (CASL PermissionGuard)
- * → ledger-scoped + audited DB access (withLedgerScope + append-only audit).
+ * Ledger book (账套) CRUD — org-scoped (RLS by app.current_org). Read for all
+ * roles; create for admin/supervisor (操作级). Creation is audited (append-only).
  */
 @Controller('ledger-books')
 @UseGuards(AuthGuard, PermissionGuard)
@@ -20,27 +40,30 @@ export class LedgerBooksController {
   async list(@CurrentIdentity() identity: Identity, @TraceId() traceId?: string) {
     return withSpan(
       'ledger-books.list',
-      { traceId, userId: identity.userId, orgId: identity.orgId, ledgerBookId: identity.ledgerBookId, action: 'read' },
-      async () => {
-        const recent = await withLedgerScope(identity.ledgerBookId, async (tx) => {
-          await appendAuditRecordTx(tx, {
-            actorId: identity.userId,
-            action: 'LIST_LEDGER_BOOKS',
-            entityType: 'LedgerBook',
-            ledgerBookId: identity.ledgerBookId,
-          });
-          return listAuditEntriesTx(tx, 5);
-        });
-        return { ledgerBookId: identity.ledgerBookId, roles: identity.roles, recentAuditCount: recent.length };
-      },
+      { traceId, userId: identity.userId, orgId: identity.orgId, action: 'read' },
+      () => withOrgScope(identity.orgId, (tx) => listLedgerBooksTx(tx)),
     );
   }
 
-  /** Operation-level authz demo: only roles entitled to 过账 (post Voucher) pass. */
-  @Post('post-check')
-  @HttpCode(200)
-  @RequirePermission('post', 'Voucher')
-  postCheck(@CurrentIdentity() identity: Identity) {
-    return { ok: true, actor: identity.userId };
+  @Post()
+  @RequirePermission('create', 'LedgerBook')
+  async create(@CurrentIdentity() identity: Identity, @Body() body: unknown, @TraceId() traceId?: string) {
+    const input = parseCreateBody(body);
+    return withSpan(
+      'ledger-books.create',
+      { traceId, userId: identity.userId, orgId: identity.orgId, action: 'create' },
+      () =>
+        withOrgScope(identity.orgId, async (tx) => {
+          const book = await createLedgerBookTx(tx, { orgId: identity.orgId, ...input });
+          await appendAuditRecordTx(tx, {
+            actorId: identity.userId,
+            action: 'CREATE_LEDGER_BOOK',
+            entityType: 'LedgerBook',
+            entityId: book.id,
+            ledgerBookId: book.id,
+          });
+          return book;
+        }),
+    );
   }
 }

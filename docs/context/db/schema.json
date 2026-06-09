@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-06-06T04:59:03.781Z",
+  "updatedAt": "2026-06-09T23:37:00.513Z",
   "ssot": {
     "mode": "repo-prisma",
     "source": {
@@ -131,6 +131,294 @@
           "map": null
         }
       ]
+    },
+    {
+      "name": "LedgerBook",
+      "dbName": "ledger_book",
+      "schema": null,
+      "columns": [
+        {
+          "name": "active",
+          "type": "Boolean",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "true",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "baseCurrency",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "base_currency",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "created_at",
+          "dbType": "Timestamptz",
+          "default": "now()",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "fiscalYear",
+          "type": "Int",
+          "nullable": false,
+          "list": false,
+          "dbName": "fiscal_year",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "id",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": "Uuid",
+          "default": "uuid()",
+          "primaryKey": true,
+          "unique": false
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "orgId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "org_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "periodStructure",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "period_structure",
+          "dbType": null,
+          "default": "\"12+1\"",
+          "primaryKey": false,
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "field": "organization",
+          "to": "Organization",
+          "optional": false,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "orgId"
+          ],
+          "references": [
+            "id"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "type": "index",
+          "fields": [
+            "orgId"
+          ],
+          "name": null,
+          "map": null
+        }
+      ]
+    },
+    {
+      "name": "Membership",
+      "dbName": "membership",
+      "schema": null,
+      "columns": [
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "created_at",
+          "dbType": "Timestamptz",
+          "default": "now()",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "email",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "id",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": "Uuid",
+          "default": "uuid()",
+          "primaryKey": true,
+          "unique": false
+        },
+        {
+          "name": "orgId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "org_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "role",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "userId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "user_id",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "field": "organization",
+          "to": "Organization",
+          "optional": false,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "orgId"
+          ],
+          "references": [
+            "id"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "type": "index",
+          "fields": [
+            "userId"
+          ],
+          "name": null,
+          "map": null
+        },
+        {
+          "type": "unique",
+          "fields": [
+            "orgId",
+            "userId"
+          ],
+          "name": null,
+          "map": null
+        }
+      ]
+    },
+    {
+      "name": "Organization",
+      "dbName": "organization",
+      "schema": null,
+      "columns": [
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "created_at",
+          "dbType": "Timestamptz",
+          "default": "now()",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "id",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": "Uuid",
+          "default": "uuid()",
+          "primaryKey": true,
+          "unique": false
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "field": "ledgerBooks",
+          "to": "LedgerBook",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
+        },
+        {
+          "field": "memberships",
+          "to": "Membership",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
+        }
+      ],
+      "indexes": []
     }
   ],
   "notes": "Generated from Prisma schema.prisma (SSOT: repo-prisma)."

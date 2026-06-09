@@ -11,20 +11,34 @@ export const ROLE_LABELS: Record<Role, string> = {
   viewer: '查看者',
 };
 
-/** Authenticated principal + tenant scope resolved from a bearer token. */
-export interface Identity {
+const ROLES: ReadonlySet<Role> = new Set<Role>(['accountant', 'cashier', 'supervisor', 'admin', 'viewer']);
+
+export function isRole(value: unknown): value is Role {
+  return typeof value === 'string' && ROLES.has(value as Role);
+}
+
+/**
+ * Tenant context carried by the bearer token. Roles are NOT here — they are the
+ * single source of truth in Membership and resolved per request (see api auth).
+ */
+export interface Principal {
   readonly userId: string;
   readonly orgId: string;
   readonly ledgerBookId: string;
+  readonly email?: string;
+}
+
+/** A {@link Principal} plus the roles resolved from its Membership (RBAC). */
+export interface Identity extends Principal {
   readonly roles: readonly Role[];
 }
 
 /**
- * Verifies a bearer token into an {@link Identity}. Mock today (HS256 dev
+ * Verifies a bearer token into a {@link Principal}. Mock today (HS256 dev
  * secret); real Logto (OIDC/JWKS) swaps in later without changing callers.
  */
 export interface IdentityProvider {
-  verify(token: string): Promise<Identity>;
+  verify(token: string): Promise<Principal>;
 }
 
 export class IdentityError extends Error {
@@ -34,9 +48,7 @@ export class IdentityError extends Error {
   }
 }
 
-const ROLES: ReadonlySet<Role> = new Set<Role>(['accountant', 'cashier', 'supervisor', 'admin', 'viewer']);
-
-function parseIdentity(payload: unknown): Identity {
+function parsePrincipal(payload: unknown): Principal {
   if (typeof payload !== 'object' || payload === null) {
     throw new IdentityError('token payload is not an object');
   }
@@ -45,36 +57,36 @@ function parseIdentity(payload: unknown): Identity {
   if (typeof userId !== 'string' || userId === '') throw new IdentityError('missing sub/userId');
   if (typeof p.orgId !== 'string' || p.orgId === '') throw new IdentityError('missing orgId');
   if (typeof p.ledgerBookId !== 'string' || p.ledgerBookId === '') throw new IdentityError('missing ledgerBookId');
-  if (!Array.isArray(p.roles) || p.roles.length === 0 || p.roles.some((r) => !ROLES.has(r as Role))) {
-    throw new IdentityError('missing or invalid roles');
-  }
-  return { userId, orgId: p.orgId, ledgerBookId: p.ledgerBookId, roles: p.roles as Role[] };
+  const base: Principal = { userId, orgId: p.orgId, ledgerBookId: p.ledgerBookId };
+  return typeof p.email === 'string' ? { ...base, email: p.email } : base;
 }
 
 export class MockIdentityProvider implements IdentityProvider {
   constructor(private readonly secret: string) {}
 
-  async verify(token: string): Promise<Identity> {
+  async verify(token: string): Promise<Principal> {
     let payload: unknown;
     try {
       payload = jwt.verify(token, this.secret, { algorithms: ['HS256'] });
     } catch {
       throw new IdentityError('invalid or expired token');
     }
-    return parseIdentity(payload);
+    return parsePrincipal(payload);
   }
 }
 
 /** Dev/test helper: mint a token the {@link MockIdentityProvider} accepts. */
 export function signDevToken(
-  identity: Identity,
+  principal: Principal,
   secret: string,
   expiresIn: jwt.SignOptions['expiresIn'] = '1h',
 ): string {
+  const claims: Record<string, unknown> = {
+    sub: principal.userId,
+    orgId: principal.orgId,
+    ledgerBookId: principal.ledgerBookId,
+  };
+  if (principal.email !== undefined) claims.email = principal.email;
   const options: jwt.SignOptions = { algorithm: 'HS256', expiresIn };
-  return jwt.sign(
-    { sub: identity.userId, orgId: identity.orgId, ledgerBookId: identity.ledgerBookId, roles: identity.roles },
-    secret,
-    options,
-  );
+  return jwt.sign(claims, secret, options);
 }

@@ -23,46 +23,69 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthStatus'
+  /v1/organization:
+    get:
+      operationId: getCurrentOrganization
+      summary: The caller's current organization (org-scoped)
+      tags: [organization]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Organization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '401':
+          description: Missing or invalid bearer token
+        '403':
+          description: Caller has no membership in the organization
   /v1/ledger-books:
     get:
       operationId: listLedgerBooks
-      summary: List ledger books in the caller's scope (P0b skeleton)
-      description: |
-        Demonstrates the P0b platform baseline: authn (bearer) → authz (CASL
-        `read LedgerBook`) → ledger-scoped, audited DB access. Real LedgerBook
-        CRUD lands in P1.
+      summary: List ledger books in the caller's organization
       tags: [ledger-books]
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: Scoped result
+          description: Ledger books (org-scoped)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LedgerBooksList'
+                type: array
+                items:
+                  $ref: '#/components/schemas/LedgerBook'
         '401':
           description: Missing or invalid bearer token
         '403':
-          description: Caller lacks the required permission
-  /v1/ledger-books/post-check:
+          description: Caller lacks read permission / no membership
     post:
-      operationId: postCheckLedgerBooks
-      summary: Operation-level authz demo (requires 过账 / post Voucher)
+      operationId: createLedgerBook
+      summary: Create a ledger book (账套) — admin/supervisor only
       tags: [ledger-books]
       security:
         - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLedgerBook'
       responses:
-        '200':
-          description: Authorized
+        '201':
+          description: Created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PostCheckResult'
+                $ref: '#/components/schemas/LedgerBook'
+        '400':
+          description: Invalid body
         '401':
           description: Missing or invalid bearer token
         '403':
-          description: Caller lacks the post (过账) permission
+          description: Caller lacks create permission
 components:
   securitySchemes:
     bearerAuth:
@@ -70,39 +93,41 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: |
-        HS256 dev token (P0b mock identity). Carries sub/orgId/ledgerBookId/roles.
+        HS256 dev token (P0b mock identity). Carries sub/orgId/ledgerBookId
+        (+ optional email). Roles are resolved from Membership, not the token.
         Real Logto (OIDC/JWKS) replaces the verifier later.
   schemas:
     HealthStatus:
       type: object
       required: [status, service, time]
       properties:
-        status:
-          type: string
-          example: ok
-        service:
-          type: string
-        time:
-          type: string
-          format: date-time
-    LedgerBooksList:
+        status: { type: string, example: ok }
+        service: { type: string }
+        time: { type: string, format: date-time }
+    Organization:
       type: object
-      required: [ledgerBookId, roles, recentAuditCount]
+      required: [id, name, createdAt]
       properties:
-        ledgerBookId:
-          type: string
-        roles:
-          type: array
-          items:
-            type: string
-            enum: [accountant, cashier, supervisor, admin, viewer]
-        recentAuditCount:
-          type: integer
-    PostCheckResult:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        createdAt: { type: string, format: date-time }
+    LedgerBook:
       type: object
-      required: [ok, actor]
+      required: [id, orgId, name, baseCurrency, fiscalYear, periodStructure, active, createdAt]
       properties:
-        ok:
-          type: boolean
-        actor:
-          type: string
+        id: { type: string, format: uuid }
+        orgId: { type: string, format: uuid }
+        name: { type: string }
+        baseCurrency: { type: string, example: CNY }
+        fiscalYear: { type: integer, example: 2026 }
+        periodStructure: { type: string, example: '12+1' }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    CreateLedgerBook:
+      type: object
+      required: [name, baseCurrency, fiscalYear]
+      properties:
+        name: { type: string }
+        baseCurrency: { type: string, example: CNY }
+        fiscalYear: { type: integer, example: 2026 }
+        periodStructure: { type: string, example: '12+1' }

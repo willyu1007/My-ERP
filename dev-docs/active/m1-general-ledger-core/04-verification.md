@@ -44,3 +44,14 @@
 
 审查修复 3 处：① **边界违规**——controller 直接 `tx.auditRecord.findMany`（Prisma 查询入业务层，违背「仅 packages/db 碰 Prisma、仓储返回领域实体」）→ 抽出 `listAuditEntriesTx` 仓储函数（返回 `AuditEntry` 领域型）；② **可观测断点**——AuthGuard 生成的 `traceId` 未串入 `withSpan` 日志 → 加 `@TraceId()` 注入并入 span context（已验证日志含 traceId）；③ post-check 语义上是校验非创建 → `@HttpCode(200)`（OpenAPI 同步）。重验：typecheck 9/9 · test 34 · lint · build 全绿；e2e 复跑 401/403/200 + GET 审计累加 1→2 正常。
 留待（非阻塞）：CASL 条件为实例级、Guard 为类型级（账套隔离由 token→scope→RLS 保障，符合设计）；读操作审计 LIST_LEDGER_BOOKS 为骨架演示；RLS 集成测试遗留全局测试角色（幂等，无害）。
+
+### P1a — 组织/成员/账套 — 2026-06-10（本机 PG17 :5432）
+
+| 验证项 | 命令 | 结果 |
+|---|---|---|
+| 类型检查 | `pnpm -r typecheck` | ✓ 9/9 |
+| 单测 + 集成 | `pnpm test` | ✓ 39 passed（含 `org-rls.integration` 5：账套按组织隔离、成员角色仅本组织解析、`WITH CHECK` 阻跨组织写、组织内创建隔离、无作用域 0 行）|
+| Lint / build / lint-docs | `pnpm lint · build · lint-docs` | ✓ 无告警 / api+web Done / 0 errors |
+| **端到端 HTTP** | 本机 PG 建库 + seed 组织/成员 + 非特权角色起 api | ✓ GET `/v1/organization`（acct）→ 组织；no-member → **403**；POST `/v1/ledger-books`（accountant）→ **403**（无创建权）；（admin）→ **201** 返回账套；GET（acct）→ 列出该账套（org 作用域读）；日志 0 错误 |
+
+要点：token→Membership 角色解析→CASL 鉴权→org 作用域 RLS 全链路打通；角色为 Membership 落库（非 token）；`ledger_book` `WITH CHECK` 防跨组织写已测。
