@@ -1,5 +1,9 @@
 /**
- * @my-erp/platform — module registry, RBAC (CASL), auth, audit, approval engine.
- * Fleshed out from P0b onward; P0a ships the package boundary only.
+ * @my-erp/platform — module registry, RBAC (CASL), auth/identity, structured
+ * logging. Fleshed out from P0b; approval engine + module registry land later.
  */
+export * from './identity';
+export * from './ability';
+export * from './logging';
+
 export const PLATFORM_PACKAGE = '@my-erp/platform' as const;

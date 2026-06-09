@@ -4,8 +4,9 @@
 My-ERP 已完成初始化（脚手架 + 契约），但尚无任何财务领域实现。M1 要落地**总账核心闭环**与平台底座，使会计能完成「建科目 → 制单 → 审核 → 过账 → 余额/账簿 → 期初建账」的最小可用闭环。
 
 ## Status
-- **P0a done / P0b next** —— P0a（平台骨架 + CI 绿）已实现并本地验证通过（见 04-verification）。在 `main` 上实现（用户指示不另开分支）。
-- Next concrete step：P0b —— `IdentityProvider` 抽象 + mock、JWT 中间件、CASL 授权骨架、Postgres RLS 基线（`SET LOCAL app.current_ledger`）、审计写入封装、OTel + testcontainers 集成测试。
+- **P0b done / P1 next** —— P0a（平台骨架）+ P0b（认证/授权/RLS/审计底座）均实现并验证（见 04-verification）。在 `main` 上实现（用户指示不另开分支）。
+- P0b 落地：`IdentityProvider`+mock（HS256 dev token / jsonwebtoken）、NestJS `AuthGuard`（401）+ CASL `PermissionGuard`（403，操作级 post/reverse/approve）、Postgres RLS 基线（`audit_record` + 非特权应用角色 + `withLedgerScope`/`SET LOCAL app.current_ledger`）、append-only 审计、结构化日志 + tracing seam。**取舍**：完整 OTel SDK 与 testcontainers 推迟（无 Docker，集成测试用本机 PG）。
+- Next concrete step：P1 —— Organization/Membership/Role/Invitation/LedgerBook 模型 + 邀请流 + RBAC 落库 + 账套 CRUD + 账套级隔离（真实业务表接 RLS）。
 
 ## Goal
 组织/账套/邀请权限底座 + 会计科目体系 + 记账凭证（借贷平衡/审核/过账/红冲）+ 期初建账 + 科目余额与试算平衡，全程合规可审计。

@@ -26,3 +26,16 @@
 | 端到端 | web(:3200) SSR → api(:8000) → PG(5433) | ✓ 页面渲染 `● ok — my-erp-api` |
 
 注：CI 在 GitHub 上的“绿”需先提交 `pnpm-lock.yaml`（`--frozen-lockfile`）。本地等价命令已全绿。
+
+### P0b — 2026-06-10（本机 PG17 :5432 验证 RLS）
+
+| 验证项 | 命令 | 结果 |
+|---|---|---|
+| 类型检查 | `pnpm -r typecheck` | ✓ 9/9 |
+| 单测 | `pnpm test` | ✓ 34 passed（CASL 能力矩阵 5、身份 4、AuthGuard 3、PermissionGuard 4 + 既有）|
+| RLS 集成测试 | `vitest run packages/db/src/rls.integration.test.ts` | ✓ 3：作用域只见本账套行（A→2/B→1）、无作用域→0 行、作用域内写仅本作用域可见（以**非特权角色**连库，超级用户会绕过 RLS）|
+| Lint / governance | `pnpm lint` · `ui:governance` · `lint-docs` | ✓ 无告警 / 23 token-only / 0 errors |
+| 构建 | `pnpm build` | ✓ api + web Done |
+| **端到端 HTTP** | 本机 PG 建库 + 以 `myerp_app` 角色起 api + curl | ✓ POST post-check：无 token **401** / viewer **403** / accountant **201**；GET ledger-books：无 token **401**、accountant **200** `{ledgerBookId,roles,recentAuditCount:1}`，二次调用 `recentAuditCount:2`（authn→CASL authz→withLedgerScope/RLS→append-only 审计累加，全链路打通）|
+
+注：testcontainers 因无 Docker 未用，RLS 集成测试改用本机 PG，CI 无 PG 时自动跳过（`describe.skipIf`）。OTel 完整 SDK 推迟，本阶段为结构化日志 + tracing seam。

@@ -1,59 +1,108 @@
 openapi: 3.1.0
 info:
-  title: Project API
+  title: My-ERP API
   version: 0.1.0
   description: |
-    Canonical API contract for this repository.
+    Canonical API contract for My-ERP (finance v1).
     After edits run:
       node .ai/skills/features/context-awareness/scripts/ctl-context.mjs touch
       node .ai/scripts/ctl-api-index.mjs generate --touch
-  # x-source-mapping:
-  #   routes: src/routes/
-  #   controllers: src/controllers/
-  #   schemas: src/schemas/
-  #   middleware: src/middleware/
-servers: []
-  # - url: http://localhost:3000
-  #   description: Local development
-paths: {}
-  # /api/example:
-  #   get:
-  #     operationId: getExample
-  #     summary: Get example resource
-  #     tags: [example]
-  #     security:
-  #       - bearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     responses:
-  #       '200':
-  #         description: Success
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ExampleResponse'
-  #       '401':
-  #         description: Unauthorized
-  #       '404':
-  #         description: Not found
+servers:
+  - url: http://localhost:8000
+    description: Local development
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Liveness probe (includes a DB ping)
+      tags: [system]
+      responses:
+        '200':
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+  /v1/ledger-books:
+    get:
+      operationId: listLedgerBooks
+      summary: List ledger books in the caller's scope (P0b skeleton)
+      description: |
+        Demonstrates the P0b platform baseline: authn (bearer) → authz (CASL
+        `read LedgerBook`) → ledger-scoped, audited DB access. Real LedgerBook
+        CRUD lands in P1.
+      tags: [ledger-books]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Scoped result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LedgerBooksList'
+        '401':
+          description: Missing or invalid bearer token
+        '403':
+          description: Caller lacks the required permission
+  /v1/ledger-books/post-check:
+    post:
+      operationId: postCheckLedgerBooks
+      summary: Operation-level authz demo (requires 过账 / post Voucher)
+      tags: [ledger-books]
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostCheckResult'
+        '401':
+          description: Missing or invalid bearer token
+        '403':
+          description: Caller lacks the post (过账) permission
 components:
-  schemas: {}
-    # ExampleResponse:
-    #   type: object
-    #   required: [id, name]
-    #   properties:
-    #     id:
-    #       type: string
-    #     name:
-    #       type: string
-    #     createdAt:
-    #       type: string
-    #       format: date-time
-  # securitySchemes:
-  #   bearerAuth:
-  #     type: http
-  #     scheme: bearer
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        HS256 dev token (P0b mock identity). Carries sub/orgId/ledgerBookId/roles.
+        Real Logto (OIDC/JWKS) replaces the verifier later.
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status, service, time]
+      properties:
+        status:
+          type: string
+          example: ok
+        service:
+          type: string
+        time:
+          type: string
+          format: date-time
+    LedgerBooksList:
+      type: object
+      required: [ledgerBookId, roles, recentAuditCount]
+      properties:
+        ledgerBookId:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+            enum: [accountant, cashier, supervisor, admin, viewer]
+        recentAuditCount:
+          type: integer
+    PostCheckResult:
+      type: object
+      required: [ok, actor]
+      properties:
+        ok:
+          type: boolean
+        actor:
+          type: string

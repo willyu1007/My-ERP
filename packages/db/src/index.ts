@@ -38,17 +38,45 @@ export interface AuditRecordInput {
   metadata?: Prisma.InputJsonValue;
 }
 
+function auditData(input: AuditRecordInput) {
+  return {
+    actorId: input.actorId,
+    action: input.action,
+    entityType: input.entityType,
+    entityId: input.entityId ?? null,
+    ledgerBookId: input.ledgerBookId ?? null,
+    metadata: input.metadata ?? Prisma.JsonNull,
+  };
+}
+
 export async function appendAuditRecord(input: AuditRecordInput) {
-  return getPrisma().auditRecord.create({
-    data: {
-      actorId: input.actorId,
-      action: input.action,
-      entityType: input.entityType,
-      entityId: input.entityId ?? null,
-      ledgerBookId: input.ledgerBookId ?? null,
-      metadata: input.metadata ?? Prisma.JsonNull,
-    },
+  return getPrisma().auditRecord.create({ data: auditData(input) });
+}
+
+/** A transaction-bound Prisma client — what repositories receive inside a scope. */
+export type TxClient = Prisma.TransactionClient;
+
+/**
+ * Run `fn` inside a transaction with the ledger scope set via SET LOCAL
+ * (`app.current_ledger`). Postgres RLS policies read this GUC to isolate rows by
+ * 账套; because it is transaction-local it is cleared when the tx ends and can
+ * never leak across pooled connections. All ledger-scoped DB access MUST go
+ * through here (hard constraint: 严禁无账套作用域的查询).
+ */
+export async function withLedgerScope<T>(
+  ledgerBookId: string,
+  fn: (tx: TxClient) => Promise<T>,
+): Promise<T> {
+  return getPrisma().$transaction(async (tx) => {
+    // set_config(key, value, is_local=true) is SET LOCAL — transaction-scoped.
+    await tx.$executeRaw`SELECT set_config('app.current_ledger', ${ledgerBookId}, true)`;
+    return fn(tx);
   });
+}
+
+/** Append an audit record inside an existing scoped transaction (preferred path). */
+export async function appendAuditRecordTx(tx: TxClient, input: AuditRecordInput) {
+  return tx.auditRecord.create({ data: auditData(input) });
 }
 
 export { Prisma } from '@prisma/client';

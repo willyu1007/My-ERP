@@ -24,4 +24,23 @@
 **遗留 TODO**
 - Prisma 6 提示 `package.json#prisma` 配置将于 v7 移除 → 迁移到 `prisma.config.ts`（择期）。
 - `pnpm-lock.yaml` 需提交，CI 的 `--frozen-lockfile` 才会绿（用户提交时纳入）。
-- P0b：把 `AuditRecord` 接上写入路径；RLS 会话变量中间件 + testcontainers 集成测试。
+
+## P0b — 认证 / 授权 / 隔离底座（完成）
+
+**决策（实现期落定）**
+- 身份：mock 用 `jsonwebtoken`（HS256，CJS 原生）而非 jose（api 为 CommonJS）；`IdentityProvider` 抽象，真实 Logto/JWKS 后替换。
+- 可观测：本阶段**结构化 JSON 日志 + tracing seam（`withSpan`）**；完整 `@opentelemetry/sdk-node` 推迟到 ARMS/SLS 就绪（用户确认）。
+- 集成测试：无 Docker → **testcontainers 推迟**，RLS 集成测试用本机 PG（:5432），无 PG 时 `describe.skipIf` 跳过（CI 需 PG service container，留 TODO）。
+- RLS 基线表 = `audit_record`（已有 ledger_book_id），真实业务表 RLS 随 P1。
+
+**改了什么**
+- `packages/platform`：`identity.ts`（`Identity`/`Role`/`IdentityProvider`/`MockIdentityProvider`/`signDevToken`）、`ability.ts`（CASL `defineAbilityFor`：RBAC + 操作级 post/reverse/approve + 账套级条件；SoD = 会计制单不可审核）、`logging.ts`（结构化日志 + `withSpan` + `newTraceId`）。依赖 `@casl/ability` + `jsonwebtoken`。
+- `packages/db`：`withLedgerScope(ledgerBookId, fn)` = `$transaction` + `set_config('app.current_ledger', …, true)`（SET LOCAL，事务结束自动失效，杜绝连接池串租户）；`appendAuditRecordTx` 在作用域内写审计。
+- 迁移 `20260610120000_p0b_rls_audit`：`audit_record` ENABLE RLS + SELECT 隔离策略（`ledger_book_id = current_setting('app.current_ledger', true)`）+ INSERT 放行（UPDATE/DELETE 无策略 = RLS 兜底 append-only）。
+- `apps/api`：`auth/`（`AuthGuard` 401、`PermissionGuard`+`@RequirePermission` 403、`@CurrentIdentity`、`identityProviderFactory`、`AuthModule`）；示例受保护资源 `ledger-books`（GET=read LedgerBook 走 withLedgerScope+审计；POST post-check=post Voucher 操作级）。`.env.example` 加 `AUTH_DEV_SECRET`。新增 dep `@my-erp/platform`、`@types/express`。
+- 契约：`docs/context/api/openapi.yaml` 补 `/health`+`/v1/ledger-books`+bearerAuth；`ctl-api-index generate` 刷新（3 endpoints）。
+
+**遗留 TODO（P0b）**
+- 完整 OTel SDK（spans→ARMS/SLS）；CI 的 PG service container（让 RLS 集成测试在 CI 跑而非跳过）。
+- 生产 DB 角色分离落地（迁移用特权角色、应用用非特权 `myerp_app`）写入 env/部署文档。
+- P1 真实业务表（LedgerBook/Account/Voucher…）逐表接 RLS + WITH CHECK（跨租户写防护）。
