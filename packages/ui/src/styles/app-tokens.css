@@ -1,0 +1,205 @@
+/* =========================================================
+   morethan — Foundations
+   Colors + Type tokens. Import this file once at the top of
+   any HTML/CSS that needs the brand.
+   ========================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500&family=Caveat:wght@400;500;600;700&family=Ma+Shan+Zheng&display=swap');
+
+:root {
+  /* ---------- Brand core ---------- */
+  --mt-navy:        #283E68;   /* Primary — reliability */
+  --mt-navy-700:    #1F3354;
+  --mt-navy-600:    #324A78;
+  --mt-navy-500:    #4761A0;   /* Hover/links */
+  --mt-navy-300:    #8FA0C2;
+  --mt-navy-100:    #DCE2EE;
+  --mt-navy-50:     #EEF1F7;
+
+  --mt-orange:      #E1703C;   /* Accent — CTA */
+  --mt-orange-700:  #C75D2C;
+  --mt-orange-600:  #D26735;   /* press */
+  --mt-orange-500:  #E68559;   /* hover */
+  --mt-orange-300:  #F0A989;
+  --mt-orange-100:  #FAE2D5;
+  --mt-orange-50:   #FDF1E9;
+
+  /* Warm near-black for body text — slightly less cool than #111827 so it
+     sits more comfortably on the cream paper background. */
+  --mt-ink:         #1F1E1B;
+  --mt-ink-2:       #2D2C28;
+  --mt-ink-3:       #4A4843;
+  --mt-ink-4:       #6E6B65;   /* muted text */
+  --mt-ink-5:       #A09D96;   /* placeholder */
+
+  /* ---------- Warm neutrals (Anthropic paper feel) ---------- */
+  --mt-cream:       #F5F2EA;   /* App canvas — slightly khaki paper */
+  --mt-sand:        #EDE9DD;   /* Card / panel */
+  --mt-sand-2:      #E3DDCD;   /* Hover surface */
+  --mt-stone:       #CFC8B6;   /* Divider on warm */
+  --mt-paper:       #FFFFFF;   /* Pure surface (white card on cream) */
+
+  /* ---------- Semantic ---------- */
+  --mt-success:     #2E8B6B;
+  --mt-success-bg:  #E4F2EC;
+  --mt-warning:     #C98A2B;
+  --mt-warning-bg:  #FBEFD8;
+  --mt-danger:      #B5402F;
+  --mt-danger-bg:   #FBE3DD;
+  --mt-info:        var(--mt-navy-500);
+  --mt-info-bg:     var(--mt-navy-50);
+
+  /* ---------- Foreground / Background tokens ---------- */
+  --fg-1: var(--mt-ink);        /* primary text */
+  --fg-2: var(--mt-ink-3);      /* secondary */
+  --fg-3: var(--mt-ink-4);      /* tertiary / hint */
+  --fg-on-navy: #FFFFFF;
+  --fg-on-orange: #FFFFFF;
+  --fg-link: var(--mt-navy-500);
+
+  --bg-canvas:  var(--mt-cream);
+  --bg-surface: var(--mt-paper);
+  --bg-sunken:  var(--mt-sand);
+  --bg-raised:  #FFFFFF;
+  --bg-hover:   var(--mt-sand-2);
+  --bg-tint:    color-mix(in oklab, var(--mt-navy) 3%, transparent); /* subtle navy row hover */
+  --bg-float:   color-mix(in oklab, var(--mt-paper) 40%, var(--mt-cream)); /* floating panel — warm off-white, not stark white */
+  --scrim:      rgba(20, 25, 35, 0.36);   /* overlay / drawer backdrop */
+
+  --border-1:  rgba(40, 62, 104, 0.10);   /* hairline on warm bg */
+  --border-2:  rgba(40, 62, 104, 0.18);   /* control border */
+  --border-3:  rgba(40, 62, 104, 0.28);   /* focused / strong */
+
+  /* ---------- Type ----------
+     - --font-sans:    UI / body / small text (Manrope grotesque + Noto Sans SC)
+     - --font-display: brand wordmark + UI titles that should stay sans
+     - --font-serif:   editorial headlines (page H1 / section H2) — Anthropic feel
+     - --font-mono:    inline code, timestamps, meta
+  */
+  --font-sans: 'Manrope', 'Inter', 'SF Pro Text', -apple-system, BlinkMacSystemFont,
+               'Noto Sans SC', 'PingFang SC', 'HarmonyOS Sans', 'Source Han Sans SC', system-ui, sans-serif;
+  --font-display: 'Manrope', 'Inter', 'SF Pro Display',
+               'Noto Sans SC', 'PingFang SC', system-ui, sans-serif;
+  --font-serif: 'Source Serif 4', 'Noto Serif SC', 'Source Han Serif SC',
+               'Songti SC', 'STSong', Georgia, 'Times New Roman', serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+  --font-hand: 'Caveat', 'Ma Shan Zheng', 'Kaiti SC', 'STKaiti', 'KaiTi', cursive;
+  --font-hand-cn: 'Ma Shan Zheng', 'Kaiti SC', 'STKaiti', 'KaiTi', 'Caveat', cursive;
+
+  /* Type scale (semantic) */
+  --display-size: 56px;  --display-lh: 1.05; --display-tracking: -0.02em; --display-weight: 800;
+  --h1-size: 40px;       --h1-lh: 1.1;  --h1-tracking: -0.02em;  --h1-weight: 700;
+  --h2-size: 28px;       --h2-lh: 1.2;  --h2-tracking: -0.01em;  --h2-weight: 700;
+  --h3-size: 20px;       --h3-lh: 1.3;  --h3-tracking: -0.005em; --h3-weight: 600;
+  --h4-size: 16px;       --h4-lh: 1.35; --h4-weight: 600;
+  --body-size: 15px;     --body-lh: 1.55; --body-weight: 400;
+  --small-size: 13px;    --small-lh: 1.5;
+  --caption-size: 12px;  --caption-lh: 1.4; --caption-tracking: 0.01em;
+  --code-size: 13px;
+
+  /* ---------- Spacing (8pt grid) ---------- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+  --sp-9: 96px;
+
+  /* ---------- Radii ---------- */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 8px;     /* controls */
+  --r-lg: 12px;    /* cards */
+  --r-xl: 16px;    /* large cards / sheets */
+  --r-2xl: 20px;
+  --r-pill: 999px;
+
+  /* ---------- Shadows (Mac-like, soft, layered) ---------- */
+  --shadow-xs: 0 1px 1px rgba(17, 24, 39, 0.04);
+  --shadow-sm: 0 1px 2px rgba(17, 24, 39, 0.06), 0 1px 1px rgba(17, 24, 39, 0.04);
+  --shadow-md: 0 4px 12px rgba(17, 24, 39, 0.06), 0 1px 2px rgba(17, 24, 39, 0.05);
+  --shadow-lg: 0 12px 32px rgba(17, 24, 39, 0.10), 0 2px 6px rgba(17, 24, 39, 0.06);
+  --shadow-xl: 0 24px 56px rgba(17, 24, 39, 0.16), 0 4px 12px rgba(17, 24, 39, 0.08);
+  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --shadow-focus: 0 0 0 3px rgba(225, 112, 60, 0.28);
+
+  /* ---------- Motion ---------- */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --t-fast: 120ms;
+  --t-base: 180ms;
+  --t-slow: 280ms;
+}
+
+/* ---------- Base resets bound to tokens ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-canvas);
+  color: var(--fg-1);
+  font-family: var(--font-sans);
+  font-size: var(--body-size);
+  line-height: var(--body-lh);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---------- Semantic typography (drop-in) ---------- */
+.mt-display, h1.mt-display {
+  font-family: var(--font-display);
+  font-size: var(--display-size);
+  line-height: var(--display-lh);
+  letter-spacing: var(--display-tracking);
+  font-weight: var(--display-weight);
+  color: var(--fg-1);
+}
+.mt-h1 {
+  font-family: var(--font-display);
+  font-size: var(--h1-size); line-height: var(--h1-lh);
+  letter-spacing: var(--h1-tracking); font-weight: var(--h1-weight);
+}
+.mt-h2 {
+  font-family: var(--font-display);
+  font-size: var(--h2-size); line-height: var(--h2-lh);
+  letter-spacing: var(--h2-tracking); font-weight: var(--h2-weight);
+}
+.mt-h3 { font-size: var(--h3-size); line-height: var(--h3-lh); font-weight: var(--h3-weight); }
+.mt-h4 { font-size: var(--h4-size); line-height: var(--h4-lh); font-weight: var(--h4-weight); }
+.mt-body { font-size: var(--body-size); line-height: var(--body-lh); color: var(--fg-1); }
+.mt-small { font-size: var(--small-size); line-height: var(--small-lh); color: var(--fg-2); }
+.mt-caption {
+  font-size: var(--caption-size); line-height: var(--caption-lh);
+  letter-spacing: var(--caption-tracking);
+  text-transform: uppercase; color: var(--fg-3); font-weight: 600;
+}
+.mt-code {
+  font-family: var(--font-mono);
+  font-size: var(--code-size);
+  background: var(--mt-sand);
+  padding: 2px 6px; border-radius: var(--r-xs);
+  color: var(--mt-navy-700);
+}
+/* Handwritten — for marginalia, signatures, expressive callouts */
+.mt-hand {
+  font-family: var(--font-hand);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.mt-hand-cn {
+  font-family: var(--font-hand-cn);
+  font-weight: 400;
+}
+a, .mt-link {
+  color: var(--fg-link);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out);
+}
+a:hover, .mt-link:hover {
+  color: var(--mt-navy);
+  border-bottom-color: var(--mt-navy-300);
+}

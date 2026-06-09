@@ -1,0 +1,41 @@
+# Local development infrastructure for My-ERP (P0a): Postgres + Redis.
+#   pnpm infra:up     # start in background
+#   pnpm infra:down   # stop
+# Credentials match .env.example / .env (DATABASE_URL, REDIS_URL).
+#
+# Explicit project name so My-ERP never collides with another compose stack that
+# happens to live in a directory also named "infra" (Compose defaults the project
+# name to the parent dir, which is too generic to be safe on a shared machine).
+name: my-erp
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: my-erp-postgres
+    environment:
+      POSTGRES_USER: myerp
+      POSTGRES_PASSWORD: myerp
+      POSTGRES_DB: myerp
+    # Host port 5433 (not the default 5432) so My-ERP coexists with other local
+    # Postgres instances on this machine. Container still listens on 5432 internally.
+    ports:
+      - '5433:5432'
+    volumes:
+      - my-erp-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U myerp -d myerp']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: my-erp-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - my-erp-redisdata:/data
+
+volumes:
+  my-erp-pgdata:
+  my-erp-redisdata:

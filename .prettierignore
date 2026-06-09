@@ -1,0 +1,31 @@
+node_modules
+dist
+.next
+out
+coverage
+**/generated
+**/next-env.d.ts
+prisma/migrations
+pnpm-lock.yaml
+
+# Markdown is governed by lint-docs, not Prettier
+*.md
+
+# Generated / SSOT / scaffold / non-code (root-anchored; owned by their own tooling)
+/.ai
+/.claude
+/.codex
+/.github
+/.githooks
+/ci
+/config
+/docs
+/dev-docs
+/env
+/observability
+/ops
+/ui
+/CHANGELOG.md
+
+# Vendored morethan workbench kit — kept in upstream style for easy re-sync
+/packages/ui/src

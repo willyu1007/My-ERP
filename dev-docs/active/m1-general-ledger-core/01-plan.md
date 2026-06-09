@@ -2,18 +2,32 @@
 
 每个阶段独立 PR；进入下一阶段前必须满足其验收并 CI 绿。贯穿要求：金额 Decimal、关键操作审计、OpenAPI 契约同步、单元+集成测试。
 
-## P0 — 平台底座
+> P0 拆为 P0a（可运行骨架 + CI 绿）与 P0b（认证/授权/隔离底座），各自独立 PR，更快拿到反馈。
+
+## P0a — 平台骨架 + CI 绿
 **做什么**
-- 实体化 monorepo：`apps/api`(NestJS)、`apps/web`(Next.js)、`packages/`(platform·finance-domain·db·contracts·api-client·ui)。
-- Prisma 接入 Postgres；基础 `schema.prisma`（仅平台表起步）；迁移流程跑通。
-- Logto/OIDC 登录（web）+ JWT 校验（api）；CASL 授权骨架；Postgres RLS 基线策略（按 ledgerBookId/orgId）。
-- 审计日志表（append-only）；OTel + 结构化日志；env 契约接入（`env/`）。
+- 实体化 monorepo：`apps/{api(NestJS),web(Next.js),workers(BullMQ 占位)}`、`packages/{platform,finance-domain,db,contracts,api-client,ui}`；各包最小 `package.json`+`tsconfig`。
+- 根脚本实体化：`dev/build/lint/typecheck/test`（pnpm `-r`）。
+- Prisma 接入 Postgres：SSOT 为 **root `prisma/schema.prisma`**（对齐 `docs/project/db-ssot.json`）；最小 append-only `AuditRecord` 表起步；`packages/db` 提供 PrismaClient 单例 + 仓储样例（仅 `packages/db` import Prisma）；首个迁移跑通；`ctl-db-ssot sync-to-context` 刷新 `docs/context/db/schema.json`。
+- 本地基础设施：`docker-compose`（Postgres + Redis）；`.env.example` 对齐 `env/` 契约。
+- `apps/api`：`/health`（含 DB ping）；`apps/web`：morethan 风格占位首页。
 
 **验收**
-- [ ] `pnpm dev` 可同时起 api/web；健康检查通。
-- [ ] Logto 登录 → api 校验 JWT → 拿到用户/组织身份。
-- [ ] 一个受保护接口经 CASL 鉴权；RLS 基线在 DB 层生效（越权查询返回空/拒绝）。
-- [ ] CI（lint/test/build）绿。
+- [ ] `pnpm dev` 可同时起 api/web；`/health` 通（含 DB ping）。
+- [ ] `prisma migrate` 在本地 Postgres 跑通；DB 契约已 sync。
+- [ ] `pnpm -r lint/typecheck/test/build` 全绿；CI 构建 job 绿。
+
+## P0b — 认证 / 授权 / 隔离底座
+**做什么**
+- `IdentityProvider` 抽象 + mock 实现；api JWT 校验中间件，解析 `orgId`/`ledgerBookId` 注入请求作用域（Logto 先 mock，后接真实租户）。
+- CASL 授权骨架（一个受保护接口示例）。
+- Postgres RLS 基线策略（按 `ledgerBookId`/`orgId`）：请求中间件设/清 `app.current_ledger` 会话变量，连接归还前清理（`$transaction` + `SET LOCAL`）。
+- 审计写入封装（append-only）；OTel + 结构化日志；集成测试库（testcontainers）。
+
+**验收**
+- [ ] mock 身份注入 → 受保护接口经 CASL 鉴权。
+- [ ] RLS 基线在 DB 层生效（越权查询返回空/拒绝）+ 集成测试覆盖。
+- [ ] 关键操作写 append-only 审计；OTel 有 trace；CI 绿。
 
 ## P1 — 组织 / 账套 / 邀请 / 权限
 **做什么**

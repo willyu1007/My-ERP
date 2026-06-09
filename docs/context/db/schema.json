@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-06-05T08:20:57.676Z",
+  "updatedAt": "2026-06-06T04:59:03.781Z",
   "ssot": {
     "mode": "repo-prisma",
     "source": {
@@ -10,11 +10,128 @@
   },
   "database": {
     "kind": "relational",
-    "dialect": "generic",
+    "dialect": "postgresql",
     "name": "",
     "schemas": []
   },
   "enums": [],
-  "tables": [],
-  "notes": "Missing prisma schema at prisma/schema.prisma. Create it, then re-run ctl-db-ssot."
+  "tables": [
+    {
+      "name": "AuditRecord",
+      "dbName": "audit_record",
+      "schema": null,
+      "columns": [
+        {
+          "name": "action",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "actorId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "actor_id",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "created_at",
+          "dbType": "Timestamptz",
+          "default": "now()",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "entityId",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "entity_id",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "entityType",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "entity_type",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "id",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": "Uuid",
+          "default": "uuid()",
+          "primaryKey": true,
+          "unique": false
+        },
+        {
+          "name": "ledgerBookId",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "ledger_book_id",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "metadata",
+          "type": "Json",
+          "nullable": true,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        }
+      ],
+      "relations": [],
+      "indexes": [
+        {
+          "type": "index",
+          "fields": [
+            "entityType",
+            "entityId"
+          ],
+          "name": null,
+          "map": null
+        },
+        {
+          "type": "index",
+          "fields": [
+            "ledgerBookId",
+            "createdAt"
+          ],
+          "name": null,
+          "map": null
+        }
+      ]
+    }
+  ],
+  "notes": "Generated from Prisma schema.prisma (SSOT: repo-prisma)."
 }

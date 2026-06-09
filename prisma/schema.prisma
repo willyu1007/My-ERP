@@ -1,0 +1,36 @@
+// My-ERP Prisma schema — single source of truth (mode: repo-prisma).
+// Path is fixed by docs/project/db-ssot.json; refresh the DB context contract with
+//   node .ai/scripts/ctl-db-ssot.mjs sync-to-context
+//
+// Hard constraints reflected here:
+//  - Money is NUMERIC/Decimal, never float (see finance tables in P2+).
+//  - Accounting archives + audit are append-only: no physical delete, ever.
+//  - Multi-tenant rows carry ledgerBookId/orgId for app-scope + Postgres RLS (P0b).
+//
+// P0a ships only the append-only AuditRecord. Platform tables (Organization,
+// Membership, Invitation, LedgerBook, AccountingPeriod) land in P0b/P1.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Append-only operation audit log (>= 1y retention). Never updated or deleted.
+model AuditRecord {
+  id           String   @id @default(uuid()) @db.Uuid
+  actorId      String   @map("actor_id")
+  action       String
+  entityType   String   @map("entity_type")
+  entityId     String?  @map("entity_id")
+  ledgerBookId String?  @map("ledger_book_id")
+  metadata     Json?
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([ledgerBookId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_record")
+}

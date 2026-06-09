@@ -1,0 +1,10 @@
+/*
+ * @my-erp/ui — morethan workbench styles. Import once at the app root:
+ *   import '@my-erp/ui/styles.css';
+ * Layer order matters: brand tokens → mt-* components → wb-* workbench layout.
+ * Visual values live here (tokens/contract); feature code stays token-only
+ * per ui/config/governance.json.
+ */
+@import './app-tokens.css';
+@import './components.css';
+@import './workbench.css';

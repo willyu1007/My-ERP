@@ -25,6 +25,23 @@ init/.init-state.json
 # Node
 node_modules/
 
+# Build artifacts
+dist/
+.next/
+*.tsbuildinfo
+out/
+
+# Env (never commit real secrets; use .env.example)
+.env
+.env.*
+!.env.example
+
+# Prisma generated client
+**/generated/
+
+# Test / coverage
+coverage/
+
 # Python
 __pycache__/
 *.pyc

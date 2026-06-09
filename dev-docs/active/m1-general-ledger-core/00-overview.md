@@ -4,8 +4,8 @@
 My-ERP 已完成初始化（脚手架 + 契约），但尚无任何财务领域实现。M1 要落地**总账核心闭环**与平台底座，使会计能完成「建科目 → 制单 → 审核 → 过账 → 余额/账簿 → 期初建账」的最小可用闭环。
 
 ## Status
-- **planned** —— 规划完成，待用户确认后进入实现（P0 起）。
-- Next concrete step：用户确认 roadmap/plan 后，开 P0 分支，实体化 `apps/api`（NestJS）与 Prisma 接入。
+- **P0a done / P0b next** —— P0a（平台骨架 + CI 绿）已实现并本地验证通过（见 04-verification）。在 `main` 上实现（用户指示不另开分支）。
+- Next concrete step：P0b —— `IdentityProvider` 抽象 + mock、JWT 中间件、CASL 授权骨架、Postgres RLS 基线（`SET LOCAL app.current_ledger`）、审计写入封装、OTel + testcontainers 集成测试。
 
 ## Goal
 组织/账套/邀请权限底座 + 会计科目体系 + 记账凭证（借贷平衡/审核/过账/红冲）+ 期初建账 + 科目余额与试算平衡，全程合规可审计。

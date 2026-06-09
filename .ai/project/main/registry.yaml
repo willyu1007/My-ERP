@@ -1,12 +1,3 @@
-# Project registry (template)
-#
-# This file is created by: `node .ai/scripts/ctl-project-governance.mjs init --project <slug>`
-# It is the semantic SSOT for Milestones/Features/Requirements/Tasks.
-#
-# IMPORTANT:
-# - Task progress status is derived from `dev-docs/**/active/<task>/00-overview.md` (SoT).
-# - Task IDs are anchored in `dev-docs/**/active/<task>/.ai-task.yaml` (SoT for identity).
-
 version: 1
 
 project:
@@ -18,17 +9,31 @@ project:
 
 milestones:
   - id: M-000
-    title: Inbox / Triage
+    title: "Inbox / Triage"
     status: in-progress
-    description: Triage queue for new or unplanned work.
+    description: "Triage queue for new or unplanned work."
 
 features:
   - id: F-000
-    title: Inbox / Untriaged
-    milestone_id: M-000
+    title: "Inbox / Untriaged"
     status: in-progress
-    description: Untriaged tasks live here until mapped to a real feature.
+    description: "Untriaged tasks live here until mapped to a real feature."
+    milestone_id: M-000
 
 requirements: []
 
-tasks: []
+tasks:
+  - id: T-001
+    slug: m1-general-ledger-core
+    status: planned
+    milestone_id: M-000
+    feature_id: F-000
+    dev_docs_path: dev-docs/active/m1-general-ledger-core
+    updated: 2026-06-06
+  - id: T-002
+    slug: web-workbench-foundation
+    status: planned
+    milestone_id: M-000
+    feature_id: F-000
+    dev_docs_path: dev-docs/active/web-workbench-foundation
+    updated: 2026-06-09

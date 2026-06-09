@@ -8,15 +8,41 @@
     "node": ">=20.0.0"
   },
   "packageManager": "pnpm@9.0.0",
+  "prisma": {
+    "schema": "prisma/schema.prisma"
+  },
   "scripts": {
-    "build": "echo \"Add build script\"",
-    "dev": "echo \"Add dev script\"",
-    "lint": "echo \"Add lint script\"",
-    "test": "echo \"Add test script\"",
-    "typecheck": "tsc --noEmit"
+    "postinstall": "prisma generate --schema prisma/schema.prisma",
+    "dev": "pnpm --filter \"./packages/*\" build && pnpm --parallel --filter \"@my-erp/api\" --filter \"@my-erp/web\" dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint apps packages",
+    "test": "vitest run",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:generate": "prisma generate --schema prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema prisma/schema.prisma",
+    "db:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
+    "db:studio": "prisma studio --schema prisma/schema.prisma",
+    "db:sync-context": "node .ai/scripts/ctl-db-ssot.mjs sync-to-context",
+    "infra:up": "docker compose -f infra/docker-compose.yml up -d",
+    "infra:down": "docker compose -f infra/docker-compose.yml down",
+    "ui:validate": "python3 .ai/skills/features/ui/ui-system-bootstrap/scripts/ui_specctl.py --repo-root . validate",
+    "ui:codegen": "python3 .ai/skills/features/ui/ui-system-bootstrap/scripts/ui_specctl.py --repo-root . codegen",
+    "ui:guard": "node scripts/ui-governance-guard.mjs",
+    "ui:governance": "pnpm ui:validate && pnpm ui:guard"
   },
   "devDependencies": {
-    "typescript": "^5.4.0"
+    "@eslint/js": "^9.9.0",
+    "@types/node": "^20.14.0",
+    "eslint": "^9.9.0",
+    "prettier": "^3.3.0",
+    "prisma": "^6.2.0",
+    "typescript": "^5.5.0",
+    "typescript-eslint": "^8.3.0",
+    "vitest": "^2.0.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.2.0"
   }
 }
-

@@ -3,7 +3,18 @@
 > 解决重大错误/死胡同后追加历史教训（append-only）。每条含：症状 · 根因 · 尝试过什么 · 修复 · 预防。
 
 ## do-not-repeat（速览）
-_(暂无。)_
+
+### docker compose 工程名默认取父目录名 → 跨项目串台（P0a）
+- 症状：`docker compose -f infra/docker-compose.yml up` 把本机另一个项目的 `wechatrag-postgres` 容器“Recreated”，其容器消失。
+- 根因：Compose 默认 project name = compose 文件父目录名（这里是通用的 `infra`）；本机另一栈的 compose 也在某个 `infra/` 目录下，两者共享 project=`infra`，于是按 (project,service) 归并、改名重建了对方容器。
+- 修复：compose 顶层显式 `name: my-erp` 隔离工程名；并把宿主端口避让到非默认（Postgres 5433、web 3200）。对方**数据卷未受影响**（我用独立的 `my-erp-pgdata`），重启对方 compose 即可恢复其容器。
+- 预防：任何 compose 文件都写显式 `name:`；放在通用目录名（infra/docker/deploy）下时尤其如此。共享开发机上不要占用默认端口（5432/3000）。
+
+### NestJS dev 用 tsx/esbuild → DI 注入 undefined → 运行时 500（P0a）
+- 症状：`pnpm build` 后 `node dist/main.js` 的 `/health` 正常 200；但 `pnpm dev`（tsx watch）下 `/health` 必 500（`this.health` 为 undefined）。
+- 根因：esbuild/tsx **不产出** `emitDecoratorMetadata`，Nest 按构造参数类型做 DI 时拿不到类型元数据 → 注入 undefined。tsc 会产出，故构建版正常。
+- 修复：dev runner 换 **swc-node**（`node --watch -r @swc-node/register src/main.ts`），swc 读 tsconfig 的 `emitDecoratorMetadata`/`experimentalDecorators` 并产出元数据。
+- 预防：用 Nest（或任何依赖装饰器元数据的库）时 dev 运行器必须支持 `emitDecoratorMetadata`——swc-node / `nest start` / ts-node 可，纯 esbuild/tsx 不可。验证 P0 骨架要 smoke 真实 `pnpm dev`，别只测构建产物。
 
 ## 预判（来自硬约束，避免踩坑）
 - 金额禁用浮点：聚合/比较一律走 Decimal；测试覆盖分/厘进位。
