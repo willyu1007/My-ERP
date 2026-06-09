@@ -53,7 +53,7 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '201':
+        '200':
           description: Authorized
           content:
             application/json:

@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-09T22:53:39.222Z",
+  "generatedAt": "2026-06-09T23:23:49.385Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "753e6f54f1d2549605e3a0c0d224cd004e8b3465d6feac36edba0b6553601333",
+  "sourceChecksumSha256": "17b993b55e5b2e86f1ab4b02445e5e6691d5e34cd94ce900358ea65bc73eaafe",
   "stats": {
     "totalEndpoints": 3,
     "byTag": {
@@ -77,7 +77,7 @@
         "body": null
       },
       "output": {
-        "successStatus": 201,
+        "successStatus": 200,
         "coreFields": [
           "ok",
           "actor"

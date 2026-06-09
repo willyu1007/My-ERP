@@ -79,5 +79,30 @@ export async function appendAuditRecordTx(tx: TxClient, input: AuditRecordInput)
   return tx.auditRecord.create({ data: auditData(input) });
 }
 
+/** Domain shape for an audit entry (repositories return entities, not Prisma rows). */
+export interface AuditEntry {
+  id: string;
+  actorId: string;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  ledgerBookId: string | null;
+  createdAt: Date;
+}
+
+/** List recent audit entries within the active ledger scope (RLS-filtered). */
+export async function listAuditEntriesTx(tx: TxClient, take = 50): Promise<AuditEntry[]> {
+  const rows = await tx.auditRecord.findMany({ orderBy: { createdAt: 'desc' }, take });
+  return rows.map((r) => ({
+    id: r.id,
+    actorId: r.actorId,
+    action: r.action,
+    entityType: r.entityType,
+    entityId: r.entityId,
+    ledgerBookId: r.ledgerBookId,
+    createdAt: r.createdAt,
+  }));
+}
+
 export { Prisma } from '@prisma/client';
 export type { PrismaClient } from '@prisma/client';

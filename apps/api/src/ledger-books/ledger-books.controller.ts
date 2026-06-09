@@ -1,10 +1,11 @@
-import { Controller, Get, Post, UseGuards } from '@nestjs/common';
-import { appendAuditRecordTx, withLedgerScope } from '@my-erp/db';
+import { Controller, Get, HttpCode, Post, UseGuards } from '@nestjs/common';
+import { appendAuditRecordTx, listAuditEntriesTx, withLedgerScope } from '@my-erp/db';
 import { withSpan, type Identity } from '@my-erp/platform';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentIdentity } from '../auth/current-identity.decorator';
 import { RequirePermission } from '../auth/permission.decorator';
 import { PermissionGuard } from '../auth/permission.guard';
+import { TraceId } from '../auth/trace-id.decorator';
 
 /**
  * Example protected resource (P0b skeleton — real LedgerBook CRUD lands in P1).
@@ -16,10 +17,10 @@ import { PermissionGuard } from '../auth/permission.guard';
 export class LedgerBooksController {
   @Get()
   @RequirePermission('read', 'LedgerBook')
-  async list(@CurrentIdentity() identity: Identity) {
+  async list(@CurrentIdentity() identity: Identity, @TraceId() traceId?: string) {
     return withSpan(
       'ledger-books.list',
-      { userId: identity.userId, orgId: identity.orgId, ledgerBookId: identity.ledgerBookId, action: 'read' },
+      { traceId, userId: identity.userId, orgId: identity.orgId, ledgerBookId: identity.ledgerBookId, action: 'read' },
       async () => {
         const recent = await withLedgerScope(identity.ledgerBookId, async (tx) => {
           await appendAuditRecordTx(tx, {
@@ -28,7 +29,7 @@ export class LedgerBooksController {
             entityType: 'LedgerBook',
             ledgerBookId: identity.ledgerBookId,
           });
-          return tx.auditRecord.findMany({ orderBy: { createdAt: 'desc' }, take: 5 });
+          return listAuditEntriesTx(tx, 5);
         });
         return { ledgerBookId: identity.ledgerBookId, roles: identity.roles, recentAuditCount: recent.length };
       },
@@ -37,6 +38,7 @@ export class LedgerBooksController {
 
   /** Operation-level authz demo: only roles entitled to 过账 (post Voucher) pass. */
   @Post('post-check')
+  @HttpCode(200)
   @RequirePermission('post', 'Voucher')
   postCheck(@CurrentIdentity() identity: Identity) {
     return { ok: true, actor: identity.userId };
