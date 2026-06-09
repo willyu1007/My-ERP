@@ -833,6 +833,14 @@ function checkNamingConventions(rootDir) {
     const dirName = path.basename(dir);
     const relPath = path.relative(rootDir, dir);
 
+    // Next.js App Router conventions are framework-mandated and intentionally
+    // not kebab-case: route groups "(group)", dynamic/catch-all segments
+    // "[id]"/"[...slug]"/"[[...slug]]", parallel/private folders "@slot"/"_x".
+    // Skip naming checks for these when under an `app/` route tree.
+    const underAppRouter = /(^|[\\/])app([\\/])/.test(dir);
+    const isNextSegment = /^\(.*\)$|^\[\[?\.{0,3}.+\]\]?$|^@.+$|^_.+$/.test(dirName);
+    if (underAppRouter && isNextSegment) continue;
+
     // Check for forbidden directory names
     if (FORBIDDEN_DIRS.has(dirName.toLowerCase())) {
       issues.push({

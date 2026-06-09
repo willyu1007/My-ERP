@@ -28,3 +28,30 @@
 - **死依赖**：删 root `tsx`、`apps/api` 与 `finance-domain` 的 `vitest`（测试统一走根 vitest）；`apps/api` 补 `@swc/helpers` 消除 peer 告警。
 - **prettier 加固**：`.prettierignore` 根锚定，排除生成/SSOT/脚手架与 vendored kit（`packages/ui/src` 保留上游风格便于 re-sync），`pnpm format` 不再误伤 `.ai`/docs/scaffold。
 - 全门禁绿：typecheck / lint / ui:governance / test / build / lint-docs。
+
+## W1 — ERP 总览 + 财务模块凭证三页（完成）
+
+**新增了什么**（全部在 `apps/web/src`，零改动 `packages/ui`）
+- **财务语义层 `lib/finance/`**：
+  - `types.ts` — VM 单一事实源（`AccountVM`/`VoucherLineVM`/`VoucherVM` + 中文标签 + `voucherStatusTone` 状态→Badge tone 映射，领域语义只在此层）。
+  - `money.ts` + `money.test.ts` — 前端借贷平衡用**整数分**精确计算（`toCents`/`centsToString`/`sumCents`/`isBalanced`），零浮点；镜像 `@my-erp/finance-domain` 不变式（未引该包以保持零侵入：它是 commonjs+dist，不在 web 依赖/transpile 链）。5 项单测（含 0.1+0.2 漂移）。
+  - `format.ts` — `formatMoney`（千分位 2dp）/`formatPeriod`。
+  - `fixtures.ts` — 12 个《小企业准则》常用科目 + 6 张凭证（各状态全覆盖；总额与 `balanced` 由分录**派生**，fixtures 永不失衡）。
+  - `data-source.ts` — `listVouchers`/`getVoucher`/`listAccounts`，**唯一 demo→真切换点**（`TODO(P1–P5)` 注释 + 形状不变即可换 `@my-erp/api-client`）。
+  - `scene-config.tsx` — 财务 `ShellNav`（`home`=ERP 总览；财务模块 group：记账凭证/会计科目/账簿）。
+- **路由组 `app/(workbench)/`**（薄页面）：
+  - `layout.tsx` — `AppShell` 外壳（注入 financeNav + 待审 badge，mock 身份）。
+  - `page.tsx`（`/`）— **ERP 总览**：财务本期 StatStrip + 模块卡（财务「已上线」/采购·库存·销售·人力「敬请期待」），落实「模块化平台、财务是首个模块」。
+  - `finance/vouchers/` — 列表（server→`VouchersClient`：`ListView`+`EntityTable`，工作流分段导航 制单/审核/过账/红冲 + 计数）；`[id]/` 详情（detail 模板 `wb-grid--sidebar`：分录表 + 摘要/状态/合计 card；审核/过账/红冲 演示动作 toast）；`new/` 制单（form 模板：多分录 + 科目下拉 + **前端借贷平衡校验**，不平/分录错禁止提交 + field 级错误）。
+  - `finance/accounts`·`finance/ledger` — 可点空状态页（W2 占位）；`system/health` — P0a 探活页迁入（带 force-dynamic）。
+
+**决策（实现期落定）**
+- **首页升级为 ERP 整体**（用户修正）：删 `app/page.tsx`（health），`/` 改由 `(workbench)/page.tsx` 承载平台总览；财务按 `/finance/` 命名空间，为未来模块留位。
+- **凭证二级导航 = 工作流动作**：用 `wb-segmented` 客户端分段（local state，按状态分桶 + 计数），而非 `SceneNav`（其 active 仅认 pathname，单页 query 无法驱动）。审核/过账/红冲 同时作为**详情页动作**（贴合「按角色组织工作流」）。
+- **零浮点不引外包**：前端校验自带整数分实现，不动后端 `finance-domain` 打包。
+- **tsconfig 加 `@/*`→`src/*` 别名**（Next 原生支持），lib 导入清爽。
+
+**遗留 TODO**
+- W2：科目树 + 账簿（试算平衡/总账/明细账）+ 其余角色工作台 + 待办队列。
+- 随 M1 P1–P5：`data-source` 切真 `/v1`；VM 命名与 `docs/context/api` 契约对齐核对。
+- （沿用 W0）字体本地化去外部 CDN @import。
