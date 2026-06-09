@@ -52,6 +52,20 @@
 - **tsconfig 加 `@/*`→`src/*` 别名**（Next 原生支持），lib 导入清爽。
 
 **遗留 TODO**
-- W2：科目树 + 账簿（试算平衡/总账/明细账）+ 其余角色工作台 + 待办队列。
 - 随 M1 P1–P5：`data-source` 切真 `/v1`；VM 命名与 `docs/context/api` 契约对齐核对。
 - （沿用 W0）字体本地化去外部 CDN @import。
+
+## W2a — 会计科目体系（完成）
+
+**改了什么**（全部在 `apps/web/src`）
+- `lib/finance/types.ts`：`AccountVM` 扩展 `parentCode`/`level`/`auxTypes`/`active`；新增 `AuxType`（往来=客户/供应商·部门·项目）+ `AUX_TYPE_LABELS`。
+- `lib/finance/fixtures.ts`：`ACCOUNTS` 重建为《小企业准则》多级科目表（`1002 银行存款`→`100201 工商银行`/`100202 建设银行`（停用）；`2221 应交税费`→`222101 应交增值税`；新增 `5001 生产成本`），经 `ACCOUNT_SEEDS` 派生；**3 条凭证分录改挂末级科目**（v-001/v-002→工商银行，v-003→应交增值税），金额不变仍借贷平衡。
+- `app/(workbench)/finance/accounts/`：占位 → `page.tsx`（server, force-dynamic, `listAccounts`）+ `accounts-client.tsx`（`Scene`：类别分段 + `EntityTable` 层级表 + 概览 `StatStrip`）。层级用名称缩进（编码升序=树前序），编码列**不可排序**以守树序。
+- `new-voucher-client.tsx`：科目下拉仅列**末级且启用**（`a.isLeaf && a.active`），accounting 正确性。
+
+**决策**
+- 不引树组件（kit 无）：用「编码=树序 + 名称缩进标识」呈现层级，零改 `packages/ui`、governance-safe（缩进用全角空格，非 inline-style）。
+- 科目走 data-source seam（同凭证）；W2a 未做科目详情/CRUD（读视图先行）。
+
+**遗留 TODO（W2a）**
+- 科目详情页 / 增删改 / 停用末级校验（待真实 API，M1 P2）。

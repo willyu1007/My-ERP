@@ -1,12 +1,9 @@
-import { EmptyState } from '@my-erp/ui';
+import { listAccounts } from '@/lib/finance/data-source';
+import { AccountsClient } from './accounts-client';
 
-export default function AccountsPage() {
-  return (
-    <div className="wb-scene wb-stack wb-stack--lg">
-      <EmptyState
-        title="会计科目 · 敬请期待"
-        desc="科目体系（《小企业会计准则》模板 + 多级科目树 + 辅助核算）将在 W2 / M1 P2 落地。"
-      />
-    </div>
-  );
+export const dynamic = 'force-dynamic';
+
+export default async function AccountsPage() {
+  const accounts = await listAccounts();
+  return <AccountsClient accounts={accounts} />;
 }

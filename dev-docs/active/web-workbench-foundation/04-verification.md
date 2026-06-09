@@ -30,3 +30,15 @@
 ### W1 代码自审复核 — 2026-06-10
 
 审查后修复 4 处并重验全绿：① overview + (workbench)/layout 直接 import fixtures **绕过 data-source seam** → 改走 `listVouchers()`（overview 转 force-dynamic）；② 草稿详情误导的「编辑」链到空白 `/new` → 移除；③ 空表单余额提示「借贷不平·差额 0.00」→ 中性态「尚未录入金额」；④ 摘要「请填写摘要」首屏即红（过早校验）→ 改 onBlur touched 后提示。重验：`typecheck`(9/9)·`test`(10)·`lint`·`ui:governance`(19 token-only)·`build`(8 路由，`/` 转 `ƒ`) 全绿；`next start` 复核：草稿详情无「编辑」、制单空表单显示「尚未录入金额」、overview 经 data-source 渲染、各路由 200。
+
+## W2a — 会计科目体系 — 2026-06-10
+
+| 验证项 | 命令 | 结果 |
+|---|---|---|
+| 类型检查 | `pnpm -r typecheck` | ✓ 9/9（AccountVM 扩展字段 + fixtures 派生）|
+| 单测 | `pnpm test` | ✓ 10 passed（凭证分录改挂末级后仍平衡，未触动 money 单测）|
+| Lint / governance | `pnpm lint` · `pnpm ui:governance` | ✓ 无告警；guard 20 feature 文件 token-only |
+| 构建 | `pnpm build` | ✓ `/finance/accounts` 由静态占位转 `ƒ`（1.59 kB）|
+| 运行时 | `next start` → `curl :3200` | ✓ 科目树渲染（银行存款▸工商/建设银行（停用）、应交增值税、生产成本、客户/部门 aux、科目总数/末级 stats）；`v-001` 改挂工商银行仍「借贷平衡」；accounts/vouchers/new 均 200 |
+
+要点：层级表以「编码=树序 + 名称缩进」呈现，编码列不可排序以守树序；制单下拉仅末级且启用科目；科目读取走 data-source seam。

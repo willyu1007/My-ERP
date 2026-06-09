@@ -40,6 +40,8 @@ export function NewVoucherClient({ accounts }: { readonly accounts: readonly Acc
   const diffCents = Math.abs(debitCents - creditCents);
   const noAmounts = debitCents === 0 && creditCents === 0;
   const summaryError = summaryTouched && summary.trim() === '';
+  // 只能挂末级且启用的科目（父级/停用科目不可记账）。
+  const postable = accounts.filter((a) => a.isLeaf && a.active);
 
   function lineError(l: DraftLine): string | null {
     const hasDebit = l.debit.trim() !== '';
@@ -122,7 +124,7 @@ export function NewVoucherClient({ accounts }: { readonly accounts: readonly Acc
                         onChange={(e) => updateLine(l.key, { accountCode: e.target.value })}
                       >
                         <option value="">选择科目</option>
-                        {accounts.map((a) => (
+                        {postable.map((a) => (
                           <option key={a.id} value={a.code}>
                             {a.code} {a.name}
                           </option>

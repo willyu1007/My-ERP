@@ -4,22 +4,60 @@
  * balanced (借贷必平); totals + balance flag are derived, not hand-written.
  */
 import { centsToString, sumCents } from './money';
-import type { AccountVM, VoucherLineVM, VoucherStatus, VoucherVM } from './types';
+import type {
+  AccountCategory,
+  AccountDirection,
+  AccountVM,
+  AuxType,
+  VoucherLineVM,
+  VoucherStatus,
+  VoucherVM,
+} from './types';
 
-export const ACCOUNTS: readonly AccountVM[] = [
-  { id: 'a-1001', code: '1001', name: '库存现金', category: 'asset', direction: 'debit', isLeaf: true },
-  { id: 'a-1002', code: '1002', name: '银行存款', category: 'asset', direction: 'debit', isLeaf: true },
-  { id: 'a-1122', code: '1122', name: '应收账款', category: 'asset', direction: 'debit', isLeaf: true },
-  { id: 'a-1601', code: '1601', name: '固定资产', category: 'asset', direction: 'debit', isLeaf: true },
-  { id: 'a-2202', code: '2202', name: '应付账款', category: 'liability', direction: 'credit', isLeaf: true },
-  { id: 'a-2211', code: '2211', name: '应付职工薪酬', category: 'liability', direction: 'credit', isLeaf: true },
-  { id: 'a-2221', code: '2221', name: '应交税费', category: 'liability', direction: 'credit', isLeaf: true },
-  { id: 'a-4001', code: '4001', name: '实收资本', category: 'equity', direction: 'credit', isLeaf: true },
-  { id: 'a-6001', code: '6001', name: '主营业务收入', category: 'profitLoss', direction: 'credit', isLeaf: true },
-  { id: 'a-6401', code: '6401', name: '主营业务成本', category: 'profitLoss', direction: 'debit', isLeaf: true },
-  { id: 'a-6601', code: '6601', name: '销售费用', category: 'profitLoss', direction: 'debit', isLeaf: true },
-  { id: 'a-6602', code: '6602', name: '管理费用', category: 'profitLoss', direction: 'debit', isLeaf: true },
+interface AccountSeed {
+  readonly code: string;
+  readonly name: string;
+  readonly category: AccountCategory;
+  readonly direction: AccountDirection;
+  readonly isLeaf: boolean;
+  readonly parentCode: string | null;
+  readonly level: number;
+  readonly auxTypes?: readonly AuxType[];
+  readonly active?: boolean;
+}
+
+// 《小企业会计准则》常用科目，含银行存款 / 应交税费的父子级；编码升序 = 树前序。
+const ACCOUNT_SEEDS: readonly AccountSeed[] = [
+  { code: '1001', name: '库存现金', category: 'asset', direction: 'debit', isLeaf: true, parentCode: null, level: 1 },
+  { code: '1002', name: '银行存款', category: 'asset', direction: 'debit', isLeaf: false, parentCode: null, level: 1 },
+  { code: '100201', name: '工商银行', category: 'asset', direction: 'debit', isLeaf: true, parentCode: '1002', level: 2 },
+  { code: '100202', name: '建设银行', category: 'asset', direction: 'debit', isLeaf: true, parentCode: '1002', level: 2, active: false },
+  { code: '1122', name: '应收账款', category: 'asset', direction: 'debit', isLeaf: true, parentCode: null, level: 1, auxTypes: ['customer'] },
+  { code: '1601', name: '固定资产', category: 'asset', direction: 'debit', isLeaf: true, parentCode: null, level: 1 },
+  { code: '2202', name: '应付账款', category: 'liability', direction: 'credit', isLeaf: true, parentCode: null, level: 1, auxTypes: ['supplier'] },
+  { code: '2211', name: '应付职工薪酬', category: 'liability', direction: 'credit', isLeaf: true, parentCode: null, level: 1 },
+  { code: '2221', name: '应交税费', category: 'liability', direction: 'credit', isLeaf: false, parentCode: null, level: 1 },
+  { code: '222101', name: '应交增值税', category: 'liability', direction: 'credit', isLeaf: true, parentCode: '2221', level: 2 },
+  { code: '4001', name: '实收资本', category: 'equity', direction: 'credit', isLeaf: true, parentCode: null, level: 1 },
+  { code: '5001', name: '生产成本', category: 'cost', direction: 'debit', isLeaf: true, parentCode: null, level: 1, auxTypes: ['project'] },
+  { code: '6001', name: '主营业务收入', category: 'profitLoss', direction: 'credit', isLeaf: true, parentCode: null, level: 1 },
+  { code: '6401', name: '主营业务成本', category: 'profitLoss', direction: 'debit', isLeaf: true, parentCode: null, level: 1 },
+  { code: '6601', name: '销售费用', category: 'profitLoss', direction: 'debit', isLeaf: true, parentCode: null, level: 1, auxTypes: ['department'] },
+  { code: '6602', name: '管理费用', category: 'profitLoss', direction: 'debit', isLeaf: true, parentCode: null, level: 1, auxTypes: ['department'] },
 ];
+
+export const ACCOUNTS: readonly AccountVM[] = ACCOUNT_SEEDS.map((s) => ({
+  id: `a-${s.code}`,
+  code: s.code,
+  name: s.name,
+  category: s.category,
+  direction: s.direction,
+  isLeaf: s.isLeaf,
+  parentCode: s.parentCode,
+  level: s.level,
+  auxTypes: s.auxTypes ?? [],
+  active: s.active ?? true,
+}));
 
 interface VoucherSeed {
   readonly id: string;
@@ -58,7 +96,7 @@ const SEEDS: readonly VoucherSeed[] = [
     checker: '李主管',
     attachments: 2,
     lines: [
-      { id: 'l-001-1', accountCode: '1002', accountName: '银行存款', summary: '收到股东投资', debit: '500000.00', credit: null },
+      { id: 'l-001-1', accountCode: '100201', accountName: '工商银行', summary: '收到股东投资', debit: '500000.00', credit: null },
       { id: 'l-001-2', accountCode: '4001', accountName: '实收资本', summary: '收到股东投资', debit: null, credit: '500000.00' },
     ],
   },
@@ -74,7 +112,7 @@ const SEEDS: readonly VoucherSeed[] = [
     attachments: 1,
     lines: [
       { id: 'l-002-1', accountCode: '6602', accountName: '管理费用', summary: '购买办公用品', debit: '1200.00', credit: null },
-      { id: 'l-002-2', accountCode: '1002', accountName: '银行存款', summary: '购买办公用品', debit: null, credit: '1200.00' },
+      { id: 'l-002-2', accountCode: '100201', accountName: '工商银行', summary: '购买办公用品', debit: null, credit: '1200.00' },
     ],
   },
   {
@@ -90,7 +128,7 @@ const SEEDS: readonly VoucherSeed[] = [
     lines: [
       { id: 'l-003-1', accountCode: '1122', accountName: '应收账款', summary: '销售商品', debit: '33900.00', credit: null },
       { id: 'l-003-2', accountCode: '6001', accountName: '主营业务收入', summary: '销售商品', debit: null, credit: '30000.00' },
-      { id: 'l-003-3', accountCode: '2221', accountName: '应交税费', summary: '销项税额 13%', debit: null, credit: '3900.00' },
+      { id: 'l-003-3', accountCode: '222101', accountName: '应交增值税', summary: '销项税额 13%', debit: null, credit: '3900.00' },
     ],
   },
   {

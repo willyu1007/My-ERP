@@ -12,18 +12,29 @@ export type AccountCategory = 'asset' | 'liability' | 'equity' | 'cost' | 'profi
 /** 科目余额方向（借/贷）。 */
 export type AccountDirection = 'debit' | 'credit';
 
+/** 辅助核算维度（往来 = 客户/供应商，部门，项目）。 */
+export type AuxType = 'customer' | 'supplier' | 'department' | 'project';
+
 /** 凭证状态机（M1 P3 落地：草稿→待审→已过账，红冲为反向凭证）。 */
 export type VoucherStatus = 'draft' | 'pending' | 'posted' | 'reversed';
 
 export interface AccountVM {
   readonly id: string;
-  /** 科目编码，如 "1002"。 */
+  /** 科目编码，如 "1002"；编码升序即树前序。 */
   readonly code: string;
   readonly name: string;
   readonly category: AccountCategory;
   readonly direction: AccountDirection;
   /** 末级科目才可挂分录。 */
   readonly isLeaf: boolean;
+  /** 上级科目编码；一级科目为 null。 */
+  readonly parentCode: string | null;
+  /** 层级深度（1 = 一级科目）。 */
+  readonly level: number;
+  /** 辅助核算维度；无则空数组。 */
+  readonly auxTypes: readonly AuxType[];
+  /** 是否启用（停用科目不可挂新分录）。 */
+  readonly active: boolean;
 }
 
 export interface VoucherLineVM {
@@ -73,6 +84,13 @@ export const ACCOUNT_CATEGORY_LABELS: Record<AccountCategory, string> = {
 export const ACCOUNT_DIRECTION_LABELS: Record<AccountDirection, string> = {
   debit: '借',
   credit: '贷',
+};
+
+export const AUX_TYPE_LABELS: Record<AuxType, string> = {
+  customer: '客户',
+  supplier: '供应商',
+  department: '部门',
+  project: '项目',
 };
 
 export const VOUCHER_STATUS_LABELS: Record<VoucherStatus, string> = {

@@ -33,6 +33,27 @@
 - [ ] 列表筛选/空状态/加载更多可用；详情与列表数据一致
 - [ ] governance + typecheck + build 绿；data-source 切换点有注释与 TODO（接 P1–P5）
 
+## W2 — 科目体系 / 账簿 / 角色工作台（demo 数据，分片推进）
+
+W1 后 `(workbench)` 外壳与 data-source seam 已就绪；W2 按片填充财务模块其余视图，全部沿用 W1 模板（Scene/分段导航/表格）与 seam。
+
+### W2a — 会计科目体系（科目树）
+**做什么**
+- VM 扩展 `AccountVM`（`parentCode`/`level`/`auxTypes`/`active`）+ `AuxType` 标签；fixtures 重建为《小企业准则》多级科目表（银行存款/应交税费等含父子级）；凭证分录改挂**末级**科目。
+- `/finance/accounts`：占位 → 科目树视图（按类别分段筛选 + 层级表：编码/名称含层级标识/方向/辅助核算/启停 + 概览 stats）。
+- 制单科目下拉仅列**末级且启用**科目（accounting 正确性）。
+
+**验收**
+- [ ] 科目按编码=树序展示，父子层级清晰；类别分段 + 计数可用。
+- [ ] 辅助核算（往来/部门/项目）标记正确；停用科目标识。
+- [ ] 制单只能选末级科目；typecheck/lint/test/ui:governance/build 全绿。
+
+### W2b — 账簿（试算平衡 + 总账/明细账）
+- `/finance/ledger`：从已过账凭证派生科目余额 → 试算平衡表（借=贷校验）+ 总账/明细分类账查询。
+
+### W2c — 角色工作台 + 待办队列
+- 出纳/主管/管理员/查看者各自「待办/任务」工作台；跨角色任务流转（demo）。
+
 ## 贯穿验收
 - [ ] 领域无关 ↔ 财务语义边界清晰（packages/ui vs apps/web/lib/finance）
 - [ ] VM 类型为单一事实源，后续切真接口仅换 data-source 实现
