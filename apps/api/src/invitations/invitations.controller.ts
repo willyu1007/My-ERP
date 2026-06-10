@@ -74,7 +74,21 @@ export class InvitationsController {
   @UseGuards(AuthGuard, PermissionGuard)
   @RequirePermission('read', 'Membership')
   async list(@CurrentIdentity() identity: Identity) {
-    return withOrgScope(identity.orgId, (tx) => listInvitationsTx(tx));
+    const invitations = await withOrgScope(identity.orgId, (tx) => listInvitationsTx(tx));
+    // Never expose the secret token in listings — it is delivered only via the
+    // invite channel (email). The create response carries it for the demo only.
+    return invitations.map((inv) => ({
+      id: inv.id,
+      orgId: inv.orgId,
+      invitedEmail: inv.invitedEmail,
+      role: inv.role,
+      status: inv.status,
+      invitedBy: inv.invitedBy,
+      expiresAt: inv.expiresAt,
+      acceptedBy: inv.acceptedBy,
+      acceptedAt: inv.acceptedAt,
+      createdAt: inv.createdAt,
+    }));
   }
 
   @Post(':id/revoke')

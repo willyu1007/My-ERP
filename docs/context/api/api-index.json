@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-10T02:03:28.682Z",
+  "generatedAt": "2026-06-10T02:13:26.581Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "a84ae66cd58ab82b285d87b966de2403b55f639ec23a2b6d216e67815e0fbafd",
+  "sourceChecksumSha256": "8f63ca7ab21be35413a9b13e638d51cfffa7919938c69e2933634ef84981ab92",
   "stats": {
     "totalEndpoints": 9,
     "byTag": {
@@ -183,11 +183,11 @@
           "orgId",
           "invitedEmail",
           "role",
-          "token",
           "status",
           "invitedBy",
           "expiresAt",
           "createdAt",
+          "token",
           "acceptedBy",
           "acceptedAt"
         ]

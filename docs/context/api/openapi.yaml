@@ -243,13 +243,13 @@ components:
         createdAt: { type: string, format: date-time }
     Invitation:
       type: object
-      required: [id, orgId, invitedEmail, role, token, status, invitedBy, expiresAt, createdAt]
+      required: [id, orgId, invitedEmail, role, status, invitedBy, expiresAt, createdAt]
       properties:
         id: { type: string, format: uuid }
         orgId: { type: string, format: uuid }
         invitedEmail: { type: string }
         role: { $ref: '#/components/schemas/Role' }
-        token: { type: string }
+        token: { type: string, description: 'Secret; present only in the create response, never in listings' }
         status: { type: string, enum: [pending, accepted, revoked, expired] }
         invitedBy: { type: string }
         expiresAt: { type: string, format: date-time }

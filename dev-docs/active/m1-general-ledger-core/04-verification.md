@@ -66,3 +66,9 @@
 | **端到端 HTTP**（全生命周期） | 本机 PG + seed admin + 非特权角色起 api | ✓ ① bob 接受前 GET org → **403**（非成员）② admin 邀请 bob(accountant) → pending+token ③ bob 接受（邮箱+token 匹配）→ 建 membership(accountant) ④ bob 接受后 GET org → **200**（角色现从新 membership 解析）⑤ bob(accountant) 发起邀请 → **403** ⑥ admin GET members → [admin:admin, bob:accountant] ⑦ bob 重复接受 → **400**（已是成员）；日志 0 错误 |
 
 要点：禁止自助加入（membership 仅经 accept 创建）；`PrincipalGuard` 解鸡生蛋（被邀请人尚非成员）；token 秘密 + 邮箱匹配 + 状态机三重校验。
+
+### P1 实施质量自审 — 2026-06-10（修复后重验全绿）
+
+审查（多租户 RLS + 认证 + 邀请安全）。修复 1 处：**`GET /v1/invitations` 返回了秘密 token**（凡有 read-Membership 者可见所有 pending token，纵深防御缺口；虽邮箱匹配已挡冒用）→ 列表剥离 token（仅 create 响应保留，演示用；OpenAPI token 改非必需）。e2e 复核：create 含 token、list 不含（10 字段）。
+复核确认无问题：JWT 锁 HS256（防算法混淆）；token 携 orgId 必须对上真实 membership 否则 403（claim 不可越权）；accept = 秘密 token + **token 签发的 email** 匹配（攻击者无签名密钥无法伪造 email）+ 状态机；各表 `WITH CHECK` 防跨组织写；membership 无 UPDATE/DELETE 策略（默认拒，append-向）；GUC 用 `NULLIF`、审计用 `createMany`（沿用 P1a 修复）。
+留待（非阻塞）：create 响应在真实流程也应只经邮件投递 token；Prisma 唯一/WITH CHECK 违例未全局映射为 4xx（并发重复 accept→500，@@unique 兜底正确性）；邮箱格式未校验；每请求 2 次事务（AuthGuard 解析 + handler）；过期邀请惰性（停留 pending）。
