@@ -130,8 +130,9 @@ model JournalVoucher {
   maker        String
   checker      String?
   postedAt     DateTime? @map("posted_at") @db.Timestamptz(6)
-  /// The original voucher this one reverses (set on a reversal voucher).
-  reversalOf   String?   @map("reversal_of") @db.Uuid
+  /// The original voucher this one reverses (set on a reversal voucher). Unique:
+  /// a voucher can be reversed at most once, even under concurrent requests.
+  reversalOf   String?   @unique @map("reversal_of") @db.Uuid
   /// The reversal voucher created from this one (set on the original when reversed).
   reversedBy   String?   @map("reversed_by") @db.Uuid
   attachments  Int       @default(0)

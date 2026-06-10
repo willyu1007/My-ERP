@@ -162,4 +162,18 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS + CHECK — journal voucher (ledger
     expect(after?.status).toBe('reversed');
     expect(after?.reversedBy).toBe(reversal.id);
   });
+
+  it('a voucher cannot be reversed twice (unique reversal_of guards concurrency)', async () => {
+    const original = await withLedgerScope(LB_A, async (tx) => {
+      const v = await createVoucherTx(tx, { ...balanced(LB_A), no: '记-2026-020' });
+      await setVoucherStatusTx(tx, v.id, { status: 'posted', checker: 'u2', postedAt: new Date() });
+      return getVoucherTx(tx, v.id);
+    });
+    const ctx = (no: string) => ({ no, reverser: 'u2', date: original!.date, period: original!.period, postedAt: new Date() });
+    await withLedgerScope(LB_A, (tx) => createReversalVoucherTx(tx, original!, ctx('记-2026-021')));
+    // A second reversal of the same original must violate the unique index.
+    await expect(
+      withLedgerScope(LB_A, (tx) => createReversalVoucherTx(tx, original!, ctx('记-2026-022'))),
+    ).rejects.toThrow();
+  });
 });
