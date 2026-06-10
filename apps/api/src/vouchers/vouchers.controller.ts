@@ -29,6 +29,7 @@ import {
 } from '@my-erp/db';
 import { Money, voucherBalanceError } from '@my-erp/finance-domain';
 import { withSpan, type Identity } from '@my-erp/platform';
+import { parseAmount } from '../common/parse-amount';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentIdentity } from '../auth/current-identity.decorator';
 import { CurrentLedgerBook } from '../auth/current-ledger-book.decorator';
@@ -44,14 +45,6 @@ interface ParsedLine {
   credit: string | null;
   aux?: unknown;
   cashFlowItem?: string | null;
-}
-
-function parseAmount(value: unknown, field: string): string | null {
-  if (value === undefined || value === null || value === '') return null;
-  if (typeof value !== 'string' || !/^\d+(\.\d{1,2})?$/.test(value)) {
-    throw new BadRequestException(`${field} must be a non-negative decimal (≤ 2dp)`);
-  }
-  return value;
 }
 
 function parseHeader(body: unknown): { date: string; summary: string; rawLines: unknown } {

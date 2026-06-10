@@ -120,6 +120,19 @@ export async function withOrgScope<T>(orgId: string, fn: (tx: TxClient) => Promi
   });
 }
 
+/**
+ * Run `fn` inside a single transaction with BOTH the org and ledger scopes set —
+ * for operations that touch org-scoped and ledger-scoped tables atomically
+ * (e.g. 期初建账 writes the ledger book's period + the ledger's opening balances).
+ */
+export async function withScope<T>(orgId: string, ledgerBookId: string, fn: (tx: TxClient) => Promise<T>): Promise<T> {
+  return getPrisma().$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT set_config('app.current_org', ${orgId}, true)`;
+    await tx.$executeRaw`SELECT set_config('app.current_ledger', ${ledgerBookId}, true)`;
+    return fn(tx);
+  });
+}
+
 /* ---- Platform domain entities + repositories (org-scoped) ---- */
 
 export interface OrganizationEntity {

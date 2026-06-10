@@ -145,6 +145,11 @@
 
 要点：启用期试算平衡校验（不平拒）；期初纳入派生账簿、首期以期初为基线正确累计；期初建账须在使用前（有 posted/reversed 即拒）；账套级 RLS + WITH CHECK。**M1 总账核心闭环全部完成并验证。**
 
+### P5 实施质量自审 — 2026-06-10（修复后重验全绿）
+
+修复 3 处：① **双作用域非原子** —— 期初余额（账套级）与启用期（组织级）原为两个事务，部分失败会不一致 → 新增 `withScope(orgId, ledgerBookId)`（一事务内设两个 GUC），整个期初建账（守卫 + 校验 + 替换 + 设期 + 审计）原子完成；② **重复科目码** 原会撞唯一约束报 409 → parseBody 加去重校验，清晰 **400**；③ `parseAmount` 在 vouchers/opening-balances 重复 → 抽到 `common/parse-amount.ts` 共用。重验：typecheck 9/9 · test 78 · lint · build；e2e：重复码→400、平衡 PUT（原子）→200、累计 80000+5000=85000 不变、使用后→400。
+复核确认无问题：启用期试算平衡校验（finance-domain 纯函数）；账户末级·启用校验；整组替换（delete+insert，RLS DELETE 策略）；WITH CHECK 阻跨账套；账户名取自当前科目表（setup 数据，合理）。留待（非债务）：0 额期初允许（无害）；`create Account` 权限语义略宽（可接受）。
+
 ### P2 实施质量自审 — 2026-06-10（修复后重验全绿）
 
 修复 1 处：**建子科目未校验「子编码扩展父编码」** —— 可在父 `1001` 下建 `9999`，破坏「编码升序=树前序」不变式 → parseCreateBody 加 `code.startsWith(parentCode) && code 更长` 校验（模板一致、seed 走 createMany 不受影响）。e2e：`9999/1001`→400、`100105/1001`→201、顶层 `1701`→201。重验 typecheck 9/9 · test 53 · lint · build。
