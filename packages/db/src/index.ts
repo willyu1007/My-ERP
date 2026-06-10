@@ -772,11 +772,18 @@ export interface PostedLineRow {
   summary: string;
 }
 
-/** Every line of POSTED vouchers in the active ledger scope — the source rows
- *  the trial balance + account ledgers are derived from (P4). */
+/**
+ * Every line that has an accounting effect in the active ledger scope — the
+ * source rows the trial balance + account ledgers are derived from (P4).
+ * Includes 'posted' AND 'reversed' vouchers: a reversed voucher's original
+ * posting is a permanent record that stays in the books; its red-letter reversal
+ * (itself 'posted', with swapped lines) negates it separately, so the pair nets
+ * to zero with both entries visible (留痕). Excluding 'reversed' would drop the
+ * original and leave only the negation.
+ */
 export async function getPostedEntriesTx(tx: TxClient): Promise<PostedLineRow[]> {
   const lines = await tx.journalEntryLine.findMany({
-    where: { voucher: { status: 'posted' } },
+    where: { voucher: { status: { in: ['posted', 'reversed'] } } },
     include: { voucher: { select: { no: true, date: true } } },
     orderBy: [{ voucher: { date: 'asc' } }, { voucherId: 'asc' }, { lineNo: 'asc' }],
   });

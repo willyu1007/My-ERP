@@ -8,7 +8,15 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { computeAccountLedger, computeTrialBalance } from '@my-erp/finance-domain';
-import { createVoucherTx, disconnectDatabase, getPostedEntriesTx, setVoucherStatusTx, withLedgerScope } from './index';
+import {
+  createReversalVoucherTx,
+  createVoucherTx,
+  disconnectDatabase,
+  getPostedEntriesTx,
+  getVoucherTx,
+  setVoucherStatusTx,
+  withLedgerScope,
+} from './index';
 
 const PORT = 5432;
 const TEST_DB = 'myerp_p4_ledger_test';
@@ -109,5 +117,45 @@ describe.skipIf(!PG_AVAILABLE)('P4 ledger derivation from posted vouchers', () =
     expect(ledger.rows).toHaveLength(2);
     expect(ledger.closing.balance).toBe('1000.00');
     expect(ledger.closing.balanceDir).toBe('借');
+  });
+
+  it('a reversed voucher nets to zero in the ledger (both entries counted)', async () => {
+    // Post a voucher touching fresh accounts (6602/1001), then reverse it.
+    const v = await withLedgerScope(LB, async (tx) => {
+      const created = await createVoucherTx(tx, {
+        ledgerBookId: LB,
+        no: '记-2026-004',
+        date: '2026-06-05',
+        period: '2026-06',
+        summary: '计提',
+        maker: 'u1',
+        totalDebit: '100.00',
+        totalCredit: '100.00',
+        lines: [
+          { accountCode: '6602', accountName: '管理费用', summary: 'x', debit: '100.00', credit: null },
+          { accountCode: '1001', accountName: '库存现金', summary: 'x', debit: null, credit: '100.00' },
+        ],
+      });
+      await setVoucherStatusTx(tx, created.id, { status: 'posted', checker: 'u2', postedAt: new Date() });
+      return getVoucherTx(tx, created.id);
+    });
+    await withLedgerScope(LB, async (tx) => {
+      const r = await createReversalVoucherTx(tx, v!, { no: '记-2026-005', reverser: 'u2', date: v!.date, period: v!.period, postedAt: new Date() });
+      await setVoucherStatusTx(tx, v!.id, { status: 'reversed', reversedBy: r.id });
+    });
+
+    const entries = await withLedgerScope(LB, (tx) => getPostedEntriesTx(tx));
+    const tb = computeTrialBalance(entries, []);
+    const row = tb.rows.find((r) => r.accountCode === '6602');
+    expect(row?.periodDebit).toBe('100.00'); // original posting still counted
+    expect(row?.periodCredit).toBe('100.00'); // reversal negates it
+    expect(row?.closingDebit).toBe('0.00');
+    expect(row?.closingCredit).toBe('0.00');
+    expect(tb.balanced.closing).toBe(true);
+
+    const ledger = computeAccountLedger('6602', entries, []);
+    expect(ledger.rows).toHaveLength(2); // original + reversal both visible
+    expect(ledger.closing.balance).toBe('0.00');
+    expect(ledger.closing.balanceDir).toBe('平');
   });
 });
