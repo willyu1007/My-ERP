@@ -62,4 +62,22 @@
 **遗留 TODO（P1a）**
 - 生产/部署文档：DB 角色分离 + 各表 GRANT（迁移不含 GRANT，env 设置时执行）。
 - AccountingPeriod 表（期间行）随 P3/P5 落地（当前 LedgerBook 仅存 periodStructure 字段）。
-- P1b：Invitation。
+
+## P1b — 邀请流（完成）
+
+**决策（实现期落定）**
+- **接受邀请的鸡生蛋问题**：被邀请人接受时尚非成员，过不了 `AuthGuard`（要求 membership→403）。新增 `PrincipalGuard`（仅验签→Principal，不查 membership）+ `@CurrentPrincipal`，accept 端点专用。安全性靠 invitation token（随机 uuid，秘密）+ 邮箱匹配。
+- `ledgerBookId` 放宽为**可选**（org 级操作如 accept 无需账套上下文；财务端点 P2+ 显式要求）。
+- 邀请按 **email** 投递（D3）；mock 身份带 email 以匹配。
+- 状态机校验抽为纯函数 `invitationAcceptError`（platform，单测）；accept 编排在 `InvitationService`（apps/api），repo 提供原语。
+
+**改了什么**
+- Prisma：`Invitation`（orgId/invitedEmail/role/token@unique/status/invitedBy/expiresAt/acceptedBy/acceptedAt）；迁移 `20260610140000_p1b_invitation`（DDL + invitation org-scoped RLS + 新增 `membership_insert_scope` 让 accept 能建成员）。
+- `packages/platform`：`invitation.ts`（`InvitationStatus` + 标签 + `invitationAcceptError`）；`isRole`；`Principal.ledgerBookId` 可选。
+- `packages/db`：`createInvitationTx`（生成 token + 7 天 expiresAt）/`listInvitationsTx`/`findInvitationBy{Token,Id}Tx`/`updateInvitationStatusTx`/`createMembershipTx`/`listMembershipsTx`（返回领域型）。
+- `apps/api`：`PrincipalGuard` + `@CurrentPrincipal`；`InvitationService`（accept：找邀请→`invitationAcceptError`→查重→建 membership→标记 accepted→审计，单事务）；`InvitationsController`（POST 发起 / GET 列表 / POST `:id/revoke` = create Membership 权；POST `accept` = PrincipalGuard）；`MembersController`（GET 列表）。ability：supervisor 加 create/read Membership。
+- 契约：openapi 增 invitations + members（9 endpoints）。
+
+**遗留 TODO（P1b）**
+- 过期清理（lazy：accept 时判过期；可加后台 job 批量标记 expired）。
+- 邀请通知（My-Chat 触达面，M5）；当前 token 经创建响应返回（演示）。

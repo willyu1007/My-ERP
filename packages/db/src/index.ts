@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { PrismaClient, Prisma } from '@prisma/client';
 
 /**
@@ -195,6 +196,146 @@ export async function createLedgerBookTx(tx: TxClient, input: CreateLedgerBookIn
     },
   });
   return toLedgerBook(created);
+}
+
+/* ---- Membership + Invitation repositories (org-scoped) ---- */
+
+export interface MembershipEntity {
+  id: string;
+  orgId: string;
+  userId: string;
+  role: string;
+  email: string | null;
+  createdAt: Date;
+}
+
+export interface InvitationEntity {
+  id: string;
+  orgId: string;
+  invitedEmail: string;
+  role: string;
+  token: string;
+  status: string;
+  invitedBy: string;
+  expiresAt: Date;
+  acceptedBy: string | null;
+  acceptedAt: Date | null;
+  createdAt: Date;
+}
+
+export interface CreateInvitationInput {
+  orgId: string;
+  invitedEmail: string;
+  role: string;
+  invitedBy: string;
+  /** Time-to-live in ms; defaults to 7 days. */
+  ttlMs?: number;
+}
+
+export interface CreateMembershipInput {
+  orgId: string;
+  userId: string;
+  role: string;
+  email?: string | null;
+}
+
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+function toMembership(m: {
+  id: string;
+  orgId: string;
+  userId: string;
+  role: string;
+  email: string | null;
+  createdAt: Date;
+}): MembershipEntity {
+  return { id: m.id, orgId: m.orgId, userId: m.userId, role: m.role, email: m.email, createdAt: m.createdAt };
+}
+
+function toInvitation(i: {
+  id: string;
+  orgId: string;
+  invitedEmail: string;
+  role: string;
+  token: string;
+  status: string;
+  invitedBy: string;
+  expiresAt: Date;
+  acceptedBy: string | null;
+  acceptedAt: Date | null;
+  createdAt: Date;
+}): InvitationEntity {
+  return {
+    id: i.id,
+    orgId: i.orgId,
+    invitedEmail: i.invitedEmail,
+    role: i.role,
+    token: i.token,
+    status: i.status,
+    invitedBy: i.invitedBy,
+    expiresAt: i.expiresAt,
+    acceptedBy: i.acceptedBy,
+    acceptedAt: i.acceptedAt,
+    createdAt: i.createdAt,
+  };
+}
+
+export async function listMembershipsTx(tx: TxClient): Promise<MembershipEntity[]> {
+  const rows = await tx.membership.findMany({ orderBy: { createdAt: 'asc' } });
+  return rows.map(toMembership);
+}
+
+export async function createMembershipTx(tx: TxClient, input: CreateMembershipInput): Promise<MembershipEntity> {
+  const created = await tx.membership.create({
+    data: { orgId: input.orgId, userId: input.userId, role: input.role, email: input.email ?? null },
+  });
+  return toMembership(created);
+}
+
+export async function createInvitationTx(tx: TxClient, input: CreateInvitationInput): Promise<InvitationEntity> {
+  const created = await tx.invitation.create({
+    data: {
+      orgId: input.orgId,
+      invitedEmail: input.invitedEmail,
+      role: input.role,
+      invitedBy: input.invitedBy,
+      token: randomUUID(),
+      expiresAt: new Date(Date.now() + (input.ttlMs ?? SEVEN_DAYS_MS)),
+    },
+  });
+  return toInvitation(created);
+}
+
+export async function listInvitationsTx(tx: TxClient): Promise<InvitationEntity[]> {
+  const rows = await tx.invitation.findMany({ orderBy: { createdAt: 'desc' } });
+  return rows.map(toInvitation);
+}
+
+export async function findInvitationByTokenTx(tx: TxClient, token: string): Promise<InvitationEntity | null> {
+  const row = await tx.invitation.findUnique({ where: { token } });
+  return row ? toInvitation(row) : null;
+}
+
+export async function findInvitationByIdTx(tx: TxClient, id: string): Promise<InvitationEntity | null> {
+  const row = await tx.invitation.findUnique({ where: { id } });
+  return row ? toInvitation(row) : null;
+}
+
+export interface UpdateInvitationStatus {
+  status: string;
+  acceptedBy?: string;
+  acceptedAt?: Date;
+}
+
+export async function updateInvitationStatusTx(tx: TxClient, id: string, patch: UpdateInvitationStatus): Promise<void> {
+  await tx.invitation.update({
+    where: { id },
+    data: {
+      status: patch.status,
+      ...(patch.acceptedBy !== undefined ? { acceptedBy: patch.acceptedBy } : {}),
+      ...(patch.acceptedAt !== undefined ? { acceptedAt: patch.acceptedAt } : {}),
+    },
+  });
 }
 
 export { Prisma } from '@prisma/client';

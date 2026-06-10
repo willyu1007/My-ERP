@@ -86,6 +86,103 @@ paths:
           description: Missing or invalid bearer token
         '403':
           description: Caller lacks create permission
+  /v1/invitations:
+    get:
+      operationId: listInvitations
+      summary: List invitations (admin/supervisor)
+      tags: [invitations]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Invitations (org-scoped)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Invitation' }
+        '401': { description: Missing or invalid bearer token }
+        '403': { description: Caller lacks invite permission }
+    post:
+      operationId: createInvitation
+      summary: Invite a user by email with a role (admin/supervisor)
+      tags: [invitations]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateInvitation' }
+      responses:
+        '201':
+          description: Created (carries the secret token)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Invitation' }
+        '400': { description: Invalid body }
+        '401': { description: Missing or invalid bearer token }
+        '403': { description: Caller lacks invite permission }
+  /v1/invitations/accept:
+    post:
+      operationId: acceptInvitation
+      summary: Accept an invitation (authenticated invitee — not yet a member)
+      description: |
+        Authn-only (PrincipalGuard); the caller is not yet a member. Validates the
+        secret token + invited email + state machine, then creates the Membership.
+      tags: [invitations]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AcceptInvitation' }
+      responses:
+        '200':
+          description: Membership created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Membership' }
+        '400': { description: Invalid/expired/mismatched invitation }
+        '401': { description: Missing or invalid bearer token }
+        '404': { description: Invitation not found }
+        '409': { description: Already a member }
+  /v1/invitations/{id}/revoke:
+    post:
+      operationId: revokeInvitation
+      summary: Revoke a pending invitation (admin/supervisor)
+      tags: [invitations]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Revoked }
+        '400': { description: Not a pending invitation }
+        '401': { description: Missing or invalid bearer token }
+        '403': { description: Caller lacks invite permission }
+        '404': { description: Invitation not found }
+  /v1/members:
+    get:
+      operationId: listMembers
+      summary: List organization members (admin/supervisor)
+      tags: [members]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Members (org-scoped)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Membership' }
+        '401': { description: Missing or invalid bearer token }
+        '403': { description: Caller lacks read permission }
 components:
   securitySchemes:
     bearerAuth:
@@ -131,3 +228,42 @@ components:
         baseCurrency: { type: string, example: CNY }
         fiscalYear: { type: integer, example: 2026 }
         periodStructure: { type: string, example: '12+1' }
+    Role:
+      type: string
+      enum: [accountant, cashier, supervisor, admin, viewer]
+    Membership:
+      type: object
+      required: [id, orgId, userId, role, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        orgId: { type: string, format: uuid }
+        userId: { type: string }
+        role: { $ref: '#/components/schemas/Role' }
+        email: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+    Invitation:
+      type: object
+      required: [id, orgId, invitedEmail, role, token, status, invitedBy, expiresAt, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        orgId: { type: string, format: uuid }
+        invitedEmail: { type: string }
+        role: { $ref: '#/components/schemas/Role' }
+        token: { type: string }
+        status: { type: string, enum: [pending, accepted, revoked, expired] }
+        invitedBy: { type: string }
+        expiresAt: { type: string, format: date-time }
+        acceptedBy: { type: string, nullable: true }
+        acceptedAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+    CreateInvitation:
+      type: object
+      required: [email, role]
+      properties:
+        email: { type: string }
+        role: { $ref: '#/components/schemas/Role' }
+    AcceptInvitation:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string }

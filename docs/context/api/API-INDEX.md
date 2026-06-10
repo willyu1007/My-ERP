@@ -1,9 +1,9 @@
 # API Index
 
-> Auto-generated at 2026-06-09T23:47:43.961Z — do NOT hand-edit.
-> Source: `docs/context/api/openapi.yaml` (SHA-256: `0355202da97f...`)
+> Auto-generated at 2026-06-10T02:03:28.682Z — do NOT hand-edit.
+> Source: `docs/context/api/openapi.yaml` (SHA-256: `a84ae66cd58a...`)
 
-Total endpoints: **4**
+Total endpoints: **9**
 
 | Method | Path | Summary | Auth | Input (required) | Output (core) | Errors |
 |--------|------|---------|------|------------------|---------------|--------|
@@ -11,3 +11,8 @@ Total endpoints: **4**
 | GET | /v1/organization | The caller's current organization (org-scoped) | bearer | — | id, name, createdAt | 401, 403 |
 | GET | /v1/ledger-books | List ledger books in the caller's organization | bearer | — | — | 401, 403 |
 | POST | /v1/ledger-books | Create a ledger book (账套) — admin/supervisor only | bearer | name, baseCurrency, fiscalYear | id, orgId, name, baseCurrency, fiscalYear, periodStructure, active, createdAt | 400, 401, 403 |
+| GET | /v1/invitations | List invitations (admin/supervisor) | bearer | — | — | 401, 403 |
+| POST | /v1/invitations | Invite a user by email with a role (admin/supervisor) | bearer | email, role | id, orgId, invitedEmail, role, token, status, invitedBy, expiresAt, createdAt, acceptedBy, acceptedAt | 400, 401, 403 |
+| POST | /v1/invitations/accept | Accept an invitation (authenticated invitee — not yet a member) | bearer | token | id, orgId, userId, role, createdAt, email | 400, 401, 404, 409 |
+| POST | /v1/invitations/{id}/revoke | Revoke a pending invitation (admin/supervisor) | bearer | id | — | 400, 401, 403, 404 |
+| GET | /v1/members | List organization members (admin/supervisor) | bearer | — | — | 401, 403 |

@@ -4,10 +4,11 @@
 My-ERP 已完成初始化（脚手架 + 契约），但尚无任何财务领域实现。M1 要落地**总账核心闭环**与平台底座，使会计能完成「建科目 → 制单 → 审核 → 过账 → 余额/账簿 → 期初建账」的最小可用闭环。
 
 ## Status
-- **P1a done / P1b next** —— P0a（骨架）+ P0b（认证/授权/RLS/审计底座）+ P1a（组织/成员/账套 + 两级作用域）均实现并验证（见 04-verification）。在 `main` 上实现（不另开分支）。
-- P0b：mock 身份、`AuthGuard`/CASL `PermissionGuard`、`audit_record` RLS（`withLedgerScope`）、审计、结构化日志 + tracing seam。OTel SDK / testcontainers 推迟。
-- P1a：`Organization`/`Membership`/`LedgerBook` 模型 + 迁移；**两级作用域**（平台表按 `app.current_org` RLS、财务表按 `app.current_ledger`）；`withOrgScope`；**角色落库**（Membership = RBAC SSOT，token 不再带 roles，`AuthGuard` 解析 membership → 角色 → CASL；无 membership → 403）；账套 CRUD（org 作用域，`ledger_book` 含 `WITH CHECK` 防跨组织写）。
-- Next concrete step：P1b —— Invitation 模型 + 状态机（待接受/已接受/撤销/过期）+ 邀请流（发起/接受/撤销）+ 禁止自助加入 + 成员/角色管理。
+- **P1 done / P2 next** —— P0a/P0b/P1a/P1b 均实现并验证（见 04-verification）。在 `main` 上实现（不另开分支）。P1 全阶段完成。
+- P0b：mock 身份、`AuthGuard`/CASL `PermissionGuard`、`audit_record` RLS、审计、结构化日志 + tracing seam（OTel SDK / testcontainers 推迟）。
+- P1a：`Organization`/`Membership`/`LedgerBook` + **两级作用域**（org / ledger 各按 GUC RLS）；`withOrgScope`；**角色落库**（Membership = RBAC SSOT）；账套 CRUD（`WITH CHECK` 防跨组织写）。
+- P1b：`Invitation` 模型 + 状态机（pending→accepted/revoked/expired）；邀请流 发起（admin/主管）/接受/撤销；**接受用 `PrincipalGuard`**（authn-only，被邀请人尚非成员）+ 邮箱匹配 + 状态机校验 → 建 Membership；**禁止自助加入**（membership 仅经 accept 创建）；成员列表。
+- Next concrete step：P2 —— 科目体系（Account 多级 + 辅助核算 + 《小企业准则》模板）+ 科目 CRUD；首个 ledger 作用域业务表接 RLS（`app.current_ledger`）。
 
 ## Goal
 组织/账套/邀请权限底座 + 会计科目体系 + 记账凭证（借贷平衡/审核/过账/红冲）+ 期初建账 + 科目余额与试算平衡，全程合规可审计。

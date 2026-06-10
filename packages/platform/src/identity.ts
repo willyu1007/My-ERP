@@ -20,11 +20,14 @@ export function isRole(value: unknown): value is Role {
 /**
  * Tenant context carried by the bearer token. Roles are NOT here — they are the
  * single source of truth in Membership and resolved per request (see api auth).
+ * `ledgerBookId` is the active financial scope (optional; org-level operations
+ * such as accepting an invitation don't need one). Financial endpoints (P2+)
+ * require it explicitly.
  */
 export interface Principal {
   readonly userId: string;
   readonly orgId: string;
-  readonly ledgerBookId: string;
+  readonly ledgerBookId?: string;
   readonly email?: string;
 }
 
@@ -56,9 +59,12 @@ function parsePrincipal(payload: unknown): Principal {
   const userId = typeof p.sub === 'string' ? p.sub : p.userId;
   if (typeof userId !== 'string' || userId === '') throw new IdentityError('missing sub/userId');
   if (typeof p.orgId !== 'string' || p.orgId === '') throw new IdentityError('missing orgId');
-  if (typeof p.ledgerBookId !== 'string' || p.ledgerBookId === '') throw new IdentityError('missing ledgerBookId');
-  const base: Principal = { userId, orgId: p.orgId, ledgerBookId: p.ledgerBookId };
-  return typeof p.email === 'string' ? { ...base, email: p.email } : base;
+  return {
+    userId,
+    orgId: p.orgId,
+    ...(typeof p.ledgerBookId === 'string' && p.ledgerBookId !== '' ? { ledgerBookId: p.ledgerBookId } : {}),
+    ...(typeof p.email === 'string' ? { email: p.email } : {}),
+  };
 }
 
 export class MockIdentityProvider implements IdentityProvider {
@@ -81,11 +87,8 @@ export function signDevToken(
   secret: string,
   expiresIn: jwt.SignOptions['expiresIn'] = '1h',
 ): string {
-  const claims: Record<string, unknown> = {
-    sub: principal.userId,
-    orgId: principal.orgId,
-    ledgerBookId: principal.ledgerBookId,
-  };
+  const claims: Record<string, unknown> = { sub: principal.userId, orgId: principal.orgId };
+  if (principal.ledgerBookId !== undefined) claims.ledgerBookId = principal.ledgerBookId;
   if (principal.email !== undefined) claims.email = principal.email;
   const options: jwt.SignOptions = { algorithm: 'HS256', expiresIn };
   return jwt.sign(claims, secret, options);

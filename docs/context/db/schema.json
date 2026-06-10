@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-06-09T23:37:00.513Z",
+  "updatedAt": "2026-06-10T01:55:05.996Z",
   "ssot": {
     "mode": "repo-prisma",
     "source": {
@@ -126,6 +126,159 @@
           "fields": [
             "ledgerBookId",
             "createdAt"
+          ],
+          "name": null,
+          "map": null
+        }
+      ]
+    },
+    {
+      "name": "Invitation",
+      "dbName": "invitation",
+      "schema": null,
+      "columns": [
+        {
+          "name": "acceptedAt",
+          "type": "DateTime",
+          "nullable": true,
+          "list": false,
+          "dbName": "accepted_at",
+          "dbType": "Timestamptz",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "acceptedBy",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "accepted_by",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "created_at",
+          "dbType": "Timestamptz",
+          "default": "now()",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "expiresAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "expires_at",
+          "dbType": "Timestamptz",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "id",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": "Uuid",
+          "default": "uuid()",
+          "primaryKey": true,
+          "unique": false
+        },
+        {
+          "name": "invitedBy",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "invited_by",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "invitedEmail",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "invited_email",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "orgId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "org_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "role",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "status",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "\"pending\"",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "token",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": true
+        }
+      ],
+      "relations": [
+        {
+          "field": "organization",
+          "to": "Organization",
+          "optional": false,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "orgId"
+          ],
+          "references": [
+            "id"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "type": "index",
+          "fields": [
+            "orgId"
           ],
           "name": null,
           "map": null
@@ -399,6 +552,15 @@
         }
       ],
       "relations": [
+        {
+          "field": "invitations",
+          "to": "Invitation",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
+        },
         {
           "field": "ledgerBooks",
           "to": "LedgerBook",

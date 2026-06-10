@@ -1,14 +1,16 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-09T23:47:43.961Z",
+  "generatedAt": "2026-06-10T02:03:28.682Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "0355202da97ff9faf7911fb1e72badb96491ab3fa7d6cbbd20a214e2ea193286",
+  "sourceChecksumSha256": "a84ae66cd58ab82b285d87b966de2403b55f639ec23a2b6d216e67815e0fbafd",
   "stats": {
-    "totalEndpoints": 4,
+    "totalEndpoints": 9,
     "byTag": {
       "system": 1,
       "organization": 1,
-      "ledger-books": 2
+      "ledger-books": 2,
+      "invitations": 4,
+      "members": 1
     }
   },
   "endpoints": [
@@ -130,6 +132,163 @@
       ],
       "example": {
         "curl": "curl -X POST '/v1/ledger-books' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"name\":\"<name>\",\"baseCurrency\":\"<baseCurrency>\",\"fiscalYear\":\"<fiscalYear>\"}'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/invitations",
+      "operationId": "listInvitations",
+      "summary": "List invitations (admin/supervisor)",
+      "tag": "invitations",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": []
+      },
+      "errors": [
+        401,
+        403
+      ],
+      "example": {
+        "curl": "curl -X GET '/v1/invitations' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/invitations",
+      "operationId": "createInvitation",
+      "summary": "Invite a user by email with a role (admin/supervisor)",
+      "tag": "invitations",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": {
+          "required": [
+            "email",
+            "role"
+          ],
+          "optional": []
+        }
+      },
+      "output": {
+        "successStatus": 201,
+        "coreFields": [
+          "id",
+          "orgId",
+          "invitedEmail",
+          "role",
+          "token",
+          "status",
+          "invitedBy",
+          "expiresAt",
+          "createdAt",
+          "acceptedBy",
+          "acceptedAt"
+        ]
+      },
+      "errors": [
+        400,
+        401,
+        403
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/invitations' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"email\":\"<email>\",\"role\":\"<role>\"}'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/invitations/accept",
+      "operationId": "acceptInvitation",
+      "summary": "Accept an invitation (authenticated invitee — not yet a member)",
+      "tag": "invitations",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": {
+          "required": [
+            "token"
+          ],
+          "optional": []
+        }
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "orgId",
+          "userId",
+          "role",
+          "createdAt",
+          "email"
+        ]
+      },
+      "errors": [
+        400,
+        401,
+        404,
+        409
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/invitations/accept' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"token\":\"<token>\"}'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/invitations/{id}/revoke",
+      "operationId": "revokeInvitation",
+      "summary": "Revoke a pending invitation (admin/supervisor)",
+      "tag": "invitations",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id"
+        ],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": []
+      },
+      "errors": [
+        400,
+        401,
+        403,
+        404
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/invitations/{id}/revoke' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/members",
+      "operationId": "listMembers",
+      "summary": "List organization members (admin/supervisor)",
+      "tag": "members",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": []
+      },
+      "errors": [
+        401,
+        403
+      ],
+      "example": {
+        "curl": "curl -X GET '/v1/members' -H 'Authorization: Bearer <token>'"
       }
     }
   ]

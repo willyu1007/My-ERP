@@ -13,10 +13,10 @@ describe('MockIdentityProvider', () => {
     expect(verified).toEqual(principal);
   });
 
-  it('omits email when not provided', async () => {
-    const token = signDevToken({ userId: 'u1', orgId: 'o1', ledgerBookId: 'lb1' }, SECRET);
+  it('omits optional ledgerBookId/email when not provided', async () => {
+    const token = signDevToken({ userId: 'u1', orgId: 'o1' }, SECRET);
     const verified = await new MockIdentityProvider(SECRET).verify(token);
-    expect(verified).toEqual({ userId: 'u1', orgId: 'o1', ledgerBookId: 'lb1' });
+    expect(verified).toEqual({ userId: 'u1', orgId: 'o1' });
   });
 
   it('rejects a token signed with the wrong secret', async () => {
@@ -24,8 +24,8 @@ describe('MockIdentityProvider', () => {
     await expect(new MockIdentityProvider(SECRET).verify(token)).rejects.toBeInstanceOf(IdentityError);
   });
 
-  it('rejects a token missing tenant scope (no ledgerBookId)', async () => {
-    const bad = jwt.sign({ sub: 'u1', orgId: 'o1' }, SECRET, { algorithm: 'HS256' });
+  it('rejects a token missing the org (tenant) claim', async () => {
+    const bad = jwt.sign({ sub: 'u1' }, SECRET, { algorithm: 'HS256' });
     await expect(new MockIdentityProvider(SECRET).verify(bad)).rejects.toBeInstanceOf(IdentityError);
   });
 });

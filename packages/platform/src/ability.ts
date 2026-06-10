@@ -37,6 +37,7 @@ export function defineAbilityFor(identity: Identity): AppAbility {
   if (has('supervisor')) {
     can('read', ['Organization', 'LedgerBook', 'Account', 'Voucher', 'AuditRecord'], scope);
     can(['create', 'update'], 'LedgerBook', scope);
+    can(['create', 'read'], 'Membership', scope); // invite + manage members
     can('approve', 'Voucher', scope);
     can('post', 'Voucher', scope);
   }

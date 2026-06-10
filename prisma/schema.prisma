@@ -47,8 +47,31 @@ model Organization {
 
   memberships Membership[]
   ledgerBooks LedgerBook[]
+  invitations Invitation[]
 
   @@map("organization")
+}
+
+/// An invitation to join an org with a role (邀请制；禁止自助加入). State machine:
+/// pending → accepted | revoked | expired. The token is a secret; accepting it
+/// (with a matching email) creates the Membership.
+model Invitation {
+  id           String    @id @default(uuid()) @db.Uuid
+  orgId        String    @map("org_id") @db.Uuid
+  invitedEmail String    @map("invited_email")
+  role         String
+  token        String    @unique
+  status       String    @default("pending")
+  invitedBy    String    @map("invited_by")
+  expiresAt    DateTime  @map("expires_at") @db.Timestamptz(6)
+  acceptedBy   String?   @map("accepted_by")
+  acceptedAt   DateTime? @map("accepted_at") @db.Timestamptz(6)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@map("invitation")
 }
 
 /// A user's role in an organization — the single source of truth for RBAC.

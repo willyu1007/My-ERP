@@ -55,3 +55,14 @@
 | **端到端 HTTP** | 本机 PG 建库 + seed 组织/成员 + 非特权角色起 api | ✓ GET `/v1/organization`（acct）→ 组织；no-member → **403**；POST `/v1/ledger-books`（accountant）→ **403**（无创建权）；（admin）→ **201** 返回账套；GET（acct）→ 列出该账套（org 作用域读）；日志 0 错误 |
 
 要点：token→Membership 角色解析→CASL 鉴权→org 作用域 RLS 全链路打通；角色为 Membership 落库（非 token）；`ledger_book` `WITH CHECK` 防跨组织写已测。
+
+### P1b — 邀请流 — 2026-06-10（本机 PG17 :5432）
+
+| 验证项 | 命令 | 结果 |
+|---|---|---|
+| 类型检查 | `pnpm -r typecheck` | ✓ 9/9 |
+| 单测 + 集成 | `pnpm test` | ✓ 46 passed（新增 invitation 状态机 4 单测 + `invitation-flow.integration` 3：建/按 token 查/跨组织不可见、accept 建成员并翻转状态、`WITH CHECK` 阻跨组织邀请）|
+| Lint / build | `pnpm lint · build` | ✓ 无告警 / api+web Done |
+| **端到端 HTTP**（全生命周期） | 本机 PG + seed admin + 非特权角色起 api | ✓ ① bob 接受前 GET org → **403**（非成员）② admin 邀请 bob(accountant) → pending+token ③ bob 接受（邮箱+token 匹配）→ 建 membership(accountant) ④ bob 接受后 GET org → **200**（角色现从新 membership 解析）⑤ bob(accountant) 发起邀请 → **403** ⑥ admin GET members → [admin:admin, bob:accountant] ⑦ bob 重复接受 → **400**（已是成员）；日志 0 错误 |
+
+要点：禁止自助加入（membership 仅经 accept 创建）；`PrincipalGuard` 解鸡生蛋（被邀请人尚非成员）；token 秘密 + 邮箱匹配 + 状态机三重校验。

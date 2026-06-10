@@ -3,6 +3,7 @@ import { AuthGuard } from './auth.guard';
 import { IDENTITY_PROVIDER, identityProviderFactory } from './identity.provider';
 import { IDENTITY_RESOLVER, MembershipIdentityResolver } from './identity-resolver';
 import { PermissionGuard } from './permission.guard';
+import { PrincipalGuard } from './principal.guard';
 
 /**
  * Auth infrastructure: identity provider + role resolver + authn/authz guards.
@@ -15,7 +16,8 @@ import { PermissionGuard } from './permission.guard';
     { provide: IDENTITY_RESOLVER, useClass: MembershipIdentityResolver },
     AuthGuard,
     PermissionGuard,
+    PrincipalGuard,
   ],
-  exports: [AuthGuard, PermissionGuard, IDENTITY_PROVIDER, IDENTITY_RESOLVER],
+  exports: [AuthGuard, PermissionGuard, PrincipalGuard, IDENTITY_PROVIDER, IDENTITY_RESOLVER],
 })
 export class AuthModule {}

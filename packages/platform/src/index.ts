@@ -4,6 +4,7 @@
  */
 export * from './identity';
 export * from './ability';
+export * from './invitation';
 export * from './logging';
 
 export const PLATFORM_PACKAGE = '@my-erp/platform' as const;
