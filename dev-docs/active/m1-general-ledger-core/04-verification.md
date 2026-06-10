@@ -88,3 +88,9 @@
 | **端到端 HTTP** | 本机 PG（5 迁移）+ seed 组织/成员/账套 + 非特权角色起 api | ✓ ① seed-standard → `{seeded:16}` ② list → 16 ③ 建子级 100101/1001 → 201、父级 1001 `isLeaf` 翻 **false**、子级 level=2 ④ 停用末级 100201 → 200 ⑤ 停用有子级的 1002 → **400** ⑥ **伪造 ledgerBookId**（他组织 L2）→ **403**（LedgerScopeGuard 绑组织）⑦ 无 ledgerBookId → **400** ⑧ 再 seed → `{seeded:0}`（幂等）；日志 0 错误 |
 
 要点：首张账套级业务表接 RLS（`app.current_ledger`）；`LedgerScopeGuard` 用应用层校验「账套∈本组织」补 RLS 的「账套隔离」，防伪造 ledgerBookId 跨组织读；模板幂等；建子翻父 isLeaf、停用末级校验。
+
+### P2 实施质量自审 — 2026-06-10（修复后重验全绿）
+
+修复 1 处：**建子科目未校验「子编码扩展父编码」** —— 可在父 `1001` 下建 `9999`，破坏「编码升序=树前序」不变式 → parseCreateBody 加 `code.startsWith(parentCode) && code 更长` 校验（模板一致、seed 走 createMany 不受影响）。e2e：`9999/1001`→400、`100105/1001`→201、顶层 `1701`→201。重验 typecheck 9/9 · test 53 · lint · build。
+复核确认无问题：account 无 DELETE 策略（不可物理删，贴合「仅作废/停用」硬约束）；`withLedgerScope` 仅设 ledger GUC（org 绑定已由 guard 前置）；update 仅允许改 name/auxTypes（category/direction/code 不可改，防账已记后结构漂移）；并发同 code 创建→P2002→409（全局过滤器）；边界无业务层直用 Prisma。
+留待（非债务）：isLeaf 不随子级全停用回退（科目不删，isLeaf=结构性有子；停用校验用 countActiveChildren 正确）；无重新启用端点；guard 未校验账套 active（可操作停用账套的科目）—— 均后续按需。

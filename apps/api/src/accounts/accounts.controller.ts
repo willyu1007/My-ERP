@@ -53,6 +53,11 @@ function parseCreateBody(body: unknown): CreateAccountBody {
   if (!isAccountCategory(b.category)) throw new BadRequestException('invalid category');
   if (!isAccountDirection(b.direction)) throw new BadRequestException('invalid direction');
   const parentCode = typeof b.parentCode === 'string' && b.parentCode !== '' ? b.parentCode : undefined;
+  // A child code must extend its parent's code (e.g. 1002 → 100201) so that
+  // ordering by code stays a valid tree pre-order.
+  if (parentCode !== undefined && (!b.code.startsWith(parentCode) || b.code.length <= parentCode.length)) {
+    throw new BadRequestException('child code must extend the parent code (e.g. 1002 → 100201)');
+  }
   const auxTypes = Array.isArray(b.auxTypes) ? b.auxTypes : [];
   if (!auxTypes.every(isAuxType)) throw new BadRequestException('invalid auxTypes');
   const result: CreateAccountBody = { code: b.code, name: b.name.trim(), category: b.category, direction: b.direction, auxTypes };
