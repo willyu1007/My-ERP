@@ -4,6 +4,7 @@ import { config } from 'dotenv';
 import { NestFactory } from '@nestjs/core';
 import { disconnectDatabase } from '@my-erp/db';
 import { AppModule } from './app.module';
+import { PrismaExceptionFilter } from './common/prisma-exception.filter';
 
 // Load the monorepo-root .env regardless of cwd. Both src (tsx) and dist (node)
 // sit three levels under the repo root, so __dirname/../../.. resolves to root.
@@ -13,6 +14,7 @@ config({ path: resolve(__dirname, '../../..', '.env') });
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, { cors: true });
   app.setGlobalPrefix('v1', { exclude: ['health'] });
+  app.useGlobalFilters(new PrismaExceptionFilter());
 
   const port = Number(process.env.PORT ?? 8000);
   await app.listen(port);

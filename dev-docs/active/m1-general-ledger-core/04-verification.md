@@ -72,3 +72,8 @@
 审查（多租户 RLS + 认证 + 邀请安全）。修复 1 处：**`GET /v1/invitations` 返回了秘密 token**（凡有 read-Membership 者可见所有 pending token，纵深防御缺口；虽邮箱匹配已挡冒用）→ 列表剥离 token（仅 create 响应保留，演示用；OpenAPI token 改非必需）。e2e 复核：create 含 token、list 不含（10 字段）。
 复核确认无问题：JWT 锁 HS256（防算法混淆）；token 携 orgId 必须对上真实 membership 否则 403（claim 不可越权）；accept = 秘密 token + **token 签发的 email** 匹配（攻击者无签名密钥无法伪造 email）+ 状态机；各表 `WITH CHECK` 防跨组织写；membership 无 UPDATE/DELETE 策略（默认拒，append-向）；GUC 用 `NULLIF`、审计用 `createMany`（沿用 P1a 修复）。
 留待（非阻塞）：create 响应在真实流程也应只经邮件投递 token；Prisma 唯一/WITH CHECK 违例未全局映射为 4xx（并发重复 accept→500，@@unique 兜底正确性）；邮箱格式未校验；每请求 2 次事务（AuthGuard 解析 + handler）；过期邀请惰性（停留 pending）。
+
+### P1 残留债务清理 — 2026-06-10（避免技术债）
+
+已解决 3 项并重验：① **Prisma 异常全局过滤器** `PrismaExceptionFilter`（P2002 唯一冲突→409、P2025→404、其余记日志→500）—— 并发重复 accept 等不再裸 500；② **邮箱格式校验**（邀请 email 走正则，非法→400）；③ **过期邀请惰性生效状态**（`invitationEffectiveStatus` 纯函数 + 单测；列表里过期的 pending 显示 expired，无需后台 job）。重验：typecheck 9/9 · test 49（+3）· lint · build；e2e：非法 email→400、合法→201、seed 的过期邀请列表显示 expired。
+有意保留（非债务）：create 响应返回 token（真实投递=邮件，属 My-Chat 触达面 M5；mock 阶段必需，list 已剥离）；每请求 2 次事务（AuthGuard 独立解析身份是有意分层，合并会耦合 auth 与 handler）。

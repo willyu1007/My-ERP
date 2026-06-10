@@ -17,7 +17,7 @@ import {
   updateInvitationStatusTx,
   withOrgScope,
 } from '@my-erp/db';
-import { isRole, type Identity, type Principal, type Role } from '@my-erp/platform';
+import { invitationEffectiveStatus, isRole, type Identity, type Principal, type Role } from '@my-erp/platform';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentIdentity } from '../auth/current-identity.decorator';
 import { CurrentPrincipal } from '../auth/current-principal.decorator';
@@ -26,11 +26,15 @@ import { PrincipalGuard } from '../auth/principal.guard';
 import { RequirePermission } from '../auth/permission.decorator';
 import { InvitationService } from './invitation.service';
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function parseInviteBody(body: unknown): { email: string; role: Role } {
   const b = (body ?? {}) as Record<string, unknown>;
-  if (typeof b.email !== 'string' || b.email.trim() === '') throw new BadRequestException('email is required');
+  if (typeof b.email !== 'string' || !EMAIL_RE.test(b.email.trim())) {
+    throw new BadRequestException('a valid email is required');
+  }
   if (!isRole(b.role)) throw new BadRequestException('role must be a valid finance role');
-  return { email: b.email, role: b.role };
+  return { email: b.email.trim(), role: b.role };
 }
 
 function parseAcceptBody(body: unknown): { token: string } {
@@ -75,14 +79,16 @@ export class InvitationsController {
   @RequirePermission('read', 'Membership')
   async list(@CurrentIdentity() identity: Identity) {
     const invitations = await withOrgScope(identity.orgId, (tx) => listInvitationsTx(tx));
+    const now = new Date();
     // Never expose the secret token in listings — it is delivered only via the
     // invite channel (email). The create response carries it for the demo only.
+    // status reflects lazy expiry (a past-expiry pending invitation reads expired).
     return invitations.map((inv) => ({
       id: inv.id,
       orgId: inv.orgId,
       invitedEmail: inv.invitedEmail,
       role: inv.role,
-      status: inv.status,
+      status: invitationEffectiveStatus(inv, now),
       invitedBy: inv.invitedBy,
       expiresAt: inv.expiresAt,
       acceptedBy: inv.acceptedBy,

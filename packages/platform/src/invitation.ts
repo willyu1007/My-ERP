@@ -32,3 +32,18 @@ export function invitationAcceptError(
   }
   return null;
 }
+
+/**
+ * Effective status for display — a still-pending invitation past its expiry reads
+ * as `expired` without needing a background sweep (lazy expiry; accept already
+ * rejects it via {@link invitationAcceptError}).
+ */
+export function invitationEffectiveStatus(
+  invitation: { readonly status: string; readonly expiresAt: Date },
+  now: Date,
+): InvitationStatus | string {
+  if (invitation.status === 'pending' && invitation.expiresAt.getTime() <= now.getTime()) {
+    return 'expired';
+  }
+  return invitation.status;
+}
