@@ -135,3 +135,20 @@
 **遗留 TODO（P3b）**
 - 红冲期间：当前红冲落在原凭证期间；可改为当前期间（发现错误的期间）。
 - 单人模式开关端点（当前经 DB/账套设置；可加 admin 切换 API）。
+
+## P4 — 账簿（派生余额）（完成）
+
+**决策（实现期落定）**
+- **余额派生不物化**（P3 D1）：不建 AccountBalance 表；试算平衡表/明细账由**已过账凭证行**聚合得出。好处：① 与日记账永远一致 ② **并发过账无错账**（没有余额表可被并发更新弄脏）③ 复用 W2b 前端那套派生逻辑、数值一致。
+- 派生纯函数放 `finance-domain`（领域逻辑，Decimal 零浮点），与凭证平衡不变式同层；db 只供原始 posted 行；api 薄编排。
+- 期末余额按净额符号定借/贷；期初余额 P4 为空（P5 期初建账再注入，派生函数已接 openings 参数）。
+
+**改了什么**
+- `finance-domain`：`ledger.ts` —— `computeTrialBalance`/`computeAccountLedger`（PostedLine/OpeningLine → 试算平衡表/明细账，Decimal）+ 4 单测。
+- `packages/db`：`getPostedEntriesTx`（`where voucher.status='posted'`、含科目名/凭证号/日期、按日期+凭证+行号排序；Decimal→2dp）。
+- `apps/api`：`LedgerController`（GET `/v1/ledger/trial-balance`、GET `/v1/ledger/accounts/:code`，ledger-scoped、read Voucher）。
+- 契约：openapi 增 ledger（23 endpoints）。
+
+**遗留 TODO（P4）**
+- 期间筛选（trial-balance/明细账按期间）；总账（汇总账）视图；导出（Excel/PDF，M3 范围）。
+- 前端 W2b 的 data-source 可切到这两个端点（demo→真）。

@@ -5,6 +5,7 @@ import { HealthController } from './health/health.controller';
 import { HealthService } from './health/health.service';
 import { InvitationsController } from './invitations/invitations.controller';
 import { InvitationService } from './invitations/invitation.service';
+import { LedgerController } from './ledger/ledger.controller';
 import { LedgerBooksController } from './ledger-books/ledger-books.controller';
 import { MembersController } from './members/members.controller';
 import { OrganizationController } from './organization/organization.controller';
@@ -20,6 +21,7 @@ import { VouchersController } from './vouchers/vouchers.controller';
     MembersController,
     AccountsController,
     VouchersController,
+    LedgerController,
   ],
   providers: [HealthService, InvitationService],
 })

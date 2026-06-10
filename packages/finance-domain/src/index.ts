@@ -1,5 +1,7 @@
 import Decimal from 'decimal.js';
 
+export * from './ledger';
+
 /**
  * Money — amounts are always exact decimals, never IEEE floats (hard constraint).
  * Persistence uses Postgres NUMERIC / Prisma Decimal; in-memory math uses decimal.js.

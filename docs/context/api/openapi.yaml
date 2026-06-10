@@ -385,6 +385,31 @@ paths:
         '400': { description: Not posted / already reversed }
         '403': { description: Lacks reverse permission }
         '404': { description: Not found }
+  /v1/ledger/trial-balance:
+    get:
+      operationId: getTrialBalance
+      summary: Trial balance (试算平衡表) — derived from posted vouchers
+      tags: [ledger]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Trial balance
+          content: { application/json: { schema: { $ref: '#/components/schemas/TrialBalance' } } }
+        '401': { description: Missing or invalid bearer token }
+        '403': { description: Ledger not in org / lacks read }
+  /v1/ledger/accounts/{code}:
+    get:
+      operationId: getAccountLedger
+      summary: Subsidiary ledger (明细分类账) for one account — derived, running balance
+      tags: [ledger]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: code, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200':
+          description: Account ledger
+          content: { application/json: { schema: { $ref: '#/components/schemas/AccountLedger' } } }
+        '401': { description: Missing or invalid bearer token }
+        '403': { description: Ledger not in org / lacks read }
 components:
   securitySchemes:
     bearerAuth:
@@ -544,3 +569,65 @@ components:
               debit: { type: string }
               credit: { type: string }
               cashFlowItem: { type: string }
+    TrialBalanceRow:
+      type: object
+      required: [accountCode, accountName, openingDebit, openingCredit, periodDebit, periodCredit, closingDebit, closingCredit]
+      properties:
+        accountCode: { type: string }
+        accountName: { type: string }
+        openingDebit: { type: string }
+        openingCredit: { type: string }
+        periodDebit: { type: string }
+        periodCredit: { type: string }
+        closingDebit: { type: string }
+        closingCredit: { type: string }
+    TrialBalanceTotals:
+      type: object
+      required: [openingDebit, openingCredit, periodDebit, periodCredit, closingDebit, closingCredit]
+      properties:
+        openingDebit: { type: string }
+        openingCredit: { type: string }
+        periodDebit: { type: string }
+        periodCredit: { type: string }
+        closingDebit: { type: string }
+        closingCredit: { type: string }
+    TrialBalance:
+      type: object
+      required: [rows, totals, balanced]
+      properties:
+        rows: { type: array, items: { $ref: '#/components/schemas/TrialBalanceRow' } }
+        totals: { $ref: '#/components/schemas/TrialBalanceTotals' }
+        balanced:
+          type: object
+          properties:
+            opening: { type: boolean }
+            period: { type: boolean }
+            closing: { type: boolean }
+    LedgerBalance:
+      type: object
+      properties:
+        debit: { type: string }
+        credit: { type: string }
+        balance: { type: string }
+        balanceDir: { type: string, enum: ['借', '贷', '平'] }
+    AccountLedger:
+      type: object
+      required: [accountCode, accountName, opening, rows, closing]
+      properties:
+        accountCode: { type: string }
+        accountName: { type: string }
+        opening: { $ref: '#/components/schemas/LedgerBalance' }
+        closing: { $ref: '#/components/schemas/LedgerBalance' }
+        rows:
+          type: array
+          items:
+            type: object
+            properties:
+              date: { type: string, format: date }
+              voucherNo: { type: string }
+              voucherId: { type: string, format: uuid }
+              summary: { type: string }
+              debit: { type: string }
+              credit: { type: string }
+              balance: { type: string }
+              balanceDir: { type: string, enum: ['借', '贷', '平'] }

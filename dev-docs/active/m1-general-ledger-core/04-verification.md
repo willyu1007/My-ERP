@@ -117,6 +117,17 @@
 复核确认无问题：借贷平衡服务层 + DB CHECK 双层、stored totals 与 lines 同算不漂移；过账/红冲单事务原子（中断回滚不留半成品）；红冲借贷互换、totals 互换仍平衡；accountName 反规范化=记录当时名（审计正确）；金额 Decimal/Money 零浮点；凭证号 count+unique 兜底（409）；边界无业务层直用 Prisma。
 留待（非债务）：反向凭证本身可再被红冲（合法但少见）；并发过账重复 setPosted（无害、双审计）；enrichLines 全量取科目（性能）；空行草稿可建（submit 拦截）。
 
+### P4 — 账簿（派生余额）— 2026-06-10（本机 PG17 :5432）
+
+| 验证项 | 命令 | 结果 |
+|---|---|---|
+| 类型检查 | `pnpm -r typecheck` | ✓ 9/9 |
+| 单测 + 集成 | `pnpm test` | ✓ 71 passed（finance-domain ledger 4 单测 + `ledger-derivation.integration` 2：仅 posted 派生、草稿排除、试算平衡、运行余额）|
+| Lint / build | `pnpm lint · build` | ✓ 无告警 / Done |
+| **端到端 HTTP** | 本机 PG（全迁移）+ 两会计 + 非特权角色起 api | ✓ 过 v1/v2（acct-a 制单提交、acct-b 过账）→ ① GET trial-balance：period/closing **balanced=True**、本期借贷 501200/501200、工商银行 期末借 **498800.00**、实收资本 贷 500000、管理费用 借 1200 ② GET accounts/100201：2 行、运行余额 500000→**498800 借**；日志 0 错误 |
+
+要点：账簿全由已过账凭证派生（草稿/待审不计）；试算平衡恒平（每张凭证平衡→总和平衡）；并发过账无错账（无余额表）；数值与 W2b 前端 demo 完全一致（前端 data-source 可切真）。
+
 ### P2 实施质量自审 — 2026-06-10（修复后重验全绿）
 
 修复 1 处：**建子科目未校验「子编码扩展父编码」** —— 可在父 `1001` 下建 `9999`，破坏「编码升序=树前序」不变式 → parseCreateBody 加 `code.startsWith(parentCode) && code 更长` 校验（模板一致、seed 走 createMany 不受影响）。e2e：`9999/1001`→400、`100105/1001`→201、顶层 `1701`→201。重验 typecheck 9/9 · test 53 · lint · build。

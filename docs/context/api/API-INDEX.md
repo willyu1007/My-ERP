@@ -1,9 +1,9 @@
 # API Index
 
-> Auto-generated at 2026-06-10T03:44:21.984Z — do NOT hand-edit.
-> Source: `docs/context/api/openapi.yaml` (SHA-256: `7e2044088f1c...`)
+> Auto-generated at 2026-06-10T08:48:10.075Z — do NOT hand-edit.
+> Source: `docs/context/api/openapi.yaml` (SHA-256: `6f796b44b19b...`)
 
-Total endpoints: **21**
+Total endpoints: **23**
 
 | Method | Path | Summary | Auth | Input (required) | Output (core) | Errors |
 |--------|------|---------|------|------------------|---------------|--------|
@@ -28,3 +28,5 @@ Total endpoints: **21**
 | POST | /v1/vouchers/{id}/submit | Submit a draft for review (draft → pending); enforces 借贷必平 | bearer | id | id, ledgerBookId, no, date, period, status, summary, totalDebit, totalCredit, maker, lines, checker, postedAt, reversalOf, reversedBy, attachments | 400, 404 |
 | POST | /v1/vouchers/{id}/post | Post a pending voucher (pending → posted; SoD — maker ≠ poster) | bearer | id | id, ledgerBookId, no, date, period, status, summary, totalDebit, totalCredit, maker, lines, checker, postedAt, reversalOf, reversedBy, attachments | 400, 403, 404 |
 | POST | /v1/vouchers/{id}/reverse | Reverse a posted voucher (红冲) — creates a posted reversal voucher | bearer | id | original, reversal | 400, 403, 404 |
+| GET | /v1/ledger/trial-balance | Trial balance (试算平衡表) — derived from posted vouchers | bearer | — | rows, totals, balanced | 401, 403 |
+| GET | /v1/ledger/accounts/{code} | Subsidiary ledger (明细分类账) for one account — derived, running balance | bearer | code | accountCode, accountName, opening, closing, rows | 401, 403 |

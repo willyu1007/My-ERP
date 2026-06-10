@@ -759,5 +759,38 @@ export async function createReversalVoucherTx(tx: TxClient, original: VoucherEnt
   return toVoucher(v);
 }
 
+/* ---- Ledger derivation source (posted entry lines) ---- */
+
+export interface PostedLineRow {
+  accountCode: string;
+  accountName: string;
+  debit: string | null;
+  credit: string | null;
+  voucherId: string;
+  voucherNo: string;
+  date: string;
+  summary: string;
+}
+
+/** Every line of POSTED vouchers in the active ledger scope — the source rows
+ *  the trial balance + account ledgers are derived from (P4). */
+export async function getPostedEntriesTx(tx: TxClient): Promise<PostedLineRow[]> {
+  const lines = await tx.journalEntryLine.findMany({
+    where: { voucher: { status: 'posted' } },
+    include: { voucher: { select: { no: true, date: true } } },
+    orderBy: [{ voucher: { date: 'asc' } }, { voucherId: 'asc' }, { lineNo: 'asc' }],
+  });
+  return lines.map((l) => ({
+    accountCode: l.accountCode,
+    accountName: l.accountName,
+    debit: l.debit ? l.debit.toFixed(2) : null,
+    credit: l.credit ? l.credit.toFixed(2) : null,
+    voucherId: l.voucherId,
+    voucherNo: l.voucher.no,
+    date: l.voucher.date.toISOString().slice(0, 10),
+    summary: l.summary,
+  }));
+}
+
 export { Prisma } from '@prisma/client';
 export type { PrismaClient } from '@prisma/client';

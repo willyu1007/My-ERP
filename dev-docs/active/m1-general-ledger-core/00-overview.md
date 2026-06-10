@@ -4,13 +4,14 @@
 My-ERP 已完成初始化（脚手架 + 契约），但尚无任何财务领域实现。M1 要落地**总账核心闭环**与平台底座，使会计能完成「建科目 → 制单 → 审核 → 过账 → 余额/账簿 → 期初建账」的最小可用闭环。
 
 ## Status
-- **P3 done / P4 next** —— P0a/P0b/P1/P2/P3 均实现并验证（见 04-verification）。在 `main` 上实现（不另开分支）。
+- **P4 done / P5 next** —— P0a/P0b/P1/P2/P3/P4 均实现并验证（见 04-verification）。在 `main` 上实现（不另开分支）。
 - P0b：mock 身份、`AuthGuard`/CASL `PermissionGuard`、`audit_record` RLS、审计、结构化日志（OTel SDK/testcontainers 推迟）。
 - P1：组织/成员/账套（两级作用域 org+ledger）+ 角色落库（Membership=RBAC SSOT）+ 账套 CRUD + 邀请流（发起/接受/撤销，禁止自助，`PrincipalGuard` 解鸡生蛋）+ 成员管理。
 - P2：`Account` 多级科目（编码=树序、辅助核算、借贷方向）；**首张账套级业务表接 RLS**（`app.current_ledger`）；**`LedgerScopeGuard`** 校验账套属本组织（防伪造 ledgerBookId 跨组织）；《小企业准则》模板**幂等种子**；科目 CRUD（建子级翻转父级 isLeaf；停用末级校验=有活跃子级不可停）；`ledgerBookId` 优化为可选（org 级操作免）。
 - P3a：`JournalVoucher` + `JournalEntryLine`（账套级 RLS）；借贷平衡不变式 `finance-domain.voucherBalanceError`（服务层）+ DB CHECK（非草稿必平）；草稿生命周期 create/list/detail/update(仅草稿)/submit；制单校验科目存在·末级·启用 + 行单边 + 凭证号按期间生成。凭证不可物理删（无 DELETE 策略）。
 - P3b：过账（pending→posted，**SoD 过账人≠制单人**，事务，DB CHECK 兜底平衡）+ **单人模式**（账套显式开启 + 二次确认 `confirmSinglePerson` 方可自过账，特殊审计）+ 红冲（posted→reversed，生成 posted 反向凭证：借贷互换、双向链接 reversalOf/reversedBy、不可重复红冲）。`LedgerScopeGuard` 改挂完整账套实体（读 singlePersonMode）。
-- Next concrete step：P4 —— 余额与账簿：试算平衡表 + 总账/明细分类账（**由已过账凭证派生**，对齐 W2b 前端）+ 并发过账一致性（事务/锁）核验。
+- P4：账簿**由已过账凭证派生**（不物化 AccountBalance）：`finance-domain` 纯函数 `computeTrialBalance`/`computeAccountLedger`（Decimal 零浮点）+ db `getPostedEntriesTx`（仅 posted、草稿排除）+ `LedgerController`（GET trial-balance / accounts/:code）。期初余额=空（P5 加）。派生天然规避并发过账错账（无余额表可改）。数值与 W2b 前端 demo 一致（工商银行 498800 等）。
+- Next concrete step：P5 —— 期初建账：启用期间设定 + 期初余额录入/批量导入（`OpeningBalance` 表）+ 启用期试算平衡校验；派生账簿自动纳入期初。
 
 ## Goal
 组织/账套/邀请权限底座 + 会计科目体系 + 记账凭证（借贷平衡/审核/过账/红冲）+ 期初建账 + 科目余额与试算平衡，全程合规可审计。
