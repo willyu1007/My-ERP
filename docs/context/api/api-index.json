@@ -1,16 +1,17 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-10T02:13:26.581Z",
+  "generatedAt": "2026-06-10T02:36:12.125Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "8f63ca7ab21be35413a9b13e638d51cfffa7919938c69e2933634ef84981ab92",
+  "sourceChecksumSha256": "f054dd042682e8a03302534221dbd3e7cf693f44f09fbe03f2e8b2dbf6f8c503",
   "stats": {
-    "totalEndpoints": 9,
+    "totalEndpoints": 14,
     "byTag": {
       "system": 1,
       "organization": 1,
       "ledger-books": 2,
       "invitations": 4,
-      "members": 1
+      "members": 1,
+      "accounts": 5
     }
   },
   "endpoints": [
@@ -289,6 +290,190 @@
       ],
       "example": {
         "curl": "curl -X GET '/v1/members' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/accounts",
+      "operationId": "listAccounts",
+      "summary": "List chart of accounts (ledger-scoped, code order = tree pre-order)",
+      "tag": "accounts",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": []
+      },
+      "errors": [
+        400,
+        401,
+        403
+      ],
+      "example": {
+        "curl": "curl -X GET '/v1/accounts' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/accounts",
+      "operationId": "createAccount",
+      "summary": "Create an account (accountant/admin)",
+      "tag": "accounts",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": {
+          "required": [
+            "code",
+            "name",
+            "category",
+            "direction"
+          ],
+          "optional": [
+            "parentCode",
+            "auxTypes"
+          ]
+        }
+      },
+      "output": {
+        "successStatus": 201,
+        "coreFields": [
+          "id",
+          "ledgerBookId",
+          "code",
+          "name",
+          "category",
+          "direction",
+          "level",
+          "isLeaf",
+          "auxTypes",
+          "active",
+          "createdAt",
+          "parentCode"
+        ]
+      },
+      "errors": [
+        400,
+        401,
+        403
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/accounts' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"code\":\"<code>\",\"name\":\"<name>\",\"category\":\"<category>\",\"direction\":\"<direction>\"}'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/accounts/seed-standard",
+      "operationId": "seedStandardChart",
+      "summary": "Seed the 《小企业准则》 standard chart (idempotent)",
+      "tag": "accounts",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 201,
+        "coreFields": [
+          "seeded"
+        ]
+      },
+      "errors": [
+        401,
+        403
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/accounts/seed-standard' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/accounts/{code}",
+      "operationId": "updateAccount",
+      "summary": "Update an account's name / aux types (accountant/admin)",
+      "tag": "accounts",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "code"
+        ],
+        "query": [],
+        "body": {
+          "required": [],
+          "optional": [
+            "name",
+            "auxTypes"
+          ]
+        }
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "ledgerBookId",
+          "code",
+          "name",
+          "category",
+          "direction",
+          "level",
+          "isLeaf",
+          "auxTypes",
+          "active",
+          "createdAt",
+          "parentCode"
+        ]
+      },
+      "errors": [
+        400,
+        404
+      ],
+      "example": {
+        "curl": "curl -X PATCH '/v1/accounts/{code}' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/accounts/{code}/deactivate",
+      "operationId": "deactivateAccount",
+      "summary": "Deactivate an account (blocked if it has active children)",
+      "tag": "accounts",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "code"
+        ],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "ledgerBookId",
+          "code",
+          "name",
+          "category",
+          "direction",
+          "level",
+          "isLeaf",
+          "auxTypes",
+          "active",
+          "createdAt",
+          "parentCode"
+        ]
+      },
+      "errors": [
+        400,
+        404
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/accounts/{code}/deactivate' -H 'Authorization: Bearer <token>'"
       }
     }
   ]

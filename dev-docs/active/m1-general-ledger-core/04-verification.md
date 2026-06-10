@@ -77,3 +77,14 @@
 
 已解决 3 项并重验：① **Prisma 异常全局过滤器** `PrismaExceptionFilter`（P2002 唯一冲突→409、P2025→404、其余记日志→500）—— 并发重复 accept 等不再裸 500；② **邮箱格式校验**（邀请 email 走正则，非法→400）；③ **过期邀请惰性生效状态**（`invitationEffectiveStatus` 纯函数 + 单测；列表里过期的 pending 显示 expired，无需后台 job）。重验：typecheck 9/9 · test 49（+3）· lint · build；e2e：非法 email→400、合法→201、seed 的过期邀请列表显示 expired。
 有意保留（非债务）：create 响应返回 token（真实投递=邮件，属 My-Chat 触达面 M5；mock 阶段必需，list 已剥离）；每请求 2 次事务（AuthGuard 独立解析身份是有意分层，合并会耦合 auth 与 handler）。
+
+### P2 — 科目体系 — 2026-06-10（本机 PG17 :5432）
+
+| 验证项 | 命令 | 结果 |
+|---|---|---|
+| 类型检查 | `pnpm -r typecheck` | ✓ 9/9 |
+| 单测 + 集成 | `pnpm test` | ✓ 53 passed（新增 `account-rls.integration` 4：seed+list 按账套隔离、幂等 seed、`WITH CHECK` 阻跨账套写、无作用域 0 行）|
+| Lint / build | `pnpm lint · build` | ✓ 无告警 / api+web Done |
+| **端到端 HTTP** | 本机 PG（5 迁移）+ seed 组织/成员/账套 + 非特权角色起 api | ✓ ① seed-standard → `{seeded:16}` ② list → 16 ③ 建子级 100101/1001 → 201、父级 1001 `isLeaf` 翻 **false**、子级 level=2 ④ 停用末级 100201 → 200 ⑤ 停用有子级的 1002 → **400** ⑥ **伪造 ledgerBookId**（他组织 L2）→ **403**（LedgerScopeGuard 绑组织）⑦ 无 ledgerBookId → **400** ⑧ 再 seed → `{seeded:0}`（幂等）；日志 0 错误 |
+
+要点：首张账套级业务表接 RLS（`app.current_ledger`）；`LedgerScopeGuard` 用应用层校验「账套∈本组织」补 RLS 的「账套隔离」，防伪造 ledgerBookId 跨组织读；模板幂等；建子翻父 isLeaf、停用末级校验。

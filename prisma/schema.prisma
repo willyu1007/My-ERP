@@ -105,7 +105,32 @@ model LedgerBook {
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  accounts     Account[]
 
   @@index([orgId])
   @@map("ledger_book")
+}
+
+/// A chart-of-accounts entry (会计科目) within a ledger book. LEDGER-scoped via
+/// RLS (app.current_ledger). Multi-level by code (升序 = 树前序); only leaf
+/// accounts carry postings. auxTypes = 辅助核算 (往来/部门/项目).
+model Account {
+  id           String   @id @default(uuid()) @db.Uuid
+  ledgerBookId String   @map("ledger_book_id") @db.Uuid
+  code         String
+  name         String
+  category     String
+  direction    String
+  parentCode   String?  @map("parent_code")
+  level        Int
+  isLeaf       Boolean  @default(true) @map("is_leaf")
+  auxTypes     String[] @default([]) @map("aux_types")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  ledgerBook LedgerBook @relation(fields: [ledgerBookId], references: [id], onDelete: Cascade)
+
+  @@unique([ledgerBookId, code])
+  @@index([ledgerBookId])
+  @@map("account")
 }

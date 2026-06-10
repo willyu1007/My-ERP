@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AccountsController } from './accounts/accounts.controller';
 import { AuthModule } from './auth/auth.module';
 import { HealthController } from './health/health.controller';
 import { HealthService } from './health/health.service';
@@ -16,6 +17,7 @@ import { OrganizationController } from './organization/organization.controller';
     LedgerBooksController,
     InvitationsController,
     MembersController,
+    AccountsController,
   ],
   providers: [HealthService, InvitationService],
 })

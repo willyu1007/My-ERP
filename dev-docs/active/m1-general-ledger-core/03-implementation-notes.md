@@ -81,3 +81,22 @@
 **遗留 TODO（P1b）**
 - 过期清理（lazy：accept 时判过期；可加后台 job 批量标记 expired）。
 - 邀请通知（My-Chat 触达面，M5）；当前 token 经创建响应返回（演示）。
+
+## P2 — 科目体系（完成）
+
+**决策（实现期落定）**
+- **账套级业务表绑定组织**：Account 按 `app.current_ledger` RLS（首张 ledger 级业务表）。但 token 的 ledgerBookId 可伪造，故新增 **`LedgerScopeGuard`**：校验该账套经 `withOrgScope` 在本组织可见（不可见→403），再 `withLedgerScope` 跑账套操作 —— 延续「应用层 + RLS」两层（应用层绑组织、RLS 绑账套）。`@LedgerBookId()` 注入已校验的 id。
+- **域词表入 platform**：`account.ts`（category/direction/auxType + 校验器 + `STANDARD_CHART` 模板）；db 不依赖 platform，seed 函数收通用 `SeedAccountInput[]`，控制器传 `STANDARD_CHART`。
+- **幂等种子**：`createMany({ skipDuplicates })`（按 `@@unique[ledgerBookId,code]` 跳过已存在）。
+- 多级树：编码升序=树前序；建子级时父级 `isLeaf` 翻 false；停用末级校验=有活跃子级不可停。
+
+**改了什么**
+- Prisma：`Account`（ledgerBookId/code/name/category/direction/parentCode/level/isLeaf/auxTypes[]/active，`@@unique[ledgerBookId,code]`）；迁移 `20260610150000_p2_account`（DDL + ledger 级 RLS，`NULLIF(...)::uuid`）。
+- `packages/platform`：`account.ts`（类型/标签/校验器/`STANDARD_CHART` 16 科目）。
+- `packages/db`：`getLedgerBookByIdTx`（绑组织用）+ account 仓储（list/getByCode/create/update/setActive/setLeaf/countActiveChildren/seed）。
+- `apps/api`：`LedgerScopeGuard` + `@LedgerBookId`；`AccountsController`（GET 列表 / POST 创建（算 level + 翻父 isLeaf）/ POST seed-standard / PATCH 改名·辅助核算 / POST `:code/deactivate`（末级校验）），审计。ability：read Account 全角色、create/update Account = 会计/管理员。
+- 契约：openapi 增 accounts（14 endpoints）。
+
+**遗留 TODO（P2）**
+- 科目删除（仅作废/停用，不物理删，已遵循）；辅助核算项主数据（往来/部门/项目档案）随后续。
+- 停用校验仅查活跃子级；有凭证发生的科目停用校验待 P3（有余额/分录不可停）。

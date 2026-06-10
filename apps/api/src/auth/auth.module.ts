@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AuthGuard } from './auth.guard';
 import { IDENTITY_PROVIDER, identityProviderFactory } from './identity.provider';
 import { IDENTITY_RESOLVER, MembershipIdentityResolver } from './identity-resolver';
+import { LedgerScopeGuard } from './ledger-scope.guard';
 import { PermissionGuard } from './permission.guard';
 import { PrincipalGuard } from './principal.guard';
 
@@ -17,7 +18,8 @@ import { PrincipalGuard } from './principal.guard';
     AuthGuard,
     PermissionGuard,
     PrincipalGuard,
+    LedgerScopeGuard,
   ],
-  exports: [AuthGuard, PermissionGuard, PrincipalGuard, IDENTITY_PROVIDER, IDENTITY_RESOLVER],
+  exports: [AuthGuard, PermissionGuard, PrincipalGuard, LedgerScopeGuard, IDENTITY_PROVIDER, IDENTITY_RESOLVER],
 })
 export class AuthModule {}

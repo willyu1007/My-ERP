@@ -9,5 +9,7 @@ import type { Identity, Principal } from '@my-erp/platform';
 export interface AuthedRequest extends Request {
   identity?: Identity;
   principal?: Principal;
+  /** The validated active ledger book id, set by LedgerScopeGuard. */
+  ledgerBookId?: string;
   traceId?: string;
 }

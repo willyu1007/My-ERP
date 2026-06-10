@@ -4,6 +4,7 @@
  */
 export * from './identity';
 export * from './ability';
+export * from './account';
 export * from './invitation';
 export * from './logging';
 

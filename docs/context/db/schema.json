@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-06-10T01:55:05.996Z",
+  "updatedAt": "2026-06-10T02:28:03.662Z",
   "ssot": {
     "mode": "repo-prisma",
     "source": {
@@ -16,6 +16,179 @@
   },
   "enums": [],
   "tables": [
+    {
+      "name": "Account",
+      "dbName": "account",
+      "schema": null,
+      "columns": [
+        {
+          "name": "active",
+          "type": "Boolean",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "true",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "auxTypes",
+          "type": "String",
+          "nullable": false,
+          "list": true,
+          "dbName": "aux_types",
+          "dbType": null,
+          "default": "[]",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "category",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "code",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "created_at",
+          "dbType": "Timestamptz",
+          "default": "now()",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "direction",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "id",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": "Uuid",
+          "default": "uuid()",
+          "primaryKey": true,
+          "unique": false
+        },
+        {
+          "name": "isLeaf",
+          "type": "Boolean",
+          "nullable": false,
+          "list": false,
+          "dbName": "is_leaf",
+          "dbType": null,
+          "default": "true",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "ledgerBookId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "ledger_book_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "level",
+          "type": "Int",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "parentCode",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "parent_code",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "field": "ledgerBook",
+          "to": "LedgerBook",
+          "optional": false,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "ledgerBookId"
+          ],
+          "references": [
+            "id"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "type": "index",
+          "fields": [
+            "ledgerBookId"
+          ],
+          "name": null,
+          "map": null
+        },
+        {
+          "type": "unique",
+          "fields": [
+            "ledgerBookId",
+            "code"
+          ],
+          "name": null,
+          "map": null
+        }
+      ]
+    },
     {
       "name": "AuditRecord",
       "dbName": "audit_record",
@@ -380,6 +553,15 @@
         }
       ],
       "relations": [
+        {
+          "field": "accounts",
+          "to": "Account",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
+        },
         {
           "field": "organization",
           "to": "Organization",

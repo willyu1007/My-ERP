@@ -185,6 +185,13 @@ export async function listLedgerBooksTx(tx: TxClient): Promise<LedgerBookEntity[
   return rows.map(toLedgerBook);
 }
 
+/** Fetch a ledger book by id within the active org scope (RLS-filtered). Returns
+ *  null when it doesn't belong to the caller's org — used to bind a ledger scope. */
+export async function getLedgerBookByIdTx(tx: TxClient, id: string): Promise<LedgerBookEntity | null> {
+  const b = await tx.ledgerBook.findUnique({ where: { id } });
+  return b ? toLedgerBook(b) : null;
+}
+
 export async function createLedgerBookTx(tx: TxClient, input: CreateLedgerBookInput): Promise<LedgerBookEntity> {
   const created = await tx.ledgerBook.create({
     data: {
@@ -336,6 +343,156 @@ export async function updateInvitationStatusTx(tx: TxClient, id: string, patch: 
       ...(patch.acceptedAt !== undefined ? { acceptedAt: patch.acceptedAt } : {}),
     },
   });
+}
+
+/* ---- Account (chart of accounts) repositories (ledger-scoped) ---- */
+
+export interface AccountEntity {
+  id: string;
+  ledgerBookId: string;
+  code: string;
+  name: string;
+  category: string;
+  direction: string;
+  parentCode: string | null;
+  level: number;
+  isLeaf: boolean;
+  auxTypes: string[];
+  active: boolean;
+  createdAt: Date;
+}
+
+export interface CreateAccountInput {
+  ledgerBookId: string;
+  code: string;
+  name: string;
+  category: string;
+  direction: string;
+  parentCode?: string | null;
+  level: number;
+  isLeaf?: boolean;
+  auxTypes?: readonly string[];
+}
+
+export interface SeedAccountInput {
+  readonly code: string;
+  readonly name: string;
+  readonly category: string;
+  readonly direction: string;
+  readonly parentCode: string | null;
+  readonly level: number;
+  readonly isLeaf: boolean;
+  readonly auxTypes?: readonly string[];
+}
+
+function toAccount(a: {
+  id: string;
+  ledgerBookId: string;
+  code: string;
+  name: string;
+  category: string;
+  direction: string;
+  parentCode: string | null;
+  level: number;
+  isLeaf: boolean;
+  auxTypes: string[];
+  active: boolean;
+  createdAt: Date;
+}): AccountEntity {
+  return {
+    id: a.id,
+    ledgerBookId: a.ledgerBookId,
+    code: a.code,
+    name: a.name,
+    category: a.category,
+    direction: a.direction,
+    parentCode: a.parentCode,
+    level: a.level,
+    isLeaf: a.isLeaf,
+    auxTypes: a.auxTypes,
+    active: a.active,
+    createdAt: a.createdAt,
+  };
+}
+
+/** All accounts in the active ledger scope, ordered by code (= tree pre-order). */
+export async function listAccountsTx(tx: TxClient): Promise<AccountEntity[]> {
+  const rows = await tx.account.findMany({ orderBy: { code: 'asc' } });
+  return rows.map(toAccount);
+}
+
+export async function getAccountByCodeTx(tx: TxClient, code: string): Promise<AccountEntity | null> {
+  const a = await tx.account.findFirst({ where: { code } });
+  return a ? toAccount(a) : null;
+}
+
+export async function createAccountTx(tx: TxClient, input: CreateAccountInput): Promise<AccountEntity> {
+  const created = await tx.account.create({
+    data: {
+      ledgerBookId: input.ledgerBookId,
+      code: input.code,
+      name: input.name,
+      category: input.category,
+      direction: input.direction,
+      parentCode: input.parentCode ?? null,
+      level: input.level,
+      isLeaf: input.isLeaf ?? true,
+      auxTypes: [...(input.auxTypes ?? [])],
+    },
+  });
+  return toAccount(created);
+}
+
+export interface UpdateAccountPatch {
+  name?: string;
+  auxTypes?: readonly string[];
+}
+
+export async function updateAccountTx(tx: TxClient, code: string, patch: UpdateAccountPatch): Promise<void> {
+  await tx.account.updateMany({
+    where: { code },
+    data: {
+      ...(patch.name !== undefined ? { name: patch.name } : {}),
+      ...(patch.auxTypes !== undefined ? { auxTypes: [...patch.auxTypes] } : {}),
+    },
+  });
+}
+
+export async function setAccountActiveTx(tx: TxClient, code: string, active: boolean): Promise<void> {
+  await tx.account.updateMany({ where: { code }, data: { active } });
+}
+
+/** Flip an account's leaf flag — a parent gaining its first child becomes a branch. */
+export async function setAccountLeafTx(tx: TxClient, code: string, isLeaf: boolean): Promise<void> {
+  await tx.account.updateMany({ where: { code }, data: { isLeaf } });
+}
+
+/** Count active child accounts of a parent (for the leaf/deactivate guard). */
+export async function countActiveChildrenTx(tx: TxClient, parentCode: string): Promise<number> {
+  return tx.account.count({ where: { parentCode, active: true } });
+}
+
+/** Idempotent chart seed: inserts only codes not already present in the ledger. */
+export async function seedAccountsTx(
+  tx: TxClient,
+  ledgerBookId: string,
+  seeds: readonly SeedAccountInput[],
+): Promise<number> {
+  const result = await tx.account.createMany({
+    data: seeds.map((s) => ({
+      ledgerBookId,
+      code: s.code,
+      name: s.name,
+      category: s.category,
+      direction: s.direction,
+      parentCode: s.parentCode,
+      level: s.level,
+      isLeaf: s.isLeaf,
+      auxTypes: [...(s.auxTypes ?? [])],
+    })),
+    skipDuplicates: true,
+  });
+  return result.count;
 }
 
 export { Prisma } from '@prisma/client';

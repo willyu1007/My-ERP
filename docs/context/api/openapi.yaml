@@ -183,6 +183,100 @@ paths:
                 items: { $ref: '#/components/schemas/Membership' }
         '401': { description: Missing or invalid bearer token }
         '403': { description: Caller lacks read permission }
+  /v1/accounts:
+    get:
+      operationId: listAccounts
+      summary: List chart of accounts (ledger-scoped, code order = tree pre-order)
+      tags: [accounts]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Account' }
+        '400': { description: No active ledger book on the token }
+        '401': { description: Missing or invalid bearer token }
+        '403': { description: Ledger book not in caller's org / lacks read permission }
+    post:
+      operationId: createAccount
+      summary: Create an account (accountant/admin)
+      tags: [accounts]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateAccount' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Account' }
+        '400': { description: Invalid body / duplicate code / parent not found }
+        '401': { description: Missing or invalid bearer token }
+        '403': { description: Lacks create permission }
+  /v1/accounts/seed-standard:
+    post:
+      operationId: seedStandardChart
+      summary: Seed the 《小企业准则》 standard chart (idempotent)
+      tags: [accounts]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '201':
+          description: Number of accounts newly seeded
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [seeded]
+                properties: { seeded: { type: integer } }
+        '401': { description: Missing or invalid bearer token }
+        '403': { description: Lacks create permission }
+  /v1/accounts/{code}:
+    patch:
+      operationId: updateAccount
+      summary: Update an account's name / aux types (accountant/admin)
+      tags: [accounts]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: code, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                auxTypes: { type: array, items: { type: string } }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Account' }
+        '400': { description: Invalid body }
+        '404': { description: Account not found }
+  /v1/accounts/{code}/deactivate:
+    post:
+      operationId: deactivateAccount
+      summary: Deactivate an account (blocked if it has active children)
+      tags: [accounts]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: code, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Deactivated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Account' }
+        '400': { description: Account has active children }
+        '404': { description: Account not found }
 components:
   securitySchemes:
     bearerAuth:
@@ -267,3 +361,29 @@ components:
       required: [token]
       properties:
         token: { type: string }
+    Account:
+      type: object
+      required: [id, ledgerBookId, code, name, category, direction, level, isLeaf, auxTypes, active, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        ledgerBookId: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string }
+        category: { type: string, enum: [asset, liability, equity, cost, profitLoss] }
+        direction: { type: string, enum: [debit, credit] }
+        parentCode: { type: string, nullable: true }
+        level: { type: integer }
+        isLeaf: { type: boolean }
+        auxTypes: { type: array, items: { type: string, enum: [customer, supplier, department, project] } }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    CreateAccount:
+      type: object
+      required: [code, name, category, direction]
+      properties:
+        code: { type: string, description: 'Numeric; longer codes nest under shorter ones' }
+        name: { type: string }
+        category: { type: string, enum: [asset, liability, equity, cost, profitLoss] }
+        direction: { type: string, enum: [debit, credit] }
+        parentCode: { type: string }
+        auxTypes: { type: array, items: { type: string, enum: [customer, supplier, department, project] } }
