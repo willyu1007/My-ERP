@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-06-10T03:19:20.709Z",
+  "updatedAt": "2026-06-10T03:32:41.105Z",
   "ssot": {
     "mode": "repo-prisma",
     "source": {
@@ -936,6 +936,17 @@
           "dbName": "period_structure",
           "dbType": null,
           "default": "\"12+1\"",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "singlePersonMode",
+          "type": "Boolean",
+          "nullable": false,
+          "list": false,
+          "dbName": "single_person_mode",
+          "dbType": null,
+          "default": "false",
           "primaryKey": false,
           "unique": false
         }

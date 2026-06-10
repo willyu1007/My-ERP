@@ -136,6 +136,7 @@ export interface LedgerBookEntity {
   fiscalYear: number;
   periodStructure: string;
   active: boolean;
+  singlePersonMode: boolean;
   createdAt: Date;
 }
 
@@ -166,6 +167,7 @@ function toLedgerBook(b: {
   fiscalYear: number;
   periodStructure: string;
   active: boolean;
+  singlePersonMode: boolean;
   createdAt: Date;
 }): LedgerBookEntity {
   return {
@@ -176,6 +178,7 @@ function toLedgerBook(b: {
     fiscalYear: b.fiscalYear,
     periodStructure: b.periodStructure,
     active: b.active,
+    singlePersonMode: b.singlePersonMode,
     createdAt: b.createdAt,
   };
 }
@@ -707,6 +710,53 @@ export async function setVoucherStatusTx(tx: TxClient, id: string, patch: Vouche
       ...(patch.reversedBy !== undefined ? { reversedBy: patch.reversedBy } : {}),
     },
   });
+}
+
+export interface ReversalContext {
+  no: string;
+  reverser: string;
+  date: string;
+  period: string;
+  postedAt: Date;
+}
+
+/**
+ * Create a posted reversal voucher (红冲) for `original` — same accounts with
+ * debit/credit swapped, so it offsets the original. The caller links the original
+ * (status=reversed, reversedBy) in the same transaction.
+ */
+export async function createReversalVoucherTx(tx: TxClient, original: VoucherEntity, ctx: ReversalContext): Promise<VoucherEntity> {
+  const v = await tx.journalVoucher.create({
+    data: {
+      ledgerBookId: original.ledgerBookId,
+      no: ctx.no,
+      date: new Date(ctx.date),
+      period: ctx.period,
+      status: 'posted',
+      summary: `红冲：${original.summary}（冲 ${original.no}）`,
+      maker: ctx.reverser,
+      checker: ctx.reverser,
+      postedAt: ctx.postedAt,
+      totalDebit: original.totalCredit,
+      totalCredit: original.totalDebit,
+      reversalOf: original.id,
+      lines: {
+        create: original.lines.map((l, i) => ({
+          ledgerBookId: original.ledgerBookId,
+          lineNo: i + 1,
+          accountCode: l.accountCode,
+          accountName: l.accountName,
+          summary: l.summary,
+          debit: l.credit,
+          credit: l.debit,
+          aux: l.aux === undefined || l.aux === null ? Prisma.JsonNull : (l.aux as Prisma.InputJsonValue),
+          cashFlowItem: l.cashFlowItem,
+        })),
+      },
+    },
+    include: { lines: { orderBy: { lineNo: 'asc' } } },
+  });
+  return toVoucher(v);
 }
 
 export { Prisma } from '@prisma/client';

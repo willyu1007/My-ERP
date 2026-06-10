@@ -117,4 +117,21 @@
 
 **遗留 TODO（P3a）**
 - 凭证号并发竞态（计数+unique 兜底→409，可改 per-ledger 序列）；附件上传（attachments 仅计数占位）。
-- P3b：post（SoD 事务）+ reverse（反向凭证）。
+
+## P3b — 过账 + 红冲（完成）
+
+**决策（实现期落定）**
+- **SoD 在 post**：过账人 ≠ 制单人（人级，非角色级）；违者 403。**单人模式**为显式例外：`LedgerBook.singlePersonMode` 开启 + 请求体 `confirmSinglePerson:true` 方可自过账，审计 action=`POST_VOUCHER_SINGLE_PERSON` + metadata。
+- **红冲 = posted 反向凭证**：借贷互换（debit↔credit）的新凭证，直接 `status=posted`；原凭证 `status=reversed` + `reversedBy`，反向凭证 `reversalOf` 指原 —— 双向可追溯，单事务原子，原凭证不删不改（仅 status/reversedBy）。不可重复红冲（`reversedBy` 已设→400）。
+- `LedgerScopeGuard` 改为挂**完整账套实体**到 `req.ledgerBook`（+ `@CurrentLedgerBook`），post 读 `singlePersonMode` 免再查。
+
+**改了什么**
+- Prisma：`LedgerBook.singlePersonMode`；迁移 `20260610170000_p3b_ledger_single_person`。
+- `packages/db`：`LedgerBookEntity.singlePersonMode`；`createReversalVoucherTx`（互换行 + posted + reversalOf）；`getLedgerBookByIdTx` 带 singlePersonMode。
+- `apps/api`：`@CurrentLedgerBook` 装饰器；`VouchersController` 加 `post`（SoD + 单人模式 + 事务 + 余额校验）+ `reverse`（红冲，返回 {original, reversal}）。
+- 测试基建：集成测试改用 `migrationDirs()` **动态全量迁移**（避免后续迁移改表致旧测试漏列）；`apply-migrations.ts`（test-only，tsconfig 排除，import.meta）。voucher 集成测试加红冲用例。
+- 契约：openapi 增 post/reverse（21 endpoints）。
+
+**遗留 TODO（P3b）**
+- 红冲期间：当前红冲落在原凭证期间；可改为当前期间（发现错误的期间）。
+- 单人模式开关端点（当前经 DB/账套设置；可加 admin 切换 API）。

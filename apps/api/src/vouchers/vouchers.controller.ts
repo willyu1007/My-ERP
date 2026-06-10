@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   NotFoundException,
@@ -14,6 +15,7 @@ import {
 import {
   appendAuditRecordTx,
   countVouchersInPeriodTx,
+  createReversalVoucherTx,
   createVoucherTx,
   getVoucherTx,
   listAccountsTx,
@@ -21,6 +23,7 @@ import {
   setVoucherStatusTx,
   updateDraftVoucherTx,
   withLedgerScope,
+  type LedgerBookEntity,
   type TxClient,
   type VoucherLineInput,
 } from '@my-erp/db';
@@ -28,6 +31,7 @@ import { Money, voucherBalanceError } from '@my-erp/finance-domain';
 import { withSpan, type Identity } from '@my-erp/platform';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentIdentity } from '../auth/current-identity.decorator';
+import { CurrentLedgerBook } from '../auth/current-ledger-book.decorator';
 import { LedgerBookId } from '../auth/ledger-book-id.decorator';
 import { LedgerScopeGuard } from '../auth/ledger-scope.guard';
 import { RequirePermission } from '../auth/permission.decorator';
@@ -170,6 +174,85 @@ export class VouchersController {
       await setVoucherStatusTx(tx, id, { status: 'pending' });
       await appendAuditRecordTx(tx, { actorId: identity.userId, action: 'SUBMIT_VOUCHER', entityType: 'Voucher', entityId: id, ledgerBookId });
       return getVoucherTx(tx, id);
+    });
+  }
+
+  /**
+   * pending → posted (审核过账). SoD: the maker cannot post their own voucher,
+   * unless single-person mode is explicitly enabled on the ledger AND the caller
+   * confirms (audited as a single-person post). Transactional + balance-checked.
+   */
+  @Post(':id/post')
+  @HttpCode(200)
+  @RequirePermission('post', 'Voucher')
+  async post(
+    @LedgerBookId() ledgerBookId: string,
+    @CurrentLedgerBook() book: LedgerBookEntity,
+    @CurrentIdentity() identity: Identity,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    const confirmSinglePerson = Boolean((body as Record<string, unknown> | null)?.confirmSinglePerson);
+    return withLedgerScope(ledgerBookId, async (tx) => {
+      const voucher = await getVoucherTx(tx, id);
+      if (!voucher) throw new NotFoundException('voucher not found');
+      if (voucher.status !== 'pending') throw new BadRequestException(`cannot post a ${voucher.status} voucher`);
+      const error = voucherBalanceError(voucher.lines);
+      if (error) throw new BadRequestException(error);
+
+      const selfPost = voucher.maker === identity.userId;
+      if (selfPost && !(book.singlePersonMode && confirmSinglePerson)) {
+        throw new ForbiddenException(
+          'the maker cannot post their own voucher (职责分离); enable single-person mode and confirm to override',
+        );
+      }
+      await setVoucherStatusTx(tx, id, { status: 'posted', checker: identity.userId, postedAt: new Date() });
+      await appendAuditRecordTx(tx, {
+        actorId: identity.userId,
+        action: selfPost ? 'POST_VOUCHER_SINGLE_PERSON' : 'POST_VOUCHER',
+        entityType: 'Voucher',
+        entityId: id,
+        ledgerBookId,
+        ...(selfPost ? { metadata: { singlePerson: true } } : {}),
+      });
+      return getVoucherTx(tx, id);
+    });
+  }
+
+  /**
+   * posted → reversed (红冲). Generates a posted reversal voucher (swapped lines)
+   * and links both ways. Atomic; the original is never deleted or mutated beyond
+   * its status + reversedBy.
+   */
+  @Post(':id/reverse')
+  @HttpCode(200)
+  @RequirePermission('reverse', 'Voucher')
+  async reverse(@LedgerBookId() ledgerBookId: string, @CurrentIdentity() identity: Identity, @Param('id') id: string) {
+    return withLedgerScope(ledgerBookId, async (tx) => {
+      const original = await getVoucherTx(tx, id);
+      if (!original) throw new NotFoundException('voucher not found');
+      if (original.status !== 'posted') throw new BadRequestException(`only a posted voucher can be reversed (current: ${original.status})`);
+      if (original.reversedBy) throw new BadRequestException('voucher already reversed');
+
+      const seq = (await countVouchersInPeriodTx(tx, original.period)) + 1;
+      const no = `记-${original.period}-${String(seq).padStart(3, '0')}`;
+      const reversal = await createReversalVoucherTx(tx, original, {
+        no,
+        reverser: identity.userId,
+        date: original.date,
+        period: original.period,
+        postedAt: new Date(),
+      });
+      await setVoucherStatusTx(tx, id, { status: 'reversed', reversedBy: reversal.id });
+      await appendAuditRecordTx(tx, {
+        actorId: identity.userId,
+        action: 'REVERSE_VOUCHER',
+        entityType: 'Voucher',
+        entityId: id,
+        ledgerBookId,
+        metadata: { reversalId: reversal.id },
+      });
+      return { original: await getVoucherTx(tx, id), reversal };
     });
   }
 }

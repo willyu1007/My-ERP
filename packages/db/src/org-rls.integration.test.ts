@@ -8,6 +8,7 @@ import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { migrationDirs } from './apply-migrations';
 import {
   createLedgerBookTx,
   disconnectDatabase,
@@ -48,9 +49,7 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS — org isolation (organization/mem
   beforeAll(async () => {
     psql('postgres', `DROP DATABASE IF EXISTS ${TEST_DB} WITH (FORCE);`);
     psql('postgres', `CREATE DATABASE ${TEST_DB};`);
-    psql(TEST_DB, migrationSql('20260606045750_init'));
-    psql(TEST_DB, migrationSql('20260610120000_p0b_rls_audit'));
-    psql(TEST_DB, migrationSql('20260610130000_p1a_org_membership_ledger'));
+    for (const m of migrationDirs()) psql(TEST_DB, migrationSql(m));
     psql(
       'postgres',
       `DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='${APP_ROLE}') THEN CREATE ROLE ${APP_ROLE} LOGIN PASSWORD '${APP_PW}'; END IF; END $$;`,

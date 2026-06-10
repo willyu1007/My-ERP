@@ -8,7 +8,9 @@ import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { migrationDirs } from './apply-migrations';
 import {
+  createReversalVoucherTx,
   createVoucherTx,
   disconnectDatabase,
   getPrisma,
@@ -65,16 +67,7 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS + CHECK — journal voucher (ledger
   beforeAll(async () => {
     psql('postgres', `DROP DATABASE IF EXISTS ${TEST_DB} WITH (FORCE);`);
     psql('postgres', `CREATE DATABASE ${TEST_DB};`);
-    for (const m of [
-      '20260606045750_init',
-      '20260610120000_p0b_rls_audit',
-      '20260610130000_p1a_org_membership_ledger',
-      '20260610140000_p1b_invitation',
-      '20260610150000_p2_account',
-      '20260610160000_p3_voucher',
-    ]) {
-      psql(TEST_DB, migrationSql(m));
-    }
+    for (const m of migrationDirs()) psql(TEST_DB, migrationSql(m));
     psql(
       'postgres',
       `DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='${APP_ROLE}') THEN CREATE ROLE ${APP_ROLE} LOGIN PASSWORD '${APP_PW}'; END IF; END $$;`,
@@ -138,5 +131,35 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS + CHECK — journal voucher (ledger
 
   it('without a ledger scope, RLS hides every voucher', async () => {
     expect(await getPrisma().journalVoucher.findMany()).toHaveLength(0);
+  });
+
+  it('reversal swaps debit/credit, posts, and links both ways', async () => {
+    const original = await withLedgerScope(LB_A, async (tx) => {
+      const v = await createVoucherTx(tx, { ...balanced(LB_A), no: '记-2026-010' });
+      await setVoucherStatusTx(tx, v.id, { status: 'posted', checker: 'u2', postedAt: new Date() });
+      return getVoucherTx(tx, v.id);
+    });
+    const reversal = await withLedgerScope(LB_A, async (tx) => {
+      const r = await createReversalVoucherTx(tx, original!, {
+        no: '记-2026-011',
+        reverser: 'u2',
+        date: original!.date,
+        period: original!.period,
+        postedAt: new Date(),
+      });
+      await setVoucherStatusTx(tx, original!.id, { status: 'reversed', reversedBy: r.id });
+      return r;
+    });
+
+    expect(reversal.status).toBe('posted');
+    expect(reversal.reversalOf).toBe(original!.id);
+    // original line: debit 1002/500 → reversal: credit 1002/500
+    const line = reversal.lines.find((l) => l.accountCode === '1002');
+    expect(line?.debit).toBeNull();
+    expect(line?.credit).toBe('500.00');
+
+    const after = await withLedgerScope(LB_A, (tx) => getVoucherTx(tx, original!.id));
+    expect(after?.status).toBe('reversed');
+    expect(after?.reversedBy).toBe(reversal.id);
   });
 });

@@ -342,6 +342,49 @@ paths:
         '200': { description: Submitted, content: { application/json: { schema: { $ref: '#/components/schemas/Voucher' } } } }
         '400': { description: Not a draft / unbalanced }
         '404': { description: Not found }
+  /v1/vouchers/{id}/post:
+    post:
+      operationId: postVoucher
+      summary: Post a pending voucher (pending → posted; SoD — maker ≠ poster)
+      description: |
+        职责分离: the maker cannot post their own voucher unless single-person mode
+        is enabled on the ledger AND the caller confirms (body confirmSinglePerson).
+      tags: [vouchers]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: { confirmSinglePerson: { type: boolean } }
+      responses:
+        '200': { description: Posted, content: { application/json: { schema: { $ref: '#/components/schemas/Voucher' } } } }
+        '400': { description: Not pending / unbalanced }
+        '403': { description: SoD — maker cannot post own (without single-person override) / lacks post }
+        '404': { description: Not found }
+  /v1/vouchers/{id}/reverse:
+    post:
+      operationId: reverseVoucher
+      summary: Reverse a posted voucher (红冲) — creates a posted reversal voucher
+      tags: [vouchers]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200':
+          description: Original (now reversed) + the generated reversal voucher
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [original, reversal]
+                properties:
+                  original: { $ref: '#/components/schemas/Voucher' }
+                  reversal: { $ref: '#/components/schemas/Voucher' }
+        '400': { description: Not posted / already reversed }
+        '403': { description: Lacks reverse permission }
+        '404': { description: Not found }
 components:
   securitySchemes:
     bearerAuth:

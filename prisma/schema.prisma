@@ -102,6 +102,8 @@ model LedgerBook {
   fiscalYear      Int      @map("fiscal_year")
   periodStructure String   @default("12+1") @map("period_structure")
   active          Boolean  @default(true)
+  /// 单人模式（SoD 例外）：显式开启后允许制单人过账自己的凭证（强制二次确认 + 留痕）。
+  singlePersonMode Boolean @default(false) @map("single_person_mode")
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)

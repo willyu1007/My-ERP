@@ -11,6 +11,7 @@ import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { migrationDirs } from './apply-migrations';
 import { appendAuditRecordTx, disconnectDatabase, getPrisma, withLedgerScope } from './index';
 
 const PORT = 5432;
@@ -42,8 +43,7 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS — ledger isolation on audit_recor
   beforeAll(async () => {
     psql('postgres', `DROP DATABASE IF EXISTS ${TEST_DB} WITH (FORCE); CREATE DATABASE ${TEST_DB};`);
     // Schema + RLS applied as the privileged owner.
-    psql(TEST_DB, migrationSql('20260606045750_init'));
-    psql(TEST_DB, migrationSql('20260610120000_p0b_rls_audit'));
+    for (const m of migrationDirs()) psql(TEST_DB, migrationSql(m));
     // Non-superuser app role — RLS only applies to non-owner/non-superuser roles.
     psql(
       'postgres',

@@ -1,4 +1,5 @@
 import type { Request } from 'express';
+import type { LedgerBookEntity } from '@my-erp/db';
 import type { Identity, Principal } from '@my-erp/platform';
 
 /**
@@ -9,7 +10,8 @@ import type { Identity, Principal } from '@my-erp/platform';
 export interface AuthedRequest extends Request {
   identity?: Identity;
   principal?: Principal;
-  /** The validated active ledger book id, set by LedgerScopeGuard. */
+  /** The validated active ledger book id + entity, set by LedgerScopeGuard. */
   ledgerBookId?: string;
+  ledgerBook?: LedgerBookEntity;
   traceId?: string;
 }
