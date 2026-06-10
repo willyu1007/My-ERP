@@ -277,6 +277,71 @@ paths:
               schema: { $ref: '#/components/schemas/Account' }
         '400': { description: Account has active children }
         '404': { description: Account not found }
+  /v1/vouchers:
+    get:
+      operationId: listVouchers
+      summary: List journal vouchers (ledger-scoped; optional status filter)
+      tags: [vouchers]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: status, in: query, required: false, schema: { type: string, enum: [draft, pending, posted, reversed] } }
+      responses:
+        '200':
+          description: Vouchers
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Voucher' } }
+        '401': { description: Missing or invalid bearer token }
+        '403': { description: Ledger not in org / lacks read }
+    post:
+      operationId: createVoucher
+      summary: Create a draft voucher (accountant/cashier)
+      tags: [vouchers]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateVoucher' } } }
+      responses:
+        '201':
+          description: Created (draft; may be unbalanced)
+          content: { application/json: { schema: { $ref: '#/components/schemas/Voucher' } } }
+        '400': { description: Invalid body / non-leaf or inactive account / malformed line }
+        '401': { description: Missing or invalid bearer token }
+        '403': { description: Lacks create permission }
+  /v1/vouchers/{id}:
+    get:
+      operationId: getVoucher
+      summary: Voucher detail (with lines)
+      tags: [vouchers]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: Voucher, content: { application/json: { schema: { $ref: '#/components/schemas/Voucher' } } } }
+        '404': { description: Not found }
+    patch:
+      operationId: updateVoucher
+      summary: Replace a draft voucher's header + lines (only while draft)
+      tags: [vouchers]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateVoucher' } } }
+      responses:
+        '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/Voucher' } } } }
+        '400': { description: Not a draft / invalid }
+        '404': { description: Not found }
+  /v1/vouchers/{id}/submit:
+    post:
+      operationId: submitVoucher
+      summary: Submit a draft for review (draft → pending); enforces 借贷必平
+      tags: [vouchers]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: Submitted, content: { application/json: { schema: { $ref: '#/components/schemas/Voucher' } } } }
+        '400': { description: Not a draft / unbalanced }
+        '404': { description: Not found }
 components:
   securitySchemes:
     bearerAuth:
@@ -387,3 +452,52 @@ components:
         direction: { type: string, enum: [debit, credit] }
         parentCode: { type: string }
         auxTypes: { type: array, items: { type: string, enum: [customer, supplier, department, project] } }
+    VoucherLine:
+      type: object
+      required: [accountCode, summary]
+      properties:
+        accountCode: { type: string }
+        accountName: { type: string, description: 'Denormalized from the chart (server-set)' }
+        summary: { type: string }
+        debit: { type: string, nullable: true, description: '2dp; exactly one of debit/credit' }
+        credit: { type: string, nullable: true }
+        cashFlowItem: { type: string, nullable: true }
+    Voucher:
+      type: object
+      required: [id, ledgerBookId, no, date, period, status, summary, totalDebit, totalCredit, maker, lines]
+      properties:
+        id: { type: string, format: uuid }
+        ledgerBookId: { type: string, format: uuid }
+        no: { type: string }
+        date: { type: string, format: date }
+        period: { type: string, example: '2026-06' }
+        status: { type: string, enum: [draft, pending, posted, reversed] }
+        summary: { type: string }
+        totalDebit: { type: string }
+        totalCredit: { type: string }
+        maker: { type: string }
+        checker: { type: string, nullable: true }
+        postedAt: { type: string, format: date-time, nullable: true }
+        reversalOf: { type: string, format: uuid, nullable: true }
+        reversedBy: { type: string, format: uuid, nullable: true }
+        attachments: { type: integer }
+        lines:
+          type: array
+          items: { $ref: '#/components/schemas/VoucherLine' }
+    CreateVoucher:
+      type: object
+      required: [date, summary, lines]
+      properties:
+        date: { type: string, format: date }
+        summary: { type: string }
+        lines:
+          type: array
+          items:
+            type: object
+            required: [accountCode]
+            properties:
+              accountCode: { type: string }
+              summary: { type: string }
+              debit: { type: string }
+              credit: { type: string }
+              cashFlowItem: { type: string }

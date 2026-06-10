@@ -100,3 +100,21 @@
 **遗留 TODO（P2）**
 - 科目删除（仅作废/停用，不物理删，已遵循）；辅助核算项主数据（往来/部门/项目档案）随后续。
 - 停用校验仅查活跃子级；有凭证发生的科目停用校验待 P3（有余额/分录不可停）。
+
+## P3a — 凭证模型 + 草稿生命周期（完成）
+
+**决策（实现期落定）**
+- **借贷平衡分两层**：服务层 `finance-domain.voucherBalanceError`（草稿可不平、submit/post 必平）+ DB CHECK `status='draft' OR total_debit=total_credit`（非草稿必平兜底）。金额走 `Decimal/NUMERIC(18,2)` + `Money`（decimal.js，零浮点）。
+- **凭证不可物理删**：journal_voucher 无 DELETE 策略；journal_entry_line 有 DELETE（草稿改单时整组替换，service 限草稿）；line 无 UPDATE（替换非改）。
+- 行的 `accountName` 由科目表**反规范化**（服务端取，不信客户端）；制单校验每行科目存在·末级·启用。
+- 凭证号 `记-{period}-{NNN}`（按 ledger+period 计数 + `@@unique[ledgerBookId,no]` 兜底并发）。
+
+**改了什么**
+- Prisma：`JournalVoucher`（no/date/period/status/summary/total_debit/total_credit/maker/checker/reversal_of/reversed_by/attachments）+ `JournalEntryLine`（ledger_book_id 反规范化用于 RLS、line_no/account_code/account_name/debit?/credit?/aux/cash_flow_item）；迁移 `20260610160000_p3_voucher`（DDL + 账套级 RLS + CHECK）。
+- `finance-domain`：`voucherBalanceError`（≥2 行、每行单边、非零、借=贷）+ 7 单测。api 加 `@my-erp/finance-domain` 依赖。
+- `packages/db`：voucher 仓储（create 含嵌套 lines、list/get、updateDraft 替换 lines、setStatus、countInPeriod；Decimal→2dp 字符串映射）。
+- `apps/api`：`VouchersController`（GET 列表(状态筛选)/GET 详情/POST 创建(草稿)/PATCH 改(仅草稿)/POST submit(借贷必平校验)），均经 `LedgerScopeGuard`，审计。
+
+**遗留 TODO（P3a）**
+- 凭证号并发竞态（计数+unique 兜底→409，可改 per-ledger 序列）；附件上传（attachments 仅计数占位）。
+- P3b：post（SoD 事务）+ reverse（反向凭证）。

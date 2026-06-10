@@ -1,9 +1,9 @@
 # API Index
 
-> Auto-generated at 2026-06-10T02:36:12.125Z — do NOT hand-edit.
-> Source: `docs/context/api/openapi.yaml` (SHA-256: `f054dd042682...`)
+> Auto-generated at 2026-06-10T03:28:29.205Z — do NOT hand-edit.
+> Source: `docs/context/api/openapi.yaml` (SHA-256: `f9f3c613ed40...`)
 
-Total endpoints: **14**
+Total endpoints: **19**
 
 | Method | Path | Summary | Auth | Input (required) | Output (core) | Errors |
 |--------|------|---------|------|------------------|---------------|--------|
@@ -21,3 +21,8 @@ Total endpoints: **14**
 | POST | /v1/accounts/seed-standard | Seed the 《小企业准则》 standard chart (idempotent) | bearer | — | seeded | 401, 403 |
 | PATCH | /v1/accounts/{code} | Update an account's name / aux types (accountant/admin) | bearer | code | id, ledgerBookId, code, name, category, direction, level, isLeaf, auxTypes, active, createdAt, parentCode | 400, 404 |
 | POST | /v1/accounts/{code}/deactivate | Deactivate an account (blocked if it has active children) | bearer | code | id, ledgerBookId, code, name, category, direction, level, isLeaf, auxTypes, active, createdAt, parentCode | 400, 404 |
+| GET | /v1/vouchers | List journal vouchers (ledger-scoped; optional status filter) | bearer | — | — | 401, 403 |
+| POST | /v1/vouchers | Create a draft voucher (accountant/cashier) | bearer | date, summary, lines | id, ledgerBookId, no, date, period, status, summary, totalDebit, totalCredit, maker, lines, checker, postedAt, reversalOf, reversedBy, attachments | 400, 401, 403 |
+| GET | /v1/vouchers/{id} | Voucher detail (with lines) | bearer | id | id, ledgerBookId, no, date, period, status, summary, totalDebit, totalCredit, maker, lines, checker, postedAt, reversalOf, reversedBy, attachments | 404 |
+| PATCH | /v1/vouchers/{id} | Replace a draft voucher's header + lines (only while draft) | bearer | date, summary, lines | id, ledgerBookId, no, date, period, status, summary, totalDebit, totalCredit, maker, lines, checker, postedAt, reversalOf, reversedBy, attachments | 400, 404 |
+| POST | /v1/vouchers/{id}/submit | Submit a draft for review (draft → pending); enforces 借贷必平 | bearer | id | id, ledgerBookId, no, date, period, status, summary, totalDebit, totalCredit, maker, lines, checker, postedAt, reversalOf, reversedBy, attachments | 400, 404 |

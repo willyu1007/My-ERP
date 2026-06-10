@@ -45,6 +45,9 @@ importers:
       '@my-erp/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@my-erp/finance-domain':
+        specifier: workspace:*
+        version: link:../../packages/finance-domain
       '@my-erp/platform':
         specifier: workspace:*
         version: link:../../packages/platform

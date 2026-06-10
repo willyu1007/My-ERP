@@ -1,17 +1,18 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-10T02:36:12.125Z",
+  "generatedAt": "2026-06-10T03:28:29.205Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "f054dd042682e8a03302534221dbd3e7cf693f44f09fbe03f2e8b2dbf6f8c503",
+  "sourceChecksumSha256": "f9f3c613ed40cb90a0c147675f7dc460f4666cee7d555ab1b835a116e8a70ade",
   "stats": {
-    "totalEndpoints": 14,
+    "totalEndpoints": 19,
     "byTag": {
       "system": 1,
       "organization": 1,
       "ledger-books": 2,
       "invitations": 4,
       "members": 1,
-      "accounts": 5
+      "accounts": 5,
+      "vouchers": 5
     }
   },
   "endpoints": [
@@ -474,6 +475,216 @@
       ],
       "example": {
         "curl": "curl -X POST '/v1/accounts/{code}/deactivate' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/vouchers",
+      "operationId": "listVouchers",
+      "summary": "List journal vouchers (ledger-scoped; optional status filter)",
+      "tag": "vouchers",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [
+          "status"
+        ],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": []
+      },
+      "errors": [
+        401,
+        403
+      ],
+      "example": {
+        "curl": "curl -X GET '/v1/vouchers' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/vouchers",
+      "operationId": "createVoucher",
+      "summary": "Create a draft voucher (accountant/cashier)",
+      "tag": "vouchers",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": {
+          "required": [
+            "date",
+            "summary",
+            "lines"
+          ],
+          "optional": []
+        }
+      },
+      "output": {
+        "successStatus": 201,
+        "coreFields": [
+          "id",
+          "ledgerBookId",
+          "no",
+          "date",
+          "period",
+          "status",
+          "summary",
+          "totalDebit",
+          "totalCredit",
+          "maker",
+          "lines",
+          "checker",
+          "postedAt",
+          "reversalOf",
+          "reversedBy",
+          "attachments"
+        ]
+      },
+      "errors": [
+        400,
+        401,
+        403
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/vouchers' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"date\":\"<date>\",\"summary\":\"<summary>\",\"lines\":\"<lines>\"}'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/vouchers/{id}",
+      "operationId": "getVoucher",
+      "summary": "Voucher detail (with lines)",
+      "tag": "vouchers",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id"
+        ],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "ledgerBookId",
+          "no",
+          "date",
+          "period",
+          "status",
+          "summary",
+          "totalDebit",
+          "totalCredit",
+          "maker",
+          "lines",
+          "checker",
+          "postedAt",
+          "reversalOf",
+          "reversedBy",
+          "attachments"
+        ]
+      },
+      "errors": [
+        404
+      ],
+      "example": {
+        "curl": "curl -X GET '/v1/vouchers/{id}' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/vouchers/{id}",
+      "operationId": "updateVoucher",
+      "summary": "Replace a draft voucher's header + lines (only while draft)",
+      "tag": "vouchers",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id"
+        ],
+        "query": [],
+        "body": {
+          "required": [
+            "date",
+            "summary",
+            "lines"
+          ],
+          "optional": []
+        }
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "ledgerBookId",
+          "no",
+          "date",
+          "period",
+          "status",
+          "summary",
+          "totalDebit",
+          "totalCredit",
+          "maker",
+          "lines",
+          "checker",
+          "postedAt",
+          "reversalOf",
+          "reversedBy",
+          "attachments"
+        ]
+      },
+      "errors": [
+        400,
+        404
+      ],
+      "example": {
+        "curl": "curl -X PATCH '/v1/vouchers/{id}' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"date\":\"<date>\",\"summary\":\"<summary>\",\"lines\":\"<lines>\"}'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/vouchers/{id}/submit",
+      "operationId": "submitVoucher",
+      "summary": "Submit a draft for review (draft → pending); enforces 借贷必平",
+      "tag": "vouchers",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id"
+        ],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "ledgerBookId",
+          "no",
+          "date",
+          "period",
+          "status",
+          "summary",
+          "totalDebit",
+          "totalCredit",
+          "maker",
+          "lines",
+          "checker",
+          "postedAt",
+          "reversalOf",
+          "reversedBy",
+          "attachments"
+        ]
+      },
+      "errors": [
+        400,
+        404
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/vouchers/{id}/submit' -H 'Authorization: Bearer <token>'"
       }
     }
   ]

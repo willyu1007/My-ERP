@@ -89,6 +89,17 @@
 
 要点：首张账套级业务表接 RLS（`app.current_ledger`）；`LedgerScopeGuard` 用应用层校验「账套∈本组织」补 RLS 的「账套隔离」，防伪造 ledgerBookId 跨组织读；模板幂等；建子翻父 isLeaf、停用末级校验。
 
+### P3a — 凭证草稿生命周期 — 2026-06-10（本机 PG17 :5432）
+
+| 验证项 | 命令 | 结果 |
+|---|---|---|
+| 类型检查 | `pnpm -r typecheck` | ✓ 9/9 |
+| 单测 + 集成 | `pnpm test` | ✓ 63 passed（`finance-domain` voucherBalanceError 7 单测 + `voucher-rls.integration` 4：建单+lines+账套隔离、**DB CHECK 阻不平转非草稿**、WITH CHECK 阻跨账套、无作用域 0 行）|
+| Lint / build | `pnpm lint · build` | ✓ 无告警 / api+web Done |
+| **端到端 HTTP** | 本机 PG（6 迁移）+ seed 科目 + 非特权角色起 api | ✓ ① 建平衡草稿 → `记-2026-06-001`/draft/2 行 ② 详情 totalDebit 500000.00 ③ submit 平衡 → 200/pending ④ PATCH 已提交 → **400**（仅草稿可改）⑤ 建不平 → draft（允许）⑥ submit 不平 → **400**（借贷必平）⑦ 建单含非末级科目 1002 → **400** ⑧ 建单行同时借贷 → **400**；日志 0 错误 |
+
+要点：借贷平衡服务层（草稿宽松/提交严格）+ DB CHECK 双保险；金额 Decimal/Money 零浮点；凭证不可物理删（无 DELETE 策略）；制单校验科目末级·启用、行单边。
+
 ### P2 实施质量自审 — 2026-06-10（修复后重验全绿）
 
 修复 1 处：**建子科目未校验「子编码扩展父编码」** —— 可在父 `1001` 下建 `9999`，破坏「编码升序=树前序」不变式 → parseCreateBody 加 `code.startsWith(parentCode) && code 更长` 校验（模板一致、seed 走 createMany 不受影响）。e2e：`9999/1001`→400、`100105/1001`→201、顶层 `1701`→201。重验 typecheck 9/9 · test 53 · lint · build。

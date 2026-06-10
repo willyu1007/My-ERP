@@ -106,9 +106,63 @@ model LedgerBook {
 
   organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   accounts     Account[]
+  vouchers     JournalVoucher[]
 
   @@index([orgId])
   @@map("ledger_book")
+}
+
+/// A journal voucher (记账凭证). Ledger-scoped. Money is NUMERIC (never float).
+/// State machine: draft → pending → posted → reversed (see service layer).
+/// Never physically deleted (无 DELETE 策略); corrections via reversal (红冲).
+model JournalVoucher {
+  id           String    @id @default(uuid()) @db.Uuid
+  ledgerBookId String    @map("ledger_book_id") @db.Uuid
+  no           String
+  date         DateTime  @db.Date
+  period       String
+  status       String    @default("draft")
+  summary      String
+  totalDebit   Decimal   @default(0) @map("total_debit") @db.Decimal(18, 2)
+  totalCredit  Decimal   @default(0) @map("total_credit") @db.Decimal(18, 2)
+  maker        String
+  checker      String?
+  postedAt     DateTime? @map("posted_at") @db.Timestamptz(6)
+  /// The original voucher this one reverses (set on a reversal voucher).
+  reversalOf   String?   @map("reversal_of") @db.Uuid
+  /// The reversal voucher created from this one (set on the original when reversed).
+  reversedBy   String?   @map("reversed_by") @db.Uuid
+  attachments  Int       @default(0)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  ledgerBook LedgerBook         @relation(fields: [ledgerBookId], references: [id], onDelete: Cascade)
+  lines      JournalEntryLine[]
+
+  @@unique([ledgerBookId, no])
+  @@index([ledgerBookId, status])
+  @@map("journal_voucher")
+}
+
+/// A single debit-or-credit line of a voucher. ledgerBookId is denormalized so
+/// lines are directly ledger-scoped by RLS. Exactly one of debit/credit is set.
+model JournalEntryLine {
+  id           String   @id @default(uuid()) @db.Uuid
+  voucherId    String   @map("voucher_id") @db.Uuid
+  ledgerBookId String   @map("ledger_book_id") @db.Uuid
+  lineNo       Int      @map("line_no")
+  accountCode  String   @map("account_code")
+  accountName  String   @map("account_name")
+  summary      String
+  debit        Decimal? @db.Decimal(18, 2)
+  credit       Decimal? @db.Decimal(18, 2)
+  aux          Json?
+  cashFlowItem String?  @map("cash_flow_item")
+
+  voucher JournalVoucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+
+  @@index([voucherId])
+  @@index([ledgerBookId])
+  @@map("journal_entry_line")
 }
 
 /// A chart-of-accounts entry (会计科目) within a ledger book. LEDGER-scoped via

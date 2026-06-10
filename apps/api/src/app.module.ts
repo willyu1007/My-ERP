@@ -8,6 +8,7 @@ import { InvitationService } from './invitations/invitation.service';
 import { LedgerBooksController } from './ledger-books/ledger-books.controller';
 import { MembersController } from './members/members.controller';
 import { OrganizationController } from './organization/organization.controller';
+import { VouchersController } from './vouchers/vouchers.controller';
 
 @Module({
   imports: [AuthModule],
@@ -18,6 +19,7 @@ import { OrganizationController } from './organization/organization.controller';
     InvitationsController,
     MembersController,
     AccountsController,
+    VouchersController,
   ],
   providers: [HealthService, InvitationService],
 })

@@ -51,3 +51,32 @@ export function isBalanced(debits: Money[], credits: Money[]): boolean {
   const sum = (xs: Money[]) => xs.reduce((acc, m) => acc.add(m), Money.zero());
   return sum(debits).equals(sum(credits));
 }
+
+/** A voucher line carries a debit XOR a credit amount (2dp string), the other null. */
+export interface VoucherLineAmounts {
+  readonly debit?: string | null;
+  readonly credit?: string | null;
+}
+
+/**
+ * Validate a voucher's lines as a balanced double entry (借贷必平). Returns an
+ * error message, or null when valid. Uses exact Decimal money (no float). Rules:
+ * at least two lines; each line exactly one of debit/credit (> 0); non-zero
+ * total; debits === credits.
+ */
+export function voucherBalanceError(lines: readonly VoucherLineAmounts[]): string | null {
+  if (lines.length < 2) return 'a voucher needs at least two entry lines';
+  let debit = Money.zero();
+  let credit = Money.zero();
+  for (const line of lines) {
+    const hasDebit = line.debit != null && line.debit !== '';
+    const hasCredit = line.credit != null && line.credit !== '';
+    if (hasDebit && hasCredit) return 'a line cannot have both a debit and a credit';
+    if (!hasDebit && !hasCredit) return 'each line must have a debit or a credit amount';
+    if (hasDebit) debit = debit.add(Money.of(line.debit as string));
+    if (hasCredit) credit = credit.add(Money.of(line.credit as string));
+  }
+  if (debit.isZero()) return 'voucher total cannot be zero';
+  if (!debit.equals(credit)) return 'debits must equal credits (借贷必平)';
+  return null;
+}

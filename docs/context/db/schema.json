@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-06-10T02:28:03.662Z",
+  "updatedAt": "2026-06-10T03:19:20.709Z",
   "ssot": {
     "mode": "repo-prisma",
     "source": {
@@ -459,6 +459,394 @@
       ]
     },
     {
+      "name": "JournalEntryLine",
+      "dbName": "journal_entry_line",
+      "schema": null,
+      "columns": [
+        {
+          "name": "accountCode",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "account_code",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "accountName",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "account_name",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "aux",
+          "type": "Json",
+          "nullable": true,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "cashFlowItem",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "cash_flow_item",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "credit",
+          "type": "Decimal",
+          "nullable": true,
+          "list": false,
+          "dbName": null,
+          "dbType": "Decimal",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "debit",
+          "type": "Decimal",
+          "nullable": true,
+          "list": false,
+          "dbName": null,
+          "dbType": "Decimal",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "id",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": "Uuid",
+          "default": "uuid()",
+          "primaryKey": true,
+          "unique": false
+        },
+        {
+          "name": "ledgerBookId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "ledger_book_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "lineNo",
+          "type": "Int",
+          "nullable": false,
+          "list": false,
+          "dbName": "line_no",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "summary",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "voucherId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "voucher_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "field": "voucher",
+          "to": "JournalVoucher",
+          "optional": false,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "voucherId"
+          ],
+          "references": [
+            "id"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "type": "index",
+          "fields": [
+            "ledgerBookId"
+          ],
+          "name": null,
+          "map": null
+        },
+        {
+          "type": "index",
+          "fields": [
+            "voucherId"
+          ],
+          "name": null,
+          "map": null
+        }
+      ]
+    },
+    {
+      "name": "JournalVoucher",
+      "dbName": "journal_voucher",
+      "schema": null,
+      "columns": [
+        {
+          "name": "attachments",
+          "type": "Int",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "0",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "checker",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "created_at",
+          "dbType": "Timestamptz",
+          "default": "now()",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "date",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": "Date",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "id",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": "Uuid",
+          "default": "uuid()",
+          "primaryKey": true,
+          "unique": false
+        },
+        {
+          "name": "ledgerBookId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "ledger_book_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "maker",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "no",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "period",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "postedAt",
+          "type": "DateTime",
+          "nullable": true,
+          "list": false,
+          "dbName": "posted_at",
+          "dbType": "Timestamptz",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "reversalOf",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "reversal_of",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "reversedBy",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "reversed_by",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "status",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "\"draft\"",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "summary",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "totalCredit",
+          "type": "Decimal",
+          "nullable": false,
+          "list": false,
+          "dbName": "total_credit",
+          "dbType": "Decimal",
+          "default": "0",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "totalDebit",
+          "type": "Decimal",
+          "nullable": false,
+          "list": false,
+          "dbName": "total_debit",
+          "dbType": "Decimal",
+          "default": "0",
+          "primaryKey": false,
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "field": "ledgerBook",
+          "to": "LedgerBook",
+          "optional": false,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "ledgerBookId"
+          ],
+          "references": [
+            "id"
+          ]
+        },
+        {
+          "field": "lines",
+          "to": "JournalEntryLine",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
+        }
+      ],
+      "indexes": [
+        {
+          "type": "index",
+          "fields": [
+            "ledgerBookId",
+            "status"
+          ],
+          "name": null,
+          "map": null
+        },
+        {
+          "type": "unique",
+          "fields": [
+            "ledgerBookId",
+            "no"
+          ],
+          "name": null,
+          "map": null
+        }
+      ]
+    },
+    {
       "name": "LedgerBook",
       "dbName": "ledger_book",
       "schema": null,
@@ -574,6 +962,15 @@
           "references": [
             "id"
           ]
+        },
+        {
+          "field": "vouchers",
+          "to": "JournalVoucher",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
         }
       ],
       "indexes": [

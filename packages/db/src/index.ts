@@ -495,5 +495,219 @@ export async function seedAccountsTx(
   return result.count;
 }
 
+/* ---- Journal voucher repositories (ledger-scoped) ---- */
+
+export interface VoucherLineEntity {
+  id: string;
+  lineNo: number;
+  accountCode: string;
+  accountName: string;
+  summary: string;
+  debit: string | null;
+  credit: string | null;
+  aux: unknown;
+  cashFlowItem: string | null;
+}
+
+export interface VoucherEntity {
+  id: string;
+  ledgerBookId: string;
+  no: string;
+  date: string;
+  period: string;
+  status: string;
+  summary: string;
+  totalDebit: string;
+  totalCredit: string;
+  maker: string;
+  checker: string | null;
+  postedAt: string | null;
+  reversalOf: string | null;
+  reversedBy: string | null;
+  attachments: number;
+  createdAt: Date;
+  lines: VoucherLineEntity[];
+}
+
+export interface VoucherLineInput {
+  accountCode: string;
+  accountName: string;
+  summary: string;
+  debit?: string | null;
+  credit?: string | null;
+  aux?: unknown;
+  cashFlowItem?: string | null;
+}
+
+export interface CreateVoucherInput {
+  ledgerBookId: string;
+  no: string;
+  date: string;
+  period: string;
+  summary: string;
+  maker: string;
+  totalDebit: string;
+  totalCredit: string;
+  lines: readonly VoucherLineInput[];
+}
+
+type RawLine = {
+  id: string;
+  lineNo: number;
+  accountCode: string;
+  accountName: string;
+  summary: string;
+  debit: Prisma.Decimal | null;
+  credit: Prisma.Decimal | null;
+  aux: Prisma.JsonValue | null;
+  cashFlowItem: string | null;
+};
+
+function toVoucherLine(l: RawLine): VoucherLineEntity {
+  return {
+    id: l.id,
+    lineNo: l.lineNo,
+    accountCode: l.accountCode,
+    accountName: l.accountName,
+    summary: l.summary,
+    debit: l.debit ? l.debit.toFixed(2) : null,
+    credit: l.credit ? l.credit.toFixed(2) : null,
+    aux: l.aux ?? null,
+    cashFlowItem: l.cashFlowItem,
+  };
+}
+
+function toVoucher(v: {
+  id: string;
+  ledgerBookId: string;
+  no: string;
+  date: Date;
+  period: string;
+  status: string;
+  summary: string;
+  totalDebit: Prisma.Decimal;
+  totalCredit: Prisma.Decimal;
+  maker: string;
+  checker: string | null;
+  postedAt: Date | null;
+  reversalOf: string | null;
+  reversedBy: string | null;
+  attachments: number;
+  createdAt: Date;
+  lines?: RawLine[];
+}): VoucherEntity {
+  return {
+    id: v.id,
+    ledgerBookId: v.ledgerBookId,
+    no: v.no,
+    date: v.date.toISOString().slice(0, 10),
+    period: v.period,
+    status: v.status,
+    summary: v.summary,
+    totalDebit: v.totalDebit.toFixed(2),
+    totalCredit: v.totalCredit.toFixed(2),
+    maker: v.maker,
+    checker: v.checker,
+    postedAt: v.postedAt ? v.postedAt.toISOString() : null,
+    reversalOf: v.reversalOf,
+    reversedBy: v.reversedBy,
+    attachments: v.attachments,
+    createdAt: v.createdAt,
+    lines: (v.lines ?? []).map(toVoucherLine),
+  };
+}
+
+function lineCreateData(ledgerBookId: string, lines: readonly VoucherLineInput[]) {
+  return lines.map((l, i) => ({
+    ledgerBookId,
+    lineNo: i + 1,
+    accountCode: l.accountCode,
+    accountName: l.accountName,
+    summary: l.summary,
+    debit: l.debit ?? null,
+    credit: l.credit ?? null,
+    aux: l.aux === undefined || l.aux === null ? Prisma.JsonNull : (l.aux as Prisma.InputJsonValue),
+    cashFlowItem: l.cashFlowItem ?? null,
+  }));
+}
+
+export async function countVouchersInPeriodTx(tx: TxClient, period: string): Promise<number> {
+  return tx.journalVoucher.count({ where: { period } });
+}
+
+export async function createVoucherTx(tx: TxClient, input: CreateVoucherInput): Promise<VoucherEntity> {
+  const v = await tx.journalVoucher.create({
+    data: {
+      ledgerBookId: input.ledgerBookId,
+      no: input.no,
+      date: new Date(input.date),
+      period: input.period,
+      summary: input.summary,
+      maker: input.maker,
+      totalDebit: input.totalDebit,
+      totalCredit: input.totalCredit,
+      lines: { create: lineCreateData(input.ledgerBookId, input.lines) },
+    },
+    include: { lines: { orderBy: { lineNo: 'asc' } } },
+  });
+  return toVoucher(v);
+}
+
+export async function listVouchersTx(tx: TxClient, status?: string): Promise<VoucherEntity[]> {
+  const rows = await tx.journalVoucher.findMany({
+    where: status ? { status } : {},
+    orderBy: [{ date: 'desc' }, { no: 'desc' }],
+  });
+  return rows.map((v) => toVoucher(v));
+}
+
+export async function getVoucherTx(tx: TxClient, id: string): Promise<VoucherEntity | null> {
+  const v = await tx.journalVoucher.findUnique({ where: { id }, include: { lines: { orderBy: { lineNo: 'asc' } } } });
+  return v ? toVoucher(v) : null;
+}
+
+export interface UpdateDraftVoucherInput {
+  date: string;
+  period: string;
+  summary: string;
+  totalDebit: string;
+  totalCredit: string;
+  lines: readonly VoucherLineInput[];
+}
+
+export async function updateDraftVoucherTx(tx: TxClient, id: string, ledgerBookId: string, input: UpdateDraftVoucherInput): Promise<void> {
+  await tx.journalEntryLine.deleteMany({ where: { voucherId: id } });
+  await tx.journalVoucher.update({
+    where: { id },
+    data: {
+      date: new Date(input.date),
+      period: input.period,
+      summary: input.summary,
+      totalDebit: input.totalDebit,
+      totalCredit: input.totalCredit,
+      lines: { create: lineCreateData(ledgerBookId, input.lines) },
+    },
+  });
+}
+
+export interface VoucherStatusPatch {
+  status: string;
+  checker?: string | null;
+  postedAt?: Date | null;
+  reversedBy?: string | null;
+}
+
+export async function setVoucherStatusTx(tx: TxClient, id: string, patch: VoucherStatusPatch): Promise<void> {
+  await tx.journalVoucher.update({
+    where: { id },
+    data: {
+      status: patch.status,
+      ...(patch.checker !== undefined ? { checker: patch.checker } : {}),
+      ...(patch.postedAt !== undefined ? { postedAt: patch.postedAt } : {}),
+      ...(patch.reversedBy !== undefined ? { reversedBy: patch.reversedBy } : {}),
+    },
+  });
+}
+
 export { Prisma } from '@prisma/client';
 export type { PrismaClient } from '@prisma/client';
