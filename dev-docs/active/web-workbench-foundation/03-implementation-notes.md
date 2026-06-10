@@ -87,3 +87,32 @@
 
 **遗留 TODO（W2b）**
 - 期间筛选 / 总账（汇总账）视图 / 导出；期初建账录入（M1 P5）。
+
+## 采用公共 web-workbench 包（替换 forked kit）— 2026-06-11
+
+**背景**：`packages/ui` 原是 morethan workbench kit 的**仓内分叉**；改为消费官方公共包 `@willyu1007/web-workbench`（My-Workflow-Base，发布于 GitHub Packages），消除分叉。
+
+**Phase A · 升级 Next15/React19**（公共包 peer `>=15/>=19`）
+- `apps/web` + `packages/ui` deps 升级到 Next15/React19（+@types 19）。
+- 修 Next 15 async `params`：`ledger/[code]`、`vouchers/[id]` 改 `await params`。
+- eslint ignore `**/next-env.d.ts`（Next15 生成三斜线引用）。
+- 现有 app（仍用旧 kit）在 15/19 上 typecheck/build/render 全绿——隔离升级风险与换包风险。
+
+**Phase B · 换包**
+- `.npmrc` 加 `@willyu1007:registry=https://npm.pkg.github.com`（auth 在全局 `~/.npmrc`）；`apps/web` + `packages/ui` 加 `@willyu1007/web-workbench@^0.1.0`。
+- `packages/ui` **瘦身为 host chrome + facade**：删被公共包覆盖的 kit（scene/list-view/entity-*/table-cells/primitives/menu/tabs/icons/topbar-slot + model{card,table,row} + 全部 styles）；留宿主 chrome（app-shell/sidebar/sidebar-create/account-menu/breadcrumb-context/toast/overlay/copy-field/badge + model nav）；`index.ts` = `export * from '@willyu1007/web-workbench'` + chrome（单一 `@my-erp/ui` 导入面，`apps/web` 0 组件改动）。
+- chrome 的 `icons`/`topbar-slot`/`CardTone` import 改自公共包——**关键集成点**：`AppShell` 用公共包的 `TopbarSlotContext`，`ListView` 顶栏筛选 portal 才能落进 AppShell 的 slot。
+- `apps/web` 唯一改动：layout 样式 import → `@willyu1007/web-workbench/styles/index.css`。`transpilePackages:['@my-erp/ui']` 保留（facade 是源码）；公共包 ships dist，正常依赖。
+
+**决策**
+- **部分替换**：公共包「lock the chrome, vary the content」——app shell/toast/overlay/breadcrumb-context 不在包内，留宿主；`packages/ui` = chrome + facade，不消失。
+- **保 facade**：`apps/web` 仍 `from '@my-erp/ui'`，最小改动；host `Badge`(children) 与公共包 `StatusBadge`(label) 并存。
+
+**收尾清理（2026-06-11）**
+- **CI registry auth**：`ci.yml` build job 加 `permissions: packages:read` + install 前写 `.npmrc` authToken（`secrets.PACKAGES_TOKEN || GITHUB_TOKEN`）。
+- **修复 RLS 集成测试隔离**：7 个 `*.integration.test.ts` 并行争用全局 role `myerp_rls_app`（`IF NOT EXISTS … CREATE ROLE` 非原子，TOCTOU 竞态）→ 改 `CREATE ROLE … EXCEPTION WHEN duplicate_object THEN NULL`（并发安全）。全量 `pnpm test` 78 passed（含 7 集成）。
+- **双轨/漂移清理**：① host `Badge`(children) 与公共包 `StatusBadge`(label) 双轨 → 迁移 8 处 `<Badge>`→`<StatusBadge>`、删 `packages/ui/badge.tsx`、`BadgeTone`→`CardTone`（单一 badge 源）；② `.prettierignore` 的 `/packages/ui/src` vendored-kit 忽略过时（kit 已外移）→ 取消并 `pnpm format` 规范化 chrome + 既有格式漂移（apps/api 等，纯格式）；③ 删 `packages/ui` 过时 `sideEffects:["*.css"]`（无 CSS）。
+
+**仍登记的发现（pre-existing，建议后续单独处理）**
+- 7 个集成测试**重复**了 psql/PORT/pgAvailable/migrationSql/role 设置（~25 行×7）→ 建议抽 `packages/db/src/test-pg.ts` 共享 harness 去冗余。
+- 集成测试 `PORT=5432` 硬编码（用本机原生 superuser pg；app 用 docker 5433）→ 建议改读 env，提升可移植性。

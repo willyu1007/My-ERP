@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Badge, EntityTable, ListView } from '@my-erp/ui';
+import { StatusBadge, EntityTable, ListView } from '@my-erp/ui';
 import type { TableColumn } from '@my-erp/ui';
 import { formatDate, formatMoney } from '@/lib/finance/format';
 import { VOUCHER_STATUS_LABELS, voucherStatusTone } from '@/lib/finance/types';
@@ -23,11 +23,41 @@ const STAGES: readonly { readonly key: Stage; readonly label: string }[] = [
 ];
 
 const COLUMNS: readonly TableColumn<VoucherVM>[] = [
-  { key: 'no', label: '凭证号', sortable: true, sortValue: (v) => v.no, render: (v) => <span className="wb-mono">{v.no}</span> },
-  { key: 'date', label: '日期', sortable: true, sortValue: (v) => v.date, render: (v) => <span className="wb-mono">{formatDate(v.date)}</span> },
+  {
+    key: 'no',
+    label: '凭证号',
+    sortable: true,
+    sortValue: (v) => v.no,
+    render: (v) => <span className="wb-mono">{v.no}</span>,
+  },
+  {
+    key: 'date',
+    label: '日期',
+    sortable: true,
+    sortValue: (v) => v.date,
+    render: (v) => <span className="wb-mono">{formatDate(v.date)}</span>,
+  },
   { key: 'summary', label: '摘要', width: '1fr', render: (v) => v.summary },
-  { key: 'amount', label: '金额', align: 'end', sortable: true, sortValue: (v) => Number(v.totalDebit), render: (v) => <span className="wb-mono">{formatMoney(v.totalDebit)}</span> },
-  { key: 'status', label: '状态', align: 'end', render: (v) => <Badge tone={voucherStatusTone(v.status)} dot>{VOUCHER_STATUS_LABELS[v.status]}</Badge> },
+  {
+    key: 'amount',
+    label: '金额',
+    align: 'end',
+    sortable: true,
+    sortValue: (v) => Number(v.totalDebit),
+    render: (v) => <span className="wb-mono">{formatMoney(v.totalDebit)}</span>,
+  },
+  {
+    key: 'status',
+    label: '状态',
+    align: 'end',
+    render: (v) => (
+      <StatusBadge
+        tone={voucherStatusTone(v.status) ?? 'muted'}
+        dot
+        label={VOUCHER_STATUS_LABELS[v.status]}
+      />
+    ),
+  },
 ];
 
 export function VouchersClient({ vouchers }: { readonly vouchers: readonly VoucherVM[] }) {

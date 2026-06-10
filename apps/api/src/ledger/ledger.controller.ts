@@ -20,10 +20,13 @@ export class LedgerController {
   @Get('trial-balance')
   @RequirePermission('read', 'Voucher')
   async trialBalance(@LedgerBookId() ledgerBookId: string, @CurrentIdentity() identity: Identity) {
-    return withSpan('ledger.trial-balance', { userId: identity.userId, ledgerBookId, action: 'read' }, () =>
-      withLedgerScope(ledgerBookId, async (tx) =>
-        computeTrialBalance(await getPostedEntriesTx(tx), await getOpeningBalancesTx(tx)),
-      ),
+    return withSpan(
+      'ledger.trial-balance',
+      { userId: identity.userId, ledgerBookId, action: 'read' },
+      () =>
+        withLedgerScope(ledgerBookId, async (tx) =>
+          computeTrialBalance(await getPostedEntriesTx(tx), await getOpeningBalancesTx(tx)),
+        ),
     );
   }
 

@@ -4,7 +4,14 @@ import type { Identity, Role } from './identity';
 /** High-sensitivity ops (post/reverse/approve) are first-class actions so
  *  operation-level authz + SoD can grant/withhold them independently of CRUD. */
 export type Action = 'manage' | 'create' | 'read' | 'update' | 'post' | 'reverse' | 'approve';
-export type Subject = 'all' | 'Organization' | 'LedgerBook' | 'Account' | 'Voucher' | 'AuditRecord' | 'Membership';
+export type Subject =
+  | 'all'
+  | 'Organization'
+  | 'LedgerBook'
+  | 'Account'
+  | 'Voucher'
+  | 'AuditRecord'
+  | 'Membership';
 
 export type AppAbility = MongoAbility<[Action, Subject]>;
 

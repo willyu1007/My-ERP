@@ -1,4 +1,10 @@
-import { type CanActivate, type ExecutionContext, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  type CanActivate,
+  type ExecutionContext,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { newTraceId, type IdentityProvider, type Principal } from '@my-erp/platform';
 import { IDENTITY_PROVIDER } from './identity.provider';
 import { IDENTITY_RESOLVER, type IdentityResolver } from './identity-resolver';

@@ -72,7 +72,11 @@ export interface TrialBalance {
   readonly rows: readonly TrialBalanceRow[];
   readonly totals: TrialBalanceTotals;
   /** 借=贷 校验，分别对期初/本期/期末三栏。 */
-  readonly balanced: { readonly opening: boolean; readonly period: boolean; readonly closing: boolean };
+  readonly balanced: {
+    readonly opening: boolean;
+    readonly period: boolean;
+    readonly closing: boolean;
+  };
 }
 
 export function computeTrialBalance(
@@ -187,9 +191,26 @@ export function computeAccountLedger(
     .flatMap((v) =>
       v.lines
         .filter((l) => l.accountCode === code)
-        .map((l) => ({ date: v.date, voucherNo: v.no, voucherId: v.id, summary: l.summary, drCents: cents(l.debit), crCents: cents(l.credit) })),
+        .map((l) => ({
+          date: v.date,
+          voucherNo: v.no,
+          voucherId: v.id,
+          summary: l.summary,
+          drCents: cents(l.debit),
+          crCents: cents(l.credit),
+        })),
     )
-    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.voucherNo < b.voucherNo ? -1 : a.voucherNo > b.voucherNo ? 1 : 0));
+    .sort((a, b) =>
+      a.date < b.date
+        ? -1
+        : a.date > b.date
+          ? 1
+          : a.voucherNo < b.voucherNo
+            ? -1
+            : a.voucherNo > b.voucherNo
+              ? 1
+              : 0,
+    );
 
   const rows: LedgerRow[] = postings.map((p) => {
     runningDebit += p.drCents - p.crCents;

@@ -48,19 +48,31 @@ interface CreateAccountBody {
 
 function parseCreateBody(body: unknown): CreateAccountBody {
   const b = (body ?? {}) as Record<string, unknown>;
-  if (typeof b.code !== 'string' || !/^\d+$/.test(b.code)) throw new BadRequestException('code must be a numeric string');
-  if (typeof b.name !== 'string' || b.name.trim() === '') throw new BadRequestException('name is required');
+  if (typeof b.code !== 'string' || !/^\d+$/.test(b.code))
+    throw new BadRequestException('code must be a numeric string');
+  if (typeof b.name !== 'string' || b.name.trim() === '')
+    throw new BadRequestException('name is required');
   if (!isAccountCategory(b.category)) throw new BadRequestException('invalid category');
   if (!isAccountDirection(b.direction)) throw new BadRequestException('invalid direction');
-  const parentCode = typeof b.parentCode === 'string' && b.parentCode !== '' ? b.parentCode : undefined;
+  const parentCode =
+    typeof b.parentCode === 'string' && b.parentCode !== '' ? b.parentCode : undefined;
   // A child code must extend its parent's code (e.g. 1002 → 100201) so that
   // ordering by code stays a valid tree pre-order.
-  if (parentCode !== undefined && (!b.code.startsWith(parentCode) || b.code.length <= parentCode.length)) {
+  if (
+    parentCode !== undefined &&
+    (!b.code.startsWith(parentCode) || b.code.length <= parentCode.length)
+  ) {
     throw new BadRequestException('child code must extend the parent code (e.g. 1002 → 100201)');
   }
   const auxTypes = Array.isArray(b.auxTypes) ? b.auxTypes : [];
   if (!auxTypes.every(isAuxType)) throw new BadRequestException('invalid auxTypes');
-  const result: CreateAccountBody = { code: b.code, name: b.name.trim(), category: b.category, direction: b.direction, auxTypes };
+  const result: CreateAccountBody = {
+    code: b.code,
+    name: b.name.trim(),
+    category: b.category,
+    direction: b.direction,
+    auxTypes,
+  };
   if (parentCode !== undefined) result.parentCode = parentCode;
   return result;
 }
@@ -76,8 +88,10 @@ export class AccountsController {
   @Get()
   @RequirePermission('read', 'Account')
   async list(@LedgerBookId() ledgerBookId: string, @CurrentIdentity() identity: Identity) {
-    return withSpan('accounts.list', { userId: identity.userId, ledgerBookId, action: 'read' }, () =>
-      withLedgerScope(ledgerBookId, (tx) => listAccountsTx(tx)),
+    return withSpan(
+      'accounts.list',
+      { userId: identity.userId, ledgerBookId, action: 'read' },
+      () => withLedgerScope(ledgerBookId, (tx) => listAccountsTx(tx)),
     );
   }
 
@@ -99,7 +113,11 @@ export class AccountsController {
 
   @Post()
   @RequirePermission('create', 'Account')
-  async create(@LedgerBookId() ledgerBookId: string, @CurrentIdentity() identity: Identity, @Body() body: unknown) {
+  async create(
+    @LedgerBookId() ledgerBookId: string,
+    @CurrentIdentity() identity: Identity,
+    @Body() body: unknown,
+  ) {
     const input = parseCreateBody(body);
     return withLedgerScope(ledgerBookId, async (tx) => {
       if (await getAccountByCodeTx(tx, input.code)) {
@@ -136,15 +154,21 @@ export class AccountsController {
 
   @Patch(':code')
   @RequirePermission('update', 'Account')
-  async update(@LedgerBookId() ledgerBookId: string, @Param('code') code: string, @Body() body: unknown) {
+  async update(
+    @LedgerBookId() ledgerBookId: string,
+    @Param('code') code: string,
+    @Body() body: unknown,
+  ) {
     const b = (body ?? {}) as Record<string, unknown>;
     const patch: { name?: string; auxTypes?: string[] } = {};
     if (b.name !== undefined) {
-      if (typeof b.name !== 'string' || b.name.trim() === '') throw new BadRequestException('name must be non-empty');
+      if (typeof b.name !== 'string' || b.name.trim() === '')
+        throw new BadRequestException('name must be non-empty');
       patch.name = b.name.trim();
     }
     if (b.auxTypes !== undefined) {
-      if (!Array.isArray(b.auxTypes) || !b.auxTypes.every(isAuxType)) throw new BadRequestException('invalid auxTypes');
+      if (!Array.isArray(b.auxTypes) || !b.auxTypes.every(isAuxType))
+        throw new BadRequestException('invalid auxTypes');
       patch.auxTypes = b.auxTypes;
     }
     return withLedgerScope(ledgerBookId, async (tx) => {
@@ -158,7 +182,11 @@ export class AccountsController {
   @Post(':code/deactivate')
   @HttpCode(200)
   @RequirePermission('update', 'Account')
-  async deactivate(@LedgerBookId() ledgerBookId: string, @CurrentIdentity() identity: Identity, @Param('code') code: string) {
+  async deactivate(
+    @LedgerBookId() ledgerBookId: string,
+    @CurrentIdentity() identity: Identity,
+    @Param('code') code: string,
+  ) {
     return withLedgerScope(ledgerBookId, async (tx) => {
       const account = await getAccountByCodeTx(tx, code);
       if (!account) throw new NotFoundException('account not found');

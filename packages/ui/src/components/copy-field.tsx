@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { IconCheck, IconCopy } from "./icons";
+import { useState } from 'react';
+import { IconCheck, IconCopy } from '@willyu1007/web-workbench';
 
 export function CopyField({
   value,
@@ -30,7 +30,7 @@ export function CopyField({
         </span>
       )}
       <span className="wb-copy__text" title={value}>
-        {value || "—"}
+        {value || '—'}
       </span>
       <button
         type="button"
@@ -39,7 +39,11 @@ export function CopyField({
         aria-label="复制"
         disabled={!value}
       >
-        {copied ? <IconCheck size={15} style={{ color: "var(--mt-success)" }} /> : <IconCopy size={15} />}
+        {copied ? (
+          <IconCheck size={15} style={{ color: 'var(--mt-success)' }} />
+        ) : (
+          <IconCopy size={15} />
+        )}
       </button>
     </div>
   );

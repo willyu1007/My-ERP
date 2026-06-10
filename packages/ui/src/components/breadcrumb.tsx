@@ -1,13 +1,6 @@
-"use client";
+'use client';
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 export interface Crumb {
   readonly label: string;
@@ -44,7 +37,7 @@ export function SetBreadcrumb({ items }: { readonly items: readonly Crumb[] }): 
   const ctx = useContext(Ctx);
   const itemsRef = useRef(items);
   itemsRef.current = items;
-  const key = items.map((i) => `${i.label}|${i.href ?? ""}`).join(">");
+  const key = items.map((i) => `${i.label}|${i.href ?? ''}`).join('>');
   useEffect(() => {
     ctx?.setTrail(itemsRef.current);
     return () => ctx?.setTrail([]);

@@ -28,8 +28,10 @@ export interface OpeningLine {
 
 export type BalanceDir = '借' | '贷' | '平';
 
-const dec = (value: string | null | undefined): Decimal => new Decimal(value && value !== '' ? value : 0);
-const dirOf = (netDebit: Decimal): BalanceDir => (netDebit.isZero() ? '平' : netDebit.isPositive() ? '借' : '贷');
+const dec = (value: string | null | undefined): Decimal =>
+  new Decimal(value && value !== '' ? value : 0);
+const dirOf = (netDebit: Decimal): BalanceDir =>
+  netDebit.isZero() ? '平' : netDebit.isPositive() ? '借' : '贷';
 const blankZero = (d: Decimal): string => (d.isZero() ? '' : d.toFixed(2));
 
 /* ---------- Trial balance ---------- */
@@ -57,7 +59,11 @@ export interface TrialBalanceTotals {
 export interface TrialBalance {
   readonly rows: readonly TrialBalanceRow[];
   readonly totals: TrialBalanceTotals;
-  readonly balanced: { readonly opening: boolean; readonly period: boolean; readonly closing: boolean };
+  readonly balanced: {
+    readonly opening: boolean;
+    readonly period: boolean;
+    readonly closing: boolean;
+  };
 }
 
 interface Acc {
@@ -68,12 +74,21 @@ interface Acc {
   periodCr: Decimal;
 }
 
-export function computeTrialBalance(entries: readonly PostedLine[], openings: readonly OpeningLine[]): TrialBalance {
+export function computeTrialBalance(
+  entries: readonly PostedLine[],
+  openings: readonly OpeningLine[],
+): TrialBalance {
   const map = new Map<string, Acc>();
   const acc = (code: string, name: string): Acc => {
     let a = map.get(code);
     if (!a) {
-      a = { name, openingDr: new Decimal(0), openingCr: new Decimal(0), periodDr: new Decimal(0), periodCr: new Decimal(0) };
+      a = {
+        name,
+        openingDr: new Decimal(0),
+        openingCr: new Decimal(0),
+        periodDr: new Decimal(0),
+        periodCr: new Decimal(0),
+      };
       map.set(code, a);
     } else if (!a.name) {
       a.name = name;
@@ -183,7 +198,17 @@ export function computeAccountLedger(
 
   const lines = entries
     .filter((e) => e.accountCode === accountCode)
-    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.voucherNo < b.voucherNo ? -1 : a.voucherNo > b.voucherNo ? 1 : 0));
+    .sort((a, b) =>
+      a.date < b.date
+        ? -1
+        : a.date > b.date
+          ? 1
+          : a.voucherNo < b.voucherNo
+            ? -1
+            : a.voucherNo > b.voucherNo
+              ? 1
+              : 0,
+    );
   const accountName = lines[0]?.accountName ?? o?.accountName ?? accountCode;
 
   const rows = lines.map((l) => {

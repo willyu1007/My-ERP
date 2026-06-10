@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Badge, EntityTable, Scene, Stat, StatStrip } from '@my-erp/ui';
+import { StatusBadge, EntityTable, Scene, Stat, StatStrip } from '@my-erp/ui';
 import type { TableColumn } from '@my-erp/ui';
 import {
   ACCOUNT_CATEGORY_LABELS,
@@ -31,12 +31,39 @@ function indentedName(a: AccountVM): string {
 
 const COLUMNS: readonly TableColumn<AccountVM>[] = [
   // Not sortable: the table is tree-ordered by code; re-sorting would split children from parents.
-  { key: 'code', label: '编码', width: '120px', render: (a) => <span className="wb-mono">{a.code}</span> },
-  { key: 'name', label: '名称', width: '1fr', render: (a) => <span className={a.active ? '' : 'wb-muted'}>{indentedName(a)}</span> },
-  { key: 'direction', label: '方向', align: 'center', render: (a) => ACCOUNT_DIRECTION_LABELS[a.direction] },
+  {
+    key: 'code',
+    label: '编码',
+    width: '120px',
+    render: (a) => <span className="wb-mono">{a.code}</span>,
+  },
+  {
+    key: 'name',
+    label: '名称',
+    width: '1fr',
+    render: (a) => <span className={a.active ? '' : 'wb-muted'}>{indentedName(a)}</span>,
+  },
+  {
+    key: 'direction',
+    label: '方向',
+    align: 'center',
+    render: (a) => ACCOUNT_DIRECTION_LABELS[a.direction],
+  },
   { key: 'leaf', label: '级次', align: 'center', render: (a) => (a.isLeaf ? '末级' : '上级') },
-  { key: 'aux', label: '辅助核算', render: (a) => (a.auxTypes.length > 0 ? a.auxTypes.map((t) => AUX_TYPE_LABELS[t]).join('、') : '—') },
-  { key: 'status', label: '状态', align: 'end', render: (a) => <Badge tone={a.active ? 'success' : 'muted'} dot>{a.active ? '启用' : '停用'}</Badge> },
+  {
+    key: 'aux',
+    label: '辅助核算',
+    render: (a) =>
+      a.auxTypes.length > 0 ? a.auxTypes.map((t) => AUX_TYPE_LABELS[t]).join('、') : '—',
+  },
+  {
+    key: 'status',
+    label: '状态',
+    align: 'end',
+    render: (a) => (
+      <StatusBadge tone={a.active ? 'success' : 'muted'} dot label={a.active ? '启用' : '停用'} />
+    ),
+  },
 ];
 
 export function AccountsClient({ accounts }: { readonly accounts: readonly AccountVM[] }) {
@@ -76,10 +103,12 @@ export function AccountsClient({ accounts }: { readonly accounts: readonly Accou
   );
 
   return (
-    <Scene nav={nav} stats={stats} intro="《小企业会计准则》科目体系（演示）。编码升序即树前序，缩进表示层级。">
-      <EntityTable<AccountVM>
-        model={{ columns: COLUMNS, rows, rowKey: (a) => a.code }}
-      />
+    <Scene
+      nav={nav}
+      stats={stats}
+      intro="《小企业会计准则》科目体系（演示）。编码升序即树前序，缩进表示层级。"
+    >
+      <EntityTable<AccountVM> model={{ columns: COLUMNS, rows, rowKey: (a) => a.code }} />
     </Scene>
   );
 }

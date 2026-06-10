@@ -33,14 +33,22 @@ export function log(level: LogLevel, message: string, context: LogContext = {}):
  * it emits structured logs; later it is backed by an OTel tracer/span with no
  * change at call sites.
  */
-export async function withSpan<T>(name: string, context: LogContext, fn: () => Promise<T>): Promise<T> {
+export async function withSpan<T>(
+  name: string,
+  context: LogContext,
+  fn: () => Promise<T>,
+): Promise<T> {
   const start = Date.now();
   try {
     const result = await fn();
     log('info', `span.ok ${name}`, { ...context, durationMs: Date.now() - start });
     return result;
   } catch (err) {
-    log('error', `span.err ${name}`, { ...context, durationMs: Date.now() - start, error: (err as Error).message });
+    log('error', `span.err ${name}`, {
+      ...context,
+      durationMs: Date.now() - start,
+      error: (err as Error).message,
+    });
     throw err;
   }
 }

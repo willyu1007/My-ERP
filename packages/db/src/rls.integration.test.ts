@@ -30,7 +30,10 @@ function pgAvailable(): boolean {
 const PG_AVAILABLE = pgAvailable();
 
 function psql(db: string, sql: string): void {
-  execSync(`psql -p ${PORT} -d ${db} -v ON_ERROR_STOP=1 -q`, { input: sql, stdio: ['pipe', 'ignore', 'pipe'] });
+  execSync(`psql -p ${PORT} -d ${db} -v ON_ERROR_STOP=1 -q`, {
+    input: sql,
+    stdio: ['pipe', 'ignore', 'pipe'],
+  });
 }
 function migrationSql(name: string): string {
   return readFileSync(
@@ -41,15 +44,21 @@ function migrationSql(name: string): string {
 
 describe.skipIf(!PG_AVAILABLE)('Postgres RLS — ledger isolation on audit_record', () => {
   beforeAll(async () => {
-    psql('postgres', `DROP DATABASE IF EXISTS ${TEST_DB} WITH (FORCE); CREATE DATABASE ${TEST_DB};`);
+    psql(
+      'postgres',
+      `DROP DATABASE IF EXISTS ${TEST_DB} WITH (FORCE); CREATE DATABASE ${TEST_DB};`,
+    );
     // Schema + RLS applied as the privileged owner.
     for (const m of migrationDirs()) psql(TEST_DB, migrationSql(m));
     // Non-superuser app role — RLS only applies to non-owner/non-superuser roles.
     psql(
       'postgres',
-      `DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='${APP_ROLE}') THEN CREATE ROLE ${APP_ROLE} LOGIN PASSWORD '${APP_PW}'; END IF; END $$;`,
+      `DO $$ BEGIN CREATE ROLE ${APP_ROLE} LOGIN PASSWORD '${APP_PW}'; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`,
     );
-    psql(TEST_DB, `GRANT USAGE ON SCHEMA public TO ${APP_ROLE}; GRANT SELECT, INSERT ON "audit_record" TO ${APP_ROLE};`);
+    psql(
+      TEST_DB,
+      `GRANT USAGE ON SCHEMA public TO ${APP_ROLE}; GRANT SELECT, INSERT ON "audit_record" TO ${APP_ROLE};`,
+    );
     // Seed two ledgers as the owner (superuser bypasses RLS).
     psql(
       TEST_DB,
@@ -85,7 +94,12 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS — ledger isolation on audit_recor
 
   it('an audit write inside a scope is visible only within that scope', async () => {
     const inScope = await withLedgerScope('lb-A', async (tx) => {
-      await appendAuditRecordTx(tx, { actorId: 'u1', action: 'POST', entityType: 'Voucher', ledgerBookId: 'lb-A' });
+      await appendAuditRecordTx(tx, {
+        actorId: 'u1',
+        action: 'POST',
+        entityType: 'Voucher',
+        ledgerBookId: 'lb-A',
+      });
       return tx.auditRecord.findMany();
     });
     expect(inScope).toHaveLength(3); // 2 seeded + 1 new, all lb-A

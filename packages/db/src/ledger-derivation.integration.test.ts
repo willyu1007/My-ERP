@@ -36,13 +36,21 @@ function pgAvailable(): boolean {
 const PG_AVAILABLE = pgAvailable();
 
 function psql(db: string, sql: string): void {
-  execSync(`psql -p ${PORT} -d ${db} -v ON_ERROR_STOP=1 -q`, { input: sql, stdio: ['pipe', 'ignore', 'pipe'] });
+  execSync(`psql -p ${PORT} -d ${db} -v ON_ERROR_STOP=1 -q`, {
+    input: sql,
+    stdio: ['pipe', 'ignore', 'pipe'],
+  });
 }
 function migrationSql(name: string): string {
-  return readFileSync(fileURLToPath(new URL(`../../../prisma/migrations/${name}/migration.sql`, import.meta.url)), 'utf8');
+  return readFileSync(
+    fileURLToPath(new URL(`../../../prisma/migrations/${name}/migration.sql`, import.meta.url)),
+    'utf8',
+  );
 }
 function migrationDirs(): string[] {
-  return readdirSync(fileURLToPath(new URL('../../../prisma/migrations', import.meta.url)), { withFileTypes: true })
+  return readdirSync(fileURLToPath(new URL('../../../prisma/migrations', import.meta.url)), {
+    withFileTypes: true,
+  })
     .filter((e) => e.isDirectory())
     .map((e) => e.name)
     .sort();
@@ -58,8 +66,20 @@ const voucher = (no: string) => ({
   totalDebit: '500.00',
   totalCredit: '500.00',
   lines: [
-    { accountCode: '1002', accountName: '银行存款', summary: '投资', debit: '500.00', credit: null },
-    { accountCode: '4001', accountName: '实收资本', summary: '投资', debit: null, credit: '500.00' },
+    {
+      accountCode: '1002',
+      accountName: '银行存款',
+      summary: '投资',
+      debit: '500.00',
+      credit: null,
+    },
+    {
+      accountCode: '4001',
+      accountName: '实收资本',
+      summary: '投资',
+      debit: null,
+      credit: '500.00',
+    },
   ],
 });
 
@@ -70,7 +90,7 @@ describe.skipIf(!PG_AVAILABLE)('P4 ledger derivation from posted vouchers', () =
     for (const m of migrationDirs()) psql(TEST_DB, migrationSql(m));
     psql(
       'postgres',
-      `DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='${APP_ROLE}') THEN CREATE ROLE ${APP_ROLE} LOGIN PASSWORD '${APP_PW}'; END IF; END $$;`,
+      `DO $$ BEGIN CREATE ROLE ${APP_ROLE} LOGIN PASSWORD '${APP_PW}'; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`,
     );
     psql(
       TEST_DB,
@@ -89,7 +109,11 @@ describe.skipIf(!PG_AVAILABLE)('P4 ledger derivation from posted vouchers', () =
     await withLedgerScope(LB, async (tx) => {
       for (const no of ['记-2026-001', '记-2026-002']) {
         const v = await createVoucherTx(tx, voucher(no));
-        await setVoucherStatusTx(tx, v.id, { status: 'posted', checker: 'u2', postedAt: new Date() });
+        await setVoucherStatusTx(tx, v.id, {
+          status: 'posted',
+          checker: 'u2',
+          postedAt: new Date(),
+        });
       }
       await createVoucherTx(tx, voucher('记-2026-003')); // draft
     });
@@ -132,15 +156,37 @@ describe.skipIf(!PG_AVAILABLE)('P4 ledger derivation from posted vouchers', () =
         totalDebit: '100.00',
         totalCredit: '100.00',
         lines: [
-          { accountCode: '6602', accountName: '管理费用', summary: 'x', debit: '100.00', credit: null },
-          { accountCode: '1001', accountName: '库存现金', summary: 'x', debit: null, credit: '100.00' },
+          {
+            accountCode: '6602',
+            accountName: '管理费用',
+            summary: 'x',
+            debit: '100.00',
+            credit: null,
+          },
+          {
+            accountCode: '1001',
+            accountName: '库存现金',
+            summary: 'x',
+            debit: null,
+            credit: '100.00',
+          },
         ],
       });
-      await setVoucherStatusTx(tx, created.id, { status: 'posted', checker: 'u2', postedAt: new Date() });
+      await setVoucherStatusTx(tx, created.id, {
+        status: 'posted',
+        checker: 'u2',
+        postedAt: new Date(),
+      });
       return getVoucherTx(tx, created.id);
     });
     await withLedgerScope(LB, async (tx) => {
-      const r = await createReversalVoucherTx(tx, v!, { no: '记-2026-005', reverser: 'u2', date: v!.date, period: v!.period, postedAt: new Date() });
+      const r = await createReversalVoucherTx(tx, v!, {
+        no: '记-2026-005',
+        reverser: 'u2',
+        date: v!.date,
+        period: v!.period,
+        postedAt: new Date(),
+      });
       await setVoucherStatusTx(tx, v!.id, { status: 'reversed', reversedBy: r.id });
     });
 

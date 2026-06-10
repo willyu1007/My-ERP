@@ -36,7 +36,10 @@ function pgAvailable(): boolean {
 const PG_AVAILABLE = pgAvailable();
 
 function psql(db: string, sql: string): void {
-  execSync(`psql -p ${PORT} -d ${db} -v ON_ERROR_STOP=1 -q`, { input: sql, stdio: ['pipe', 'ignore', 'pipe'] });
+  execSync(`psql -p ${PORT} -d ${db} -v ON_ERROR_STOP=1 -q`, {
+    input: sql,
+    stdio: ['pipe', 'ignore', 'pipe'],
+  });
 }
 function migrationSql(name: string): string {
   return readFileSync(
@@ -45,25 +48,27 @@ function migrationSql(name: string): string {
   );
 }
 
-describe.skipIf(!PG_AVAILABLE)('Postgres RLS — org isolation (organization/membership/ledger_book)', () => {
-  beforeAll(async () => {
-    psql('postgres', `DROP DATABASE IF EXISTS ${TEST_DB} WITH (FORCE);`);
-    psql('postgres', `CREATE DATABASE ${TEST_DB};`);
-    for (const m of migrationDirs()) psql(TEST_DB, migrationSql(m));
-    psql(
-      'postgres',
-      `DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='${APP_ROLE}') THEN CREATE ROLE ${APP_ROLE} LOGIN PASSWORD '${APP_PW}'; END IF; END $$;`,
-    );
-    psql(
-      TEST_DB,
-      `GRANT USAGE ON SCHEMA public TO ${APP_ROLE};
+describe.skipIf(!PG_AVAILABLE)(
+  'Postgres RLS — org isolation (organization/membership/ledger_book)',
+  () => {
+    beforeAll(async () => {
+      psql('postgres', `DROP DATABASE IF EXISTS ${TEST_DB} WITH (FORCE);`);
+      psql('postgres', `CREATE DATABASE ${TEST_DB};`);
+      for (const m of migrationDirs()) psql(TEST_DB, migrationSql(m));
+      psql(
+        'postgres',
+        `DO $$ BEGIN CREATE ROLE ${APP_ROLE} LOGIN PASSWORD '${APP_PW}'; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`,
+      );
+      psql(
+        TEST_DB,
+        `GRANT USAGE ON SCHEMA public TO ${APP_ROLE};
        GRANT SELECT ON "organization", "membership" TO ${APP_ROLE};
        GRANT SELECT, INSERT, UPDATE ON "ledger_book" TO ${APP_ROLE};`,
-    );
-    // Seed two orgs as the owner (superuser bypasses RLS).
-    psql(
-      TEST_DB,
-      `INSERT INTO "organization"(id,name) VALUES ('${ORG_A}','Org A'),('${ORG_B}','Org B');
+      );
+      // Seed two orgs as the owner (superuser bypasses RLS).
+      psql(
+        TEST_DB,
+        `INSERT INTO "organization"(id,name) VALUES ('${ORG_A}','Org A'),('${ORG_B}','Org B');
        INSERT INTO "membership"(id,org_id,user_id,role) VALUES
          (gen_random_uuid(),'${ORG_A}','user-a','accountant'),
          (gen_random_uuid(),'${ORG_B}','user-b','admin');
@@ -71,53 +76,64 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS — org isolation (organization/mem
          (gen_random_uuid(),'${ORG_A}','A Book 1','CNY',2026),
          (gen_random_uuid(),'${ORG_A}','A Book 2','CNY',2026),
          (gen_random_uuid(),'${ORG_B}','B Book','CNY',2026);`,
-    );
-    process.env.DATABASE_URL = `postgresql://${APP_ROLE}:${APP_PW}@localhost:${PORT}/${TEST_DB}?schema=public`;
-    await disconnectDatabase();
-  }, 60_000);
+      );
+      process.env.DATABASE_URL = `postgresql://${APP_ROLE}:${APP_PW}@localhost:${PORT}/${TEST_DB}?schema=public`;
+      await disconnectDatabase();
+    }, 60_000);
 
-  afterAll(async () => {
-    await disconnectDatabase();
-    psql('postgres', `DROP DATABASE IF EXISTS ${TEST_DB} WITH (FORCE);`);
-  });
+    afterAll(async () => {
+      await disconnectDatabase();
+      psql('postgres', `DROP DATABASE IF EXISTS ${TEST_DB} WITH (FORCE);`);
+    });
 
-  it('ledger books are isolated by org scope', async () => {
-    const a = await withOrgScope(ORG_A, (tx) => listLedgerBooksTx(tx));
-    expect(a).toHaveLength(2);
-    expect(a.every((b) => b.orgId === ORG_A)).toBe(true);
+    it('ledger books are isolated by org scope', async () => {
+      const a = await withOrgScope(ORG_A, (tx) => listLedgerBooksTx(tx));
+      expect(a).toHaveLength(2);
+      expect(a.every((b) => b.orgId === ORG_A)).toBe(true);
 
-    const b = await withOrgScope(ORG_B, (tx) => listLedgerBooksTx(tx));
-    expect(b).toHaveLength(1);
-    expect(b[0]?.name).toBe('B Book');
-  });
+      const b = await withOrgScope(ORG_B, (tx) => listLedgerBooksTx(tx));
+      expect(b).toHaveLength(1);
+      expect(b[0]?.name).toBe('B Book');
+    });
 
-  it('membership roles resolve only within the active org', async () => {
-    const inA = await withOrgScope(ORG_A, (tx) => listMembershipRolesTx(tx, 'user-a'));
-    expect(inA).toEqual(['accountant']);
-    // user-b's membership lives in Org B → invisible under Org A scope.
-    const bUnderA = await withOrgScope(ORG_A, (tx) => listMembershipRolesTx(tx, 'user-b'));
-    expect(bUnderA).toEqual([]);
-  });
+    it('membership roles resolve only within the active org', async () => {
+      const inA = await withOrgScope(ORG_A, (tx) => listMembershipRolesTx(tx, 'user-a'));
+      expect(inA).toEqual(['accountant']);
+      // user-b's membership lives in Org B → invisible under Org A scope.
+      const bUnderA = await withOrgScope(ORG_A, (tx) => listMembershipRolesTx(tx, 'user-b'));
+      expect(bUnderA).toEqual([]);
+    });
 
-  it('WITH CHECK blocks creating a ledger book for another org', async () => {
-    await expect(
-      withOrgScope(ORG_A, (tx) =>
-        createLedgerBookTx(tx, { orgId: ORG_B, name: 'sneaky', baseCurrency: 'CNY', fiscalYear: 2026 }),
-      ),
-    ).rejects.toThrow();
-  });
+    it('WITH CHECK blocks creating a ledger book for another org', async () => {
+      await expect(
+        withOrgScope(ORG_A, (tx) =>
+          createLedgerBookTx(tx, {
+            orgId: ORG_B,
+            name: 'sneaky',
+            baseCurrency: 'CNY',
+            fiscalYear: 2026,
+          }),
+        ),
+      ).rejects.toThrow();
+    });
 
-  it('a create within the active org succeeds and is isolated', async () => {
-    const created = await withOrgScope(ORG_A, (tx) =>
-      createLedgerBookTx(tx, { orgId: ORG_A, name: 'A Book 3', baseCurrency: 'CNY', fiscalYear: 2026 }),
-    );
-    expect(created.orgId).toBe(ORG_A);
-    const a = await withOrgScope(ORG_A, (tx) => listLedgerBooksTx(tx));
-    expect(a).toHaveLength(3);
-  });
+    it('a create within the active org succeeds and is isolated', async () => {
+      const created = await withOrgScope(ORG_A, (tx) =>
+        createLedgerBookTx(tx, {
+          orgId: ORG_A,
+          name: 'A Book 3',
+          baseCurrency: 'CNY',
+          fiscalYear: 2026,
+        }),
+      );
+      expect(created.orgId).toBe(ORG_A);
+      const a = await withOrgScope(ORG_A, (tx) => listLedgerBooksTx(tx));
+      expect(a).toHaveLength(3);
+    });
 
-  it('without an org scope, RLS hides every row', async () => {
-    const rows = await getPrisma().ledgerBook.findMany();
-    expect(rows).toHaveLength(0);
-  });
-});
+    it('without an org scope, RLS hides every row', async () => {
+      const rows = await getPrisma().ledgerBook.findMany();
+      expect(rows).toHaveLength(0);
+    });
+  },
+);

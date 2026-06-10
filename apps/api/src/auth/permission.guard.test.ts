@@ -29,7 +29,9 @@ describe('PermissionGuard (authorization)', () => {
   });
 
   it('allows when the ability grants it (viewer read LedgerBook → 200)', () => {
-    expect(guardWith({ action: 'read', subject: 'LedgerBook' }).canActivate(contextFor(id(['viewer'])))).toBe(true);
+    expect(
+      guardWith({ action: 'read', subject: 'LedgerBook' }).canActivate(contextFor(id(['viewer']))),
+    ).toBe(true);
   });
 
   it('forbids a high-sensitivity op the role lacks (viewer post Voucher → 403)', () => {
@@ -39,6 +41,8 @@ describe('PermissionGuard (authorization)', () => {
   });
 
   it('allows a high-sensitivity op for an entitled role (accountant post Voucher)', () => {
-    expect(guardWith({ action: 'post', subject: 'Voucher' }).canActivate(contextFor(id(['accountant'])))).toBe(true);
+    expect(
+      guardWith({ action: 'post', subject: 'Voucher' }).canActivate(contextFor(id(['accountant']))),
+    ).toBe(true);
   });
 });

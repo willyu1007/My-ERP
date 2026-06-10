@@ -17,7 +17,13 @@ import {
   updateInvitationStatusTx,
   withOrgScope,
 } from '@my-erp/db';
-import { invitationEffectiveStatus, isRole, type Identity, type Principal, type Role } from '@my-erp/platform';
+import {
+  invitationEffectiveStatus,
+  isRole,
+  type Identity,
+  type Principal,
+  type Role,
+} from '@my-erp/platform';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentIdentity } from '../auth/current-identity.decorator';
 import { CurrentPrincipal } from '../auth/current-principal.decorator';
@@ -39,7 +45,8 @@ function parseInviteBody(body: unknown): { email: string; role: Role } {
 
 function parseAcceptBody(body: unknown): { token: string } {
   const b = (body ?? {}) as Record<string, unknown>;
-  if (typeof b.token !== 'string' || b.token.trim() === '') throw new BadRequestException('token is required');
+  if (typeof b.token !== 'string' || b.token.trim() === '')
+    throw new BadRequestException('token is required');
   return { token: b.token };
 }
 

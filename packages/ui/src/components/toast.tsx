@@ -1,16 +1,9 @@
-"use client";
+'use client';
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
-import { IconAlert, IconCheck, IconClock, IconX } from "./icons";
+import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
+import { IconAlert, IconCheck, IconClock, IconX } from '@willyu1007/web-workbench';
 
-type Tone = "info" | "success" | "error" | "busy";
+type Tone = 'info' | 'success' | 'error' | 'busy';
 
 interface Toast {
   readonly id: number;
@@ -30,7 +23,7 @@ const ToastContext = createContext<ToastApi | null>(null);
 
 export function useToast(): ToastApi {
   const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error("useToast must be used within ToastProvider");
+  if (!ctx) throw new Error('useToast must be used within ToastProvider');
   return ctx;
 }
 
@@ -47,7 +40,7 @@ export function ToastProvider({ children }: { readonly children: ReactNode }): R
       const id = ++idRef.current;
       setToasts((prev) => [...prev, { id, tone, title, ...(msg ? { msg } : {}) }]);
       if (autoClose) {
-        setTimeout(() => dismiss(id), tone === "error" ? 6000 : 3800);
+        setTimeout(() => dismiss(id), tone === 'error' ? 6000 : 3800);
       }
       return id;
     },
@@ -63,16 +56,16 @@ export function ToastProvider({ children }: { readonly children: ReactNode }): R
 
   const run = useCallback(
     async <T,>(busyTitle: string, fn: () => Promise<T>): Promise<T | undefined> => {
-      const busyId = push("busy", busyTitle, undefined, false);
+      const busyId = push('busy', busyTitle, undefined, false);
       try {
         const result = await fn();
         dismiss(busyId);
-        push("success", busyTitle, "操作已完成");
+        push('success', busyTitle, '操作已完成');
         return result;
       } catch (error) {
         dismiss(busyId);
-        const msg = error instanceof Error ? error.message : "操作失败";
-        push("error", "操作失败", msg);
+        const msg = error instanceof Error ? error.message : '操作失败';
+        push('error', '操作失败', msg);
         return undefined;
       }
     },
@@ -95,12 +88,12 @@ function ToastView({ toast, onClose }: { readonly toast: Toast; readonly onClose
   return (
     <div className={`wb-toast wb-toast--${toast.tone}`}>
       <span className="wb-toast__icon">
-        {toast.tone === "success" ? (
-          <IconCheck size={16} style={{ color: "var(--mt-success)" }} />
-        ) : toast.tone === "error" ? (
-          <IconAlert size={16} style={{ color: "var(--mt-danger)" }} />
+        {toast.tone === 'success' ? (
+          <IconCheck size={16} style={{ color: 'var(--mt-success)' }} />
+        ) : toast.tone === 'error' ? (
+          <IconAlert size={16} style={{ color: 'var(--mt-danger)' }} />
         ) : (
-          <IconClock size={16} style={{ color: "var(--mt-warning)" }} />
+          <IconClock size={16} style={{ color: 'var(--mt-warning)' }} />
         )}
       </span>
       <div className="wb-toast__body">

@@ -1,4 +1,12 @@
-import { BadRequestException, Body, Controller, Get, HttpCode, Put, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import {
   appendAuditRecordTx,
   countPostedVouchersTx,
@@ -37,10 +45,16 @@ function parseBody(body: unknown): { openingPeriod: string; balances: ParsedOpen
   const seen = new Set<string>();
   const balances = b.balances.map((item) => {
     const o = (item ?? {}) as Record<string, unknown>;
-    if (typeof o.accountCode !== 'string' || o.accountCode === '') throw new BadRequestException('accountCode is required');
-    if (seen.has(o.accountCode)) throw new BadRequestException(`duplicate accountCode ${o.accountCode}`);
+    if (typeof o.accountCode !== 'string' || o.accountCode === '')
+      throw new BadRequestException('accountCode is required');
+    if (seen.has(o.accountCode))
+      throw new BadRequestException(`duplicate accountCode ${o.accountCode}`);
     seen.add(o.accountCode);
-    return { accountCode: o.accountCode, debit: parseAmount(o.debit, 'debit'), credit: parseAmount(o.credit, 'credit') };
+    return {
+      accountCode: o.accountCode,
+      debit: parseAmount(o.debit, 'debit'),
+      credit: parseAmount(o.credit, 'credit'),
+    };
   });
   return { openingPeriod: b.openingPeriod, balances };
 }
@@ -63,7 +77,11 @@ export class OpeningBalancesController {
   @Put()
   @HttpCode(200)
   @RequirePermission('create', 'Account')
-  async set(@LedgerBookId() ledgerBookId: string, @CurrentIdentity() identity: Identity, @Body() body: unknown) {
+  async set(
+    @LedgerBookId() ledgerBookId: string,
+    @CurrentIdentity() identity: Identity,
+    @Body() body: unknown,
+  ) {
     const { openingPeriod, balances } = parseBody(body);
     const error = openingBalanceError(balances);
     if (error) throw new BadRequestException(error);
@@ -72,15 +90,24 @@ export class OpeningBalancesController {
     // ledger_book) and the opening set (ledger-scoped) are written together.
     const saved = await withScope(identity.orgId, ledgerBookId, async (tx) => {
       if ((await countPostedVouchersTx(tx)) > 0) {
-        throw new BadRequestException('cannot set opening balances after the book has been used (期初建账须在使用前)');
+        throw new BadRequestException(
+          'cannot set opening balances after the book has been used (期初建账须在使用前)',
+        );
       }
       const accounts = new Map((await listAccountsTx(tx)).map((a) => [a.code, a]));
       const enriched: OpeningBalanceInput[] = balances.map((bal) => {
         const account = accounts.get(bal.accountCode);
         if (!account) throw new BadRequestException(`account ${bal.accountCode} not found`);
-        if (!account.isLeaf) throw new BadRequestException(`account ${bal.accountCode} is not a leaf account`);
-        if (!account.active) throw new BadRequestException(`account ${bal.accountCode} is inactive`);
-        return { accountCode: bal.accountCode, accountName: account.name, debit: bal.debit, credit: bal.credit };
+        if (!account.isLeaf)
+          throw new BadRequestException(`account ${bal.accountCode} is not a leaf account`);
+        if (!account.active)
+          throw new BadRequestException(`account ${bal.accountCode} is inactive`);
+        return {
+          accountCode: bal.accountCode,
+          accountName: account.name,
+          debit: bal.debit,
+          credit: bal.credit,
+        };
       });
       await replaceOpeningBalancesTx(tx, ledgerBookId, enriched);
       await setLedgerOpeningPeriodTx(tx, ledgerBookId, openingPeriod);

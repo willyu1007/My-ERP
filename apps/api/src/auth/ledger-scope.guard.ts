@@ -23,7 +23,9 @@ export class LedgerScopeGuard implements CanActivate {
     if (!identity.ledgerBookId) {
       throw new BadRequestException('no active ledger book — set ledgerBookId in the token');
     }
-    const book = await withOrgScope(identity.orgId, (tx) => getLedgerBookByIdTx(tx, identity.ledgerBookId as string));
+    const book = await withOrgScope(identity.orgId, (tx) =>
+      getLedgerBookByIdTx(tx, identity.ledgerBookId as string),
+    );
     if (!book) throw new ForbiddenException('ledger book not found in your organization');
     req.ledgerBookId = book.id;
     req.ledgerBook = book;

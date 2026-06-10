@@ -5,10 +5,10 @@ import { usePathname } from 'next/navigation';
 import { Fragment, useState, type ReactNode } from 'react';
 import type { ShellNav } from '../model/nav';
 import { BreadcrumbProvider, useBreadcrumbTrail, type Crumb } from './breadcrumb';
-import { IconChevronRight, IconMenu } from './icons';
+import { IconChevronRight, IconMenu } from '@willyu1007/web-workbench';
 import { Sidebar } from './sidebar';
 import { ToastProvider } from './toast';
-import { TopbarSlotContext } from './topbar-slot';
+import { TopbarSlotContext } from '@willyu1007/web-workbench';
 
 function sectionFor(nav: ShellNav, pathname: string): Crumb {
   const hit = nav.sections.find(

@@ -1,38 +1,28 @@
 /**
- * @my-erp/ui — morethan workbench kit (scenario-agnostic).
- * Ported from the morethan ecosystem; carries no domain vocabulary. A scenario
- * (finance first) supplies nav config + view-models and composes these pieces.
- * Styles: import '@my-erp/ui/styles.css' once at the app root.
+ * @my-erp/ui — host UI surface for the My-ERP web app.
+ *
+ * Composition over fork: the scenario-agnostic workbench kit (Scene/List
+ * paradigms, primitives, contracts, icons, styles) comes from the shared
+ * `@willyu1007/web-workbench` package. This package adds only the HOST CHROME
+ * the shared kit intentionally leaves to the host (app shell, sidebar, toast,
+ * overlay, breadcrumb context, nav config) and re-exports the kit, so apps/web
+ * keeps a single `@my-erp/ui` import surface.
+ *
+ * Styles: import '@willyu1007/web-workbench/styles/index.css' once at the app root.
  */
 
-// Presentation models (scenario-agnostic contracts)
-export * from './model/nav';
-export * from './model/card-model';
-export * from './model/table-model';
-export * from './model/row-model';
+// Shared workbench kit: Scene/SceneNav, ListView, EntityTable/Row/Card, cell kit,
+// primitives (Section/Stat/StatStrip/EmptyState/Meter/Breadcrumb), icons, menu,
+// tabs, topbar-slot, StatusBadge, InsightCard, and the contract types.
+export * from '@willyu1007/web-workbench';
 
-// Shell
+// Host chrome — not in the shared kit ("lock the chrome, vary the content").
 export * from './components/app-shell';
 export * from './components/sidebar';
 export * from './components/sidebar-create';
 export * from './components/account-menu';
 export * from './components/breadcrumb';
-export * from './components/topbar-slot';
-
-// Scene + List paradigm
-export * from './components/scene';
-export * from './components/list-view';
-export * from './components/entity-table';
-export * from './components/entity-row';
-export * from './components/entity-card';
-export * from './components/table-cells';
-
-// Atoms / primitives
-export * from './components/primitives';
-export * from './components/badge';
-export * from './components/menu';
-export * from './components/overlay';
-export * from './components/tabs';
 export * from './components/toast';
+export * from './components/overlay';
 export * from './components/copy-field';
-export * from './components/icons';
+export * from './model/nav';

@@ -1,6 +1,6 @@
 'use client';
 
-import { Badge, Breadcrumb, Section, useToast } from '@my-erp/ui';
+import { StatusBadge, Breadcrumb, Section, useToast } from '@my-erp/ui';
 import { formatDate, formatMoney, formatPeriod } from '@/lib/finance/format';
 import { VOUCHER_STATUS_LABELS, voucherStatusTone } from '@/lib/finance/types';
 import type { VoucherVM } from '@/lib/finance/types';
@@ -12,7 +12,11 @@ import type { VoucherVM } from '@/lib/finance/types';
 export function VoucherDetail({ voucher }: { readonly voucher: VoucherVM }) {
   const toast = useToast();
   const act = (label: string): void =>
-    toast.notify('success', `${label}（演示）`, `凭证 ${voucher.no} 已${label}（演示数据，未持久化）`);
+    toast.notify(
+      'success',
+      `${label}（演示）`,
+      `凭证 ${voucher.no} 已${label}（演示数据，未持久化）`,
+    );
 
   const meta: readonly (readonly [string, string])[] = [
     ['日期', formatDate(voucher.date)],
@@ -24,7 +28,9 @@ export function VoucherDetail({ voucher }: { readonly voucher: VoucherVM }) {
 
   return (
     <div className="wb-scene wb-stack wb-stack--lg">
-      <Breadcrumb items={[{ label: '记账凭证', href: '/finance/vouchers' }, { label: voucher.no }]} />
+      <Breadcrumb
+        items={[{ label: '记账凭证', href: '/finance/vouchers' }, { label: voucher.no }]}
+      />
 
       <div className="wb-grid wb-grid--sidebar">
         <Section title="分录">
@@ -45,32 +51,42 @@ export function VoucherDetail({ voucher }: { readonly voucher: VoucherVM }) {
                     <td>
                       <span className="wb-mono">{l.accountCode}</span> {l.accountName}
                     </td>
-                    <td className="wb-table__cell--end wb-mono">{l.debit ? formatMoney(l.debit) : ''}</td>
-                    <td className="wb-table__cell--end wb-mono">{l.credit ? formatMoney(l.credit) : ''}</td>
+                    <td className="wb-table__cell--end wb-mono">
+                      {l.debit ? formatMoney(l.debit) : ''}
+                    </td>
+                    <td className="wb-table__cell--end wb-mono">
+                      {l.credit ? formatMoney(l.credit) : ''}
+                    </td>
                   </tr>
                 ))}
                 <tr className="wb-table__row">
                   <td>合计</td>
                   <td />
                   <td className="wb-table__cell--end wb-mono">{formatMoney(voucher.totalDebit)}</td>
-                  <td className="wb-table__cell--end wb-mono">{formatMoney(voucher.totalCredit)}</td>
+                  <td className="wb-table__cell--end wb-mono">
+                    {formatMoney(voucher.totalCredit)}
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
           <div className="wb-row">
-            <Badge tone={voucher.balanced ? 'success' : 'danger'} dot>
-              {voucher.balanced ? '借贷平衡' : '借贷不平'}
-            </Badge>
+            <StatusBadge
+              tone={voucher.balanced ? 'success' : 'danger'}
+              dot
+              label={voucher.balanced ? '借贷平衡' : '借贷不平'}
+            />
           </div>
         </Section>
 
         <div className="wb-card">
           <div className="wb-card__head">
             <h3 className="wb-card__title">{voucher.summary}</h3>
-            <Badge tone={voucherStatusTone(voucher.status)} dot>
-              {VOUCHER_STATUS_LABELS[voucher.status]}
-            </Badge>
+            <StatusBadge
+              tone={voucherStatusTone(voucher.status) ?? 'muted'}
+              dot
+              label={VOUCHER_STATUS_LABELS[voucher.status]}
+            />
           </div>
 
           <div className="wb-stack wb-stack--sm">
@@ -85,26 +101,44 @@ export function VoucherDetail({ voucher }: { readonly voucher: VoucherVM }) {
 
           <div className="wb-row wb-row--wrap">
             {voucher.status === 'draft' && (
-              <button type="button" className="mt-btn mt-btn--primary mt-btn--sm" onClick={() => act('提交审核')}>
+              <button
+                type="button"
+                className="mt-btn mt-btn--primary mt-btn--sm"
+                onClick={() => act('提交审核')}
+              >
                 提交审核
               </button>
             )}
             {voucher.status === 'pending' && (
               <>
-                <button type="button" className="mt-btn mt-btn--primary mt-btn--sm" onClick={() => act('审核')}>
+                <button
+                  type="button"
+                  className="mt-btn mt-btn--primary mt-btn--sm"
+                  onClick={() => act('审核')}
+                >
                   审核
                 </button>
-                <button type="button" className="mt-btn mt-btn--secondary mt-btn--sm" onClick={() => act('过账')}>
+                <button
+                  type="button"
+                  className="mt-btn mt-btn--secondary mt-btn--sm"
+                  onClick={() => act('过账')}
+                >
                   过账
                 </button>
               </>
             )}
             {voucher.status === 'posted' && (
-              <button type="button" className="mt-btn mt-btn--danger mt-btn--sm" onClick={() => act('红冲')}>
+              <button
+                type="button"
+                className="mt-btn mt-btn--danger mt-btn--sm"
+                onClick={() => act('红冲')}
+              >
                 红冲
               </button>
             )}
-            {voucher.status === 'reversed' && <span className="wb-muted">该凭证已红冲，不可再操作。</span>}
+            {voucher.status === 'reversed' && (
+              <span className="wb-muted">该凭证已红冲，不可再操作。</span>
+            )}
           </div>
         </div>
       </div>

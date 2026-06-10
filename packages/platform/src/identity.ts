@@ -11,7 +11,13 @@ export const ROLE_LABELS: Record<Role, string> = {
   viewer: '查看者',
 };
 
-const ROLES: ReadonlySet<Role> = new Set<Role>(['accountant', 'cashier', 'supervisor', 'admin', 'viewer']);
+const ROLES: ReadonlySet<Role> = new Set<Role>([
+  'accountant',
+  'cashier',
+  'supervisor',
+  'admin',
+  'viewer',
+]);
 
 export function isRole(value: unknown): value is Role {
   return typeof value === 'string' && ROLES.has(value as Role);
@@ -62,7 +68,9 @@ function parsePrincipal(payload: unknown): Principal {
   return {
     userId,
     orgId: p.orgId,
-    ...(typeof p.ledgerBookId === 'string' && p.ledgerBookId !== '' ? { ledgerBookId: p.ledgerBookId } : {}),
+    ...(typeof p.ledgerBookId === 'string' && p.ledgerBookId !== ''
+      ? { ledgerBookId: p.ledgerBookId }
+      : {}),
     ...(typeof p.email === 'string' ? { email: p.email } : {}),
   };
 }

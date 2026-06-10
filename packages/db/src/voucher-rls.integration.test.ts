@@ -39,7 +39,10 @@ function pgAvailable(): boolean {
 const PG_AVAILABLE = pgAvailable();
 
 function psql(db: string, sql: string): void {
-  execSync(`psql -p ${PORT} -d ${db} -v ON_ERROR_STOP=1 -q`, { input: sql, stdio: ['pipe', 'ignore', 'pipe'] });
+  execSync(`psql -p ${PORT} -d ${db} -v ON_ERROR_STOP=1 -q`, {
+    input: sql,
+    stdio: ['pipe', 'ignore', 'pipe'],
+  });
 }
 function migrationSql(name: string): string {
   return readFileSync(
@@ -58,8 +61,20 @@ const balanced = (lb: string) => ({
   totalDebit: '500.00',
   totalCredit: '500.00',
   lines: [
-    { accountCode: '1002', accountName: '银行存款', summary: '投资', debit: '500.00', credit: null },
-    { accountCode: '4001', accountName: '实收资本', summary: '投资', debit: null, credit: '500.00' },
+    {
+      accountCode: '1002',
+      accountName: '银行存款',
+      summary: '投资',
+      debit: '500.00',
+      credit: null,
+    },
+    {
+      accountCode: '4001',
+      accountName: '实收资本',
+      summary: '投资',
+      debit: null,
+      credit: '500.00',
+    },
   ],
 });
 
@@ -70,7 +85,7 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS + CHECK — journal voucher (ledger
     for (const m of migrationDirs()) psql(TEST_DB, migrationSql(m));
     psql(
       'postgres',
-      `DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='${APP_ROLE}') THEN CREATE ROLE ${APP_ROLE} LOGIN PASSWORD '${APP_PW}'; END IF; END $$;`,
+      `DO $$ BEGIN CREATE ROLE ${APP_ROLE} LOGIN PASSWORD '${APP_PW}'; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`,
     );
     psql(
       TEST_DB,
@@ -120,7 +135,9 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS + CHECK — journal voucher (ledger
       }),
     );
     // status='draft' is allowed unbalanced; flipping to pending must violate the CHECK.
-    await expect(withLedgerScope(LB_A, (tx) => setVoucherStatusTx(tx, v.id, { status: 'pending' }))).rejects.toThrow();
+    await expect(
+      withLedgerScope(LB_A, (tx) => setVoucherStatusTx(tx, v.id, { status: 'pending' })),
+    ).rejects.toThrow();
   });
 
   it('WITH CHECK blocks creating a voucher in another ledger', async () => {
@@ -169,7 +186,13 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS + CHECK — journal voucher (ledger
       await setVoucherStatusTx(tx, v.id, { status: 'posted', checker: 'u2', postedAt: new Date() });
       return getVoucherTx(tx, v.id);
     });
-    const ctx = (no: string) => ({ no, reverser: 'u2', date: original!.date, period: original!.period, postedAt: new Date() });
+    const ctx = (no: string) => ({
+      no,
+      reverser: 'u2',
+      date: original!.date,
+      period: original!.period,
+      postedAt: new Date(),
+    });
     await withLedgerScope(LB_A, (tx) => createReversalVoucherTx(tx, original!, ctx('记-2026-021')));
     // A second reversal of the same original must violate the unique index.
     await expect(

@@ -1,5 +1,10 @@
 import { BadRequestException, Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
-import { appendAuditRecordTx, createLedgerBookTx, listLedgerBooksTx, withOrgScope } from '@my-erp/db';
+import {
+  appendAuditRecordTx,
+  createLedgerBookTx,
+  listLedgerBooksTx,
+  withOrgScope,
+} from '@my-erp/db';
 import { withSpan, type Identity } from '@my-erp/platform';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentIdentity } from '../auth/current-identity.decorator';
@@ -16,14 +21,19 @@ interface CreateLedgerBookBody {
 
 function parseCreateBody(body: unknown): CreateLedgerBookBody {
   const b = (body ?? {}) as Record<string, unknown>;
-  if (typeof b.name !== 'string' || b.name.trim() === '') throw new BadRequestException('name is required');
+  if (typeof b.name !== 'string' || b.name.trim() === '')
+    throw new BadRequestException('name is required');
   if (typeof b.baseCurrency !== 'string' || b.baseCurrency.trim() === '') {
     throw new BadRequestException('baseCurrency is required');
   }
   if (typeof b.fiscalYear !== 'number' || !Number.isInteger(b.fiscalYear)) {
     throw new BadRequestException('fiscalYear must be an integer');
   }
-  const result: CreateLedgerBookBody = { name: b.name, baseCurrency: b.baseCurrency, fiscalYear: b.fiscalYear };
+  const result: CreateLedgerBookBody = {
+    name: b.name,
+    baseCurrency: b.baseCurrency,
+    fiscalYear: b.fiscalYear,
+  };
   if (typeof b.periodStructure === 'string') result.periodStructure = b.periodStructure;
   return result;
 }
@@ -47,7 +57,11 @@ export class LedgerBooksController {
 
   @Post()
   @RequirePermission('create', 'LedgerBook')
-  async create(@CurrentIdentity() identity: Identity, @Body() body: unknown, @TraceId() traceId?: string) {
+  async create(
+    @CurrentIdentity() identity: Identity,
+    @Body() body: unknown,
+    @TraceId() traceId?: string,
+  ) {
     const input = parseCreateBody(body);
     return withSpan(
       'ledger-books.create',

@@ -6,14 +6,24 @@ import { formatMoney } from '@/lib/finance/format';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AccountLedgerPage({ params }: { readonly params: { readonly code: string } }) {
-  const ledger = await getAccountLedger(params.code);
+export default async function AccountLedgerPage({
+  params,
+}: {
+  readonly params: Promise<{ readonly code: string }>;
+}) {
+  const { code } = await params;
+  const ledger = await getAccountLedger(code);
   if (!ledger) notFound();
   const { account, opening, rows, closing } = ledger;
 
   return (
     <div className="wb-scene wb-stack wb-stack--lg">
-      <Breadcrumb items={[{ label: '账簿', href: '/finance/ledger' }, { label: `${account.code} ${account.name}` }]} />
+      <Breadcrumb
+        items={[
+          { label: '账簿', href: '/finance/ledger' },
+          { label: `${account.code} ${account.name}` },
+        ]}
+      />
 
       <Section title={`明细账 · ${account.name}`}>
         <div className="wb-table-wrap">
@@ -32,8 +42,12 @@ export default async function AccountLedgerPage({ params }: { readonly params: {
             <tbody>
               <tr className="wb-table__row">
                 <td colSpan={3}>期初余额</td>
-                <td className="wb-table__cell--end wb-mono">{opening.debit ? formatMoney(opening.debit) : ''}</td>
-                <td className="wb-table__cell--end wb-mono">{opening.credit ? formatMoney(opening.credit) : ''}</td>
+                <td className="wb-table__cell--end wb-mono">
+                  {opening.debit ? formatMoney(opening.debit) : ''}
+                </td>
+                <td className="wb-table__cell--end wb-mono">
+                  {opening.credit ? formatMoney(opening.credit) : ''}
+                </td>
                 <td className="wb-table__cell--center">{opening.balanceDir}</td>
                 <td className="wb-table__cell--end wb-mono">{formatMoney(opening.balance)}</td>
               </tr>
@@ -46,16 +60,24 @@ export default async function AccountLedgerPage({ params }: { readonly params: {
                     </Link>
                   </td>
                   <td>{r.summary}</td>
-                  <td className="wb-table__cell--end wb-mono">{r.debit ? formatMoney(r.debit) : ''}</td>
-                  <td className="wb-table__cell--end wb-mono">{r.credit ? formatMoney(r.credit) : ''}</td>
+                  <td className="wb-table__cell--end wb-mono">
+                    {r.debit ? formatMoney(r.debit) : ''}
+                  </td>
+                  <td className="wb-table__cell--end wb-mono">
+                    {r.credit ? formatMoney(r.credit) : ''}
+                  </td>
                   <td className="wb-table__cell--center">{r.balanceDir}</td>
                   <td className="wb-table__cell--end wb-mono">{formatMoney(r.balance)}</td>
                 </tr>
               ))}
               <tr className="wb-table__row">
                 <td colSpan={3}>期末余额</td>
-                <td className="wb-table__cell--end wb-mono">{closing.debit ? formatMoney(closing.debit) : ''}</td>
-                <td className="wb-table__cell--end wb-mono">{closing.credit ? formatMoney(closing.credit) : ''}</td>
+                <td className="wb-table__cell--end wb-mono">
+                  {closing.debit ? formatMoney(closing.debit) : ''}
+                </td>
+                <td className="wb-table__cell--end wb-mono">
+                  {closing.credit ? formatMoney(closing.credit) : ''}
+                </td>
                 <td className="wb-table__cell--center">{closing.balanceDir}</td>
                 <td className="wb-table__cell--end wb-mono">{formatMoney(closing.balance)}</td>
               </tr>

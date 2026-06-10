@@ -8,7 +8,12 @@
  *              return api.vouchers.list({ ledgerBookId });   // scoped + RLS-backed
  */
 import { ACCOUNTS, OPENING_BALANCES, VOUCHERS } from './fixtures';
-import { computeAccountLedger, computeTrialBalance, type AccountLedger, type TrialBalance } from './ledger';
+import {
+  computeAccountLedger,
+  computeTrialBalance,
+  type AccountLedger,
+  type TrialBalance,
+} from './ledger';
 import type { AccountVM, VoucherVM } from './types';
 
 export async function listVouchers(): Promise<readonly VoucherVM[]> {

@@ -125,7 +125,11 @@ export async function withOrgScope<T>(orgId: string, fn: (tx: TxClient) => Promi
  * for operations that touch org-scoped and ledger-scoped tables atomically
  * (e.g. 期初建账 writes the ledger book's period + the ledger's opening balances).
  */
-export async function withScope<T>(orgId: string, ledgerBookId: string, fn: (tx: TxClient) => Promise<T>): Promise<T> {
+export async function withScope<T>(
+  orgId: string,
+  ledgerBookId: string,
+  fn: (tx: TxClient) => Promise<T>,
+): Promise<T> {
   return getPrisma().$transaction(async (tx) => {
     await tx.$executeRaw`SELECT set_config('app.current_org', ${orgId}, true)`;
     await tx.$executeRaw`SELECT set_config('app.current_ledger', ${ledgerBookId}, true)`;
@@ -162,7 +166,10 @@ export interface CreateLedgerBookInput {
   periodStructure?: string;
 }
 
-export async function getOrganizationTx(tx: TxClient, orgId: string): Promise<OrganizationEntity | null> {
+export async function getOrganizationTx(
+  tx: TxClient,
+  orgId: string,
+): Promise<OrganizationEntity | null> {
   const o = await tx.organization.findUnique({ where: { id: orgId } });
   return o ? { id: o.id, name: o.name, createdAt: o.createdAt } : null;
 }
@@ -206,12 +213,18 @@ export async function listLedgerBooksTx(tx: TxClient): Promise<LedgerBookEntity[
 
 /** Fetch a ledger book by id within the active org scope (RLS-filtered). Returns
  *  null when it doesn't belong to the caller's org — used to bind a ledger scope. */
-export async function getLedgerBookByIdTx(tx: TxClient, id: string): Promise<LedgerBookEntity | null> {
+export async function getLedgerBookByIdTx(
+  tx: TxClient,
+  id: string,
+): Promise<LedgerBookEntity | null> {
   const b = await tx.ledgerBook.findUnique({ where: { id } });
   return b ? toLedgerBook(b) : null;
 }
 
-export async function createLedgerBookTx(tx: TxClient, input: CreateLedgerBookInput): Promise<LedgerBookEntity> {
+export async function createLedgerBookTx(
+  tx: TxClient,
+  input: CreateLedgerBookInput,
+): Promise<LedgerBookEntity> {
   const created = await tx.ledgerBook.create({
     data: {
       orgId: input.orgId,
@@ -275,7 +288,14 @@ function toMembership(m: {
   email: string | null;
   createdAt: Date;
 }): MembershipEntity {
-  return { id: m.id, orgId: m.orgId, userId: m.userId, role: m.role, email: m.email, createdAt: m.createdAt };
+  return {
+    id: m.id,
+    orgId: m.orgId,
+    userId: m.userId,
+    role: m.role,
+    email: m.email,
+    createdAt: m.createdAt,
+  };
 }
 
 function toInvitation(i: {
@@ -311,14 +331,25 @@ export async function listMembershipsTx(tx: TxClient): Promise<MembershipEntity[
   return rows.map(toMembership);
 }
 
-export async function createMembershipTx(tx: TxClient, input: CreateMembershipInput): Promise<MembershipEntity> {
+export async function createMembershipTx(
+  tx: TxClient,
+  input: CreateMembershipInput,
+): Promise<MembershipEntity> {
   const created = await tx.membership.create({
-    data: { orgId: input.orgId, userId: input.userId, role: input.role, email: input.email ?? null },
+    data: {
+      orgId: input.orgId,
+      userId: input.userId,
+      role: input.role,
+      email: input.email ?? null,
+    },
   });
   return toMembership(created);
 }
 
-export async function createInvitationTx(tx: TxClient, input: CreateInvitationInput): Promise<InvitationEntity> {
+export async function createInvitationTx(
+  tx: TxClient,
+  input: CreateInvitationInput,
+): Promise<InvitationEntity> {
   const created = await tx.invitation.create({
     data: {
       orgId: input.orgId,
@@ -337,12 +368,18 @@ export async function listInvitationsTx(tx: TxClient): Promise<InvitationEntity[
   return rows.map(toInvitation);
 }
 
-export async function findInvitationByTokenTx(tx: TxClient, token: string): Promise<InvitationEntity | null> {
+export async function findInvitationByTokenTx(
+  tx: TxClient,
+  token: string,
+): Promise<InvitationEntity | null> {
   const row = await tx.invitation.findUnique({ where: { token } });
   return row ? toInvitation(row) : null;
 }
 
-export async function findInvitationByIdTx(tx: TxClient, id: string): Promise<InvitationEntity | null> {
+export async function findInvitationByIdTx(
+  tx: TxClient,
+  id: string,
+): Promise<InvitationEntity | null> {
   const row = await tx.invitation.findUnique({ where: { id } });
   return row ? toInvitation(row) : null;
 }
@@ -353,7 +390,11 @@ export interface UpdateInvitationStatus {
   acceptedAt?: Date;
 }
 
-export async function updateInvitationStatusTx(tx: TxClient, id: string, patch: UpdateInvitationStatus): Promise<void> {
+export async function updateInvitationStatusTx(
+  tx: TxClient,
+  id: string,
+  patch: UpdateInvitationStatus,
+): Promise<void> {
   await tx.invitation.update({
     where: { id },
     data: {
@@ -440,12 +481,18 @@ export async function listAccountsTx(tx: TxClient): Promise<AccountEntity[]> {
   return rows.map(toAccount);
 }
 
-export async function getAccountByCodeTx(tx: TxClient, code: string): Promise<AccountEntity | null> {
+export async function getAccountByCodeTx(
+  tx: TxClient,
+  code: string,
+): Promise<AccountEntity | null> {
   const a = await tx.account.findFirst({ where: { code } });
   return a ? toAccount(a) : null;
 }
 
-export async function createAccountTx(tx: TxClient, input: CreateAccountInput): Promise<AccountEntity> {
+export async function createAccountTx(
+  tx: TxClient,
+  input: CreateAccountInput,
+): Promise<AccountEntity> {
   const created = await tx.account.create({
     data: {
       ledgerBookId: input.ledgerBookId,
@@ -467,7 +514,11 @@ export interface UpdateAccountPatch {
   auxTypes?: readonly string[];
 }
 
-export async function updateAccountTx(tx: TxClient, code: string, patch: UpdateAccountPatch): Promise<void> {
+export async function updateAccountTx(
+  tx: TxClient,
+  code: string,
+  patch: UpdateAccountPatch,
+): Promise<void> {
   await tx.account.updateMany({
     where: { code },
     data: {
@@ -477,7 +528,11 @@ export async function updateAccountTx(tx: TxClient, code: string, patch: UpdateA
   });
 }
 
-export async function setAccountActiveTx(tx: TxClient, code: string, active: boolean): Promise<void> {
+export async function setAccountActiveTx(
+  tx: TxClient,
+  code: string,
+  active: boolean,
+): Promise<void> {
   await tx.account.updateMany({ where: { code }, data: { active } });
 }
 
@@ -654,7 +709,10 @@ export async function countVouchersInPeriodTx(tx: TxClient, period: string): Pro
   return tx.journalVoucher.count({ where: { period } });
 }
 
-export async function createVoucherTx(tx: TxClient, input: CreateVoucherInput): Promise<VoucherEntity> {
+export async function createVoucherTx(
+  tx: TxClient,
+  input: CreateVoucherInput,
+): Promise<VoucherEntity> {
   const v = await tx.journalVoucher.create({
     data: {
       ledgerBookId: input.ledgerBookId,
@@ -681,7 +739,10 @@ export async function listVouchersTx(tx: TxClient, status?: string): Promise<Vou
 }
 
 export async function getVoucherTx(tx: TxClient, id: string): Promise<VoucherEntity | null> {
-  const v = await tx.journalVoucher.findUnique({ where: { id }, include: { lines: { orderBy: { lineNo: 'asc' } } } });
+  const v = await tx.journalVoucher.findUnique({
+    where: { id },
+    include: { lines: { orderBy: { lineNo: 'asc' } } },
+  });
   return v ? toVoucher(v) : null;
 }
 
@@ -694,7 +755,12 @@ export interface UpdateDraftVoucherInput {
   lines: readonly VoucherLineInput[];
 }
 
-export async function updateDraftVoucherTx(tx: TxClient, id: string, ledgerBookId: string, input: UpdateDraftVoucherInput): Promise<void> {
+export async function updateDraftVoucherTx(
+  tx: TxClient,
+  id: string,
+  ledgerBookId: string,
+  input: UpdateDraftVoucherInput,
+): Promise<void> {
   await tx.journalEntryLine.deleteMany({ where: { voucherId: id } });
   await tx.journalVoucher.update({
     where: { id },
@@ -716,7 +782,11 @@ export interface VoucherStatusPatch {
   reversedBy?: string | null;
 }
 
-export async function setVoucherStatusTx(tx: TxClient, id: string, patch: VoucherStatusPatch): Promise<void> {
+export async function setVoucherStatusTx(
+  tx: TxClient,
+  id: string,
+  patch: VoucherStatusPatch,
+): Promise<void> {
   await tx.journalVoucher.update({
     where: { id },
     data: {
@@ -741,7 +811,11 @@ export interface ReversalContext {
  * debit/credit swapped, so it offsets the original. The caller links the original
  * (status=reversed, reversedBy) in the same transaction.
  */
-export async function createReversalVoucherTx(tx: TxClient, original: VoucherEntity, ctx: ReversalContext): Promise<VoucherEntity> {
+export async function createReversalVoucherTx(
+  tx: TxClient,
+  original: VoucherEntity,
+  ctx: ReversalContext,
+): Promise<VoucherEntity> {
   const v = await tx.journalVoucher.create({
     data: {
       ledgerBookId: original.ledgerBookId,
@@ -765,7 +839,10 @@ export async function createReversalVoucherTx(tx: TxClient, original: VoucherEnt
           summary: l.summary,
           debit: l.credit,
           credit: l.debit,
-          aux: l.aux === undefined || l.aux === null ? Prisma.JsonNull : (l.aux as Prisma.InputJsonValue),
+          aux:
+            l.aux === undefined || l.aux === null
+              ? Prisma.JsonNull
+              : (l.aux as Prisma.InputJsonValue),
           cashFlowItem: l.cashFlowItem,
         })),
       },
@@ -868,7 +945,11 @@ export async function countPostedVouchersTx(tx: TxClient): Promise<number> {
 }
 
 /** Set the ledger book's enabled period (org-scoped — call within withOrgScope). */
-export async function setLedgerOpeningPeriodTx(tx: TxClient, ledgerBookId: string, openingPeriod: string): Promise<void> {
+export async function setLedgerOpeningPeriodTx(
+  tx: TxClient,
+  ledgerBookId: string,
+  openingPeriod: string,
+): Promise<void> {
   await tx.ledgerBook.update({ where: { id: ledgerBookId }, data: { openingPeriod } });
 }
 

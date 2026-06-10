@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ShellNav } from '../model/nav';
 import { AccountMenu } from './account-menu';
-import { IconSearch, IconSidebar } from './icons';
+import { IconSearch, IconSidebar } from '@willyu1007/web-workbench';
 import { SidebarCreate } from './sidebar-create';
 import { useToast } from './toast';
 
@@ -42,7 +42,13 @@ export function Sidebar({
       {open && <div className="wb-sidebar__backdrop" onClick={onClose} aria-hidden="true" />}
       <aside className={`wb-sidebar${open ? ' wb-sidebar--open' : ''}`}>
         <div className="wb-sidebar__top">
-          <button type="button" className="wb-iconbtn" aria-label="搜索" title="搜索" onClick={search}>
+          <button
+            type="button"
+            className="wb-iconbtn"
+            aria-label="搜索"
+            title="搜索"
+            onClick={search}
+          >
             <IconSearch size={18} />
           </button>
           <button
@@ -76,7 +82,9 @@ export function Sidebar({
                     className={`wb-nav__item${group.showIcons ? '' : ' wb-nav__item--noicon'}${active ? ' wb-nav__item--active' : ''}`}
                     aria-current={active ? 'page' : undefined}
                   >
-                    {group.showIcons && item.icon && <span className="wb-nav__icon">{item.icon}</span>}
+                    {group.showIcons && item.icon && (
+                      <span className="wb-nav__icon">{item.icon}</span>
+                    )}
                     <span className="wb-nav__label">{item.label}</span>
                     {count > 0 && <span className="wb-nav__count">{count}</span>}
                   </Link>

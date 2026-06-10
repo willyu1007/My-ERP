@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Badge, Section, Stat, StatStrip } from '@my-erp/ui';
+import { StatusBadge, Section, Stat, StatStrip } from '@my-erp/ui';
 import { getTrialBalance } from '@/lib/finance/data-source';
 import { formatMoney } from '@/lib/finance/format';
 
@@ -28,9 +28,21 @@ export default async function LedgerPage() {
 
       <Section title="试算平衡表">
         <div className="wb-row wb-row--wrap">
-          <Badge tone={tb.balanced.opening ? 'success' : 'danger'} dot>期初 {tb.balanced.opening ? '平衡' : '不平'}</Badge>
-          <Badge tone={tb.balanced.period ? 'success' : 'danger'} dot>本期 {tb.balanced.period ? '平衡' : '不平'}</Badge>
-          <Badge tone={tb.balanced.closing ? 'success' : 'danger'} dot>期末 {tb.balanced.closing ? '平衡' : '不平'}</Badge>
+          <StatusBadge
+            tone={tb.balanced.opening ? 'success' : 'danger'}
+            dot
+            label={`期初 ${tb.balanced.opening ? '平衡' : '不平'}`}
+          />
+          <StatusBadge
+            tone={tb.balanced.period ? 'success' : 'danger'}
+            dot
+            label={`本期 ${tb.balanced.period ? '平衡' : '不平'}`}
+          />
+          <StatusBadge
+            tone={tb.balanced.closing ? 'success' : 'danger'}
+            dot
+            label={`期末 ${tb.balanced.closing ? '平衡' : '不平'}`}
+          />
         </div>
         <div className="wb-table-wrap">
           <table className="wb-table">
@@ -63,12 +75,24 @@ export default async function LedgerPage() {
               ))}
               <tr className="wb-table__row">
                 <td>合计</td>
-                <td className="wb-table__cell--end wb-mono">{formatMoney(tb.totals.openingDebit)}</td>
-                <td className="wb-table__cell--end wb-mono">{formatMoney(tb.totals.openingCredit)}</td>
-                <td className="wb-table__cell--end wb-mono">{formatMoney(tb.totals.periodDebit)}</td>
-                <td className="wb-table__cell--end wb-mono">{formatMoney(tb.totals.periodCredit)}</td>
-                <td className="wb-table__cell--end wb-mono">{formatMoney(tb.totals.closingDebit)}</td>
-                <td className="wb-table__cell--end wb-mono">{formatMoney(tb.totals.closingCredit)}</td>
+                <td className="wb-table__cell--end wb-mono">
+                  {formatMoney(tb.totals.openingDebit)}
+                </td>
+                <td className="wb-table__cell--end wb-mono">
+                  {formatMoney(tb.totals.openingCredit)}
+                </td>
+                <td className="wb-table__cell--end wb-mono">
+                  {formatMoney(tb.totals.periodDebit)}
+                </td>
+                <td className="wb-table__cell--end wb-mono">
+                  {formatMoney(tb.totals.periodCredit)}
+                </td>
+                <td className="wb-table__cell--end wb-mono">
+                  {formatMoney(tb.totals.closingDebit)}
+                </td>
+                <td className="wb-table__cell--end wb-mono">
+                  {formatMoney(tb.totals.closingCredit)}
+                </td>
               </tr>
             </tbody>
           </table>

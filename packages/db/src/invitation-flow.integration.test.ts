@@ -38,7 +38,10 @@ function pgAvailable(): boolean {
 const PG_AVAILABLE = pgAvailable();
 
 function psql(db: string, sql: string): void {
-  execSync(`psql -p ${PORT} -d ${db} -v ON_ERROR_STOP=1 -q`, { input: sql, stdio: ['pipe', 'ignore', 'pipe'] });
+  execSync(`psql -p ${PORT} -d ${db} -v ON_ERROR_STOP=1 -q`, {
+    input: sql,
+    stdio: ['pipe', 'ignore', 'pipe'],
+  });
 }
 function migrationSql(name: string): string {
   return readFileSync(
@@ -54,7 +57,7 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS — invitation flow', () => {
     for (const m of migrationDirs()) psql(TEST_DB, migrationSql(m));
     psql(
       'postgres',
-      `DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='${APP_ROLE}') THEN CREATE ROLE ${APP_ROLE} LOGIN PASSWORD '${APP_PW}'; END IF; END $$;`,
+      `DO $$ BEGIN CREATE ROLE ${APP_ROLE} LOGIN PASSWORD '${APP_PW}'; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`,
     );
     psql(
       TEST_DB,
@@ -80,7 +83,12 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS — invitation flow', () => {
 
   it('creates an invitation, finds it by token, and lists it within the org', async () => {
     const inv = await withOrgScope(ORG_A, (tx) =>
-      createInvitationTx(tx, { orgId: ORG_A, invitedEmail: 'bob@x.com', role: 'accountant', invitedBy: 'admin-a' }),
+      createInvitationTx(tx, {
+        orgId: ORG_A,
+        invitedEmail: 'bob@x.com',
+        role: 'accountant',
+        invitedBy: 'admin-a',
+      }),
     );
     expect(inv.status).toBe('pending');
     expect(inv.token).toBeTruthy();
@@ -103,8 +111,17 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS — invitation flow', () => {
         role: 'cashier',
         invitedBy: 'admin-a',
       });
-      const membership = await createMembershipTx(tx, { orgId: ORG_A, userId: 'carol', role: inv.role, email: 'carol@x.com' });
-      await updateInvitationStatusTx(tx, inv.id, { status: 'accepted', acceptedBy: 'carol', acceptedAt: new Date() });
+      const membership = await createMembershipTx(tx, {
+        orgId: ORG_A,
+        userId: 'carol',
+        role: inv.role,
+        email: 'carol@x.com',
+      });
+      await updateInvitationStatusTx(tx, inv.id, {
+        status: 'accepted',
+        acceptedBy: 'carol',
+        acceptedAt: new Date(),
+      });
       return { invId: inv.id, membership };
     });
     expect(result.membership.role).toBe('cashier');
@@ -118,7 +135,12 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS — invitation flow', () => {
   it('WITH CHECK blocks creating an invitation for another org', async () => {
     await expect(
       withOrgScope(ORG_A, (tx) =>
-        createInvitationTx(tx, { orgId: ORG_B, invitedEmail: 'x@x.com', role: 'viewer', invitedBy: 'admin-a' }),
+        createInvitationTx(tx, {
+          orgId: ORG_B,
+          invitedEmail: 'x@x.com',
+          role: 'viewer',
+          invitedBy: 'admin-a',
+        }),
       ),
     ).rejects.toThrow();
   });

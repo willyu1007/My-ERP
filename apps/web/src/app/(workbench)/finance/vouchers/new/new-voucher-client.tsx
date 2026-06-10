@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRef, useState, type FormEvent } from 'react';
-import { Badge, Breadcrumb, useToast } from '@my-erp/ui';
+import { StatusBadge, Breadcrumb, useToast } from '@my-erp/ui';
 import { formatMoney, formatPeriod } from '@/lib/finance/format';
 import { centsToString, sumCents, toCents } from '@/lib/finance/money';
 import type { AccountVM } from '@/lib/finance/types';
@@ -80,23 +80,37 @@ export function NewVoucherClient({ accounts }: { readonly accounts: readonly Acc
 
   return (
     <div className="wb-scene wb-stack wb-stack--lg">
-      <Breadcrumb items={[{ label: '记账凭证', href: '/finance/vouchers' }, { label: '新增凭证' }]} />
+      <Breadcrumb
+        items={[{ label: '记账凭证', href: '/finance/vouchers' }, { label: '新增凭证' }]}
+      />
 
       <div className="mt-card">
         <form className="wb-form" onSubmit={submit}>
           <div className="wb-form__row">
             <div className="mt-field">
-              <label className="mt-label" htmlFor="v-date">日期</label>
-              <input id="v-date" className="mt-input" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <label className="mt-label" htmlFor="v-date">
+                日期
+              </label>
+              <input
+                id="v-date"
+                className="mt-input"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
             </div>
             <div className="mt-field">
-              <label className="mt-label" htmlFor="v-period">会计期间</label>
+              <label className="mt-label" htmlFor="v-period">
+                会计期间
+              </label>
               <input id="v-period" className="mt-input" value={periodLabel} readOnly />
             </div>
           </div>
 
           <div className="mt-field">
-            <label className="mt-label" htmlFor="v-summary">摘要</label>
+            <label className="mt-label" htmlFor="v-summary">
+              摘要
+            </label>
             <input
               id="v-summary"
               className={`mt-input${summaryError ? ' mt-input--error' : ''}`}
@@ -116,7 +130,9 @@ export function NewVoucherClient({ accounts }: { readonly accounts: readonly Acc
                 <div key={l.key} className="wb-stack wb-stack--sm">
                   <div className="wb-form__row">
                     <div className="mt-field">
-                      <label className="mt-label" htmlFor={`acct-${l.key}`}>科目</label>
+                      <label className="mt-label" htmlFor={`acct-${l.key}`}>
+                        科目
+                      </label>
                       <select
                         id={`acct-${l.key}`}
                         className={`mt-select${err === '请选择科目' ? ' mt-input--error' : ''}`}
@@ -132,7 +148,9 @@ export function NewVoucherClient({ accounts }: { readonly accounts: readonly Acc
                       </select>
                     </div>
                     <div className="mt-field">
-                      <label className="mt-label" htmlFor={`summary-${l.key}`}>摘要</label>
+                      <label className="mt-label" htmlFor={`summary-${l.key}`}>
+                        摘要
+                      </label>
                       <input
                         id={`summary-${l.key}`}
                         className="mt-input"
@@ -141,7 +159,9 @@ export function NewVoucherClient({ accounts }: { readonly accounts: readonly Acc
                       />
                     </div>
                     <div className="mt-field">
-                      <label className="mt-label" htmlFor={`debit-${l.key}`}>借方</label>
+                      <label className="mt-label" htmlFor={`debit-${l.key}`}>
+                        借方
+                      </label>
                       <input
                         id={`debit-${l.key}`}
                         className={`mt-input${err && l.debit.trim() !== '' ? ' mt-input--error' : ''}`}
@@ -152,7 +172,9 @@ export function NewVoucherClient({ accounts }: { readonly accounts: readonly Acc
                       />
                     </div>
                     <div className="mt-field">
-                      <label className="mt-label" htmlFor={`credit-${l.key}`}>贷方</label>
+                      <label className="mt-label" htmlFor={`credit-${l.key}`}>
+                        贷方
+                      </label>
                       <input
                         id={`credit-${l.key}`}
                         className={`mt-input${err && l.credit.trim() !== '' ? ' mt-input--error' : ''}`}
@@ -176,7 +198,11 @@ export function NewVoucherClient({ accounts }: { readonly accounts: readonly Acc
               );
             })}
             <div className="wb-row">
-              <button type="button" className="mt-btn mt-btn--secondary mt-btn--sm" onClick={addLine}>
+              <button
+                type="button"
+                className="mt-btn mt-btn--secondary mt-btn--sm"
+                onClick={addLine}
+              >
                 + 添加分录
               </button>
             </div>
@@ -188,16 +214,24 @@ export function NewVoucherClient({ accounts }: { readonly accounts: readonly Acc
             <span className="wb-muted">贷方合计</span>
             <span className="wb-mono">{formatMoney(centsToString(creditCents))}</span>
             {noAmounts ? (
-              <Badge tone="muted" dot>尚未录入金额</Badge>
+              <StatusBadge tone="muted" dot label="尚未录入金额" />
             ) : (
-              <Badge tone={balanced ? 'success' : 'danger'} dot>
-                {balanced ? '借贷平衡' : `借贷不平 · 差额 ${formatMoney(centsToString(diffCents))}`}
-              </Badge>
+              <StatusBadge
+                tone={balanced ? 'success' : 'danger'}
+                dot
+                label={
+                  balanced ? '借贷平衡' : `借贷不平 · 差额 ${formatMoney(centsToString(diffCents))}`
+                }
+              />
             )}
           </div>
 
           <div className="wb-row">
-            <button type="submit" className={`mt-btn mt-btn--primary${canSubmit ? '' : ' mt-btn--disabled'}`} disabled={!canSubmit}>
+            <button
+              type="submit"
+              className={`mt-btn mt-btn--primary${canSubmit ? '' : ' mt-btn--disabled'}`}
+              disabled={!canSubmit}
+            >
               保存草稿
             </button>
             <Link href="/finance/vouchers" className="mt-btn mt-btn--ghost">

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Badge, Section, Stat, StatStrip } from '@my-erp/ui';
+import { StatusBadge, Section, Stat, StatStrip } from '@my-erp/ui';
 import { listVouchers } from '@/lib/finance/data-source';
 import { VOUCHER_STATUS_LABELS } from '@/lib/finance/types';
 
@@ -13,7 +13,13 @@ interface ModuleCard {
 }
 
 const MODULES: readonly ModuleCard[] = [
-  { key: 'finance', name: '财务', desc: '会计总账 + 出纳资金。v1 首个模块。', href: '/finance/vouchers', active: true },
+  {
+    key: 'finance',
+    name: '财务',
+    desc: '会计总账 + 出纳资金。v1 首个模块。',
+    href: '/finance/vouchers',
+    active: true,
+  },
   { key: 'purchase', name: '采购', desc: '采购申请、订单与供应商管理。', active: false },
   { key: 'inventory', name: '库存', desc: '出入库、库存核算与盘点。', active: false },
   { key: 'sales', name: '销售', desc: '报价、订单与客户管理。', active: false },
@@ -53,7 +59,7 @@ export default async function OverviewPage() {
               <Link key={m.key} href={m.href} className="wb-card">
                 <div className="wb-card__head">
                   <h3 className="wb-card__title">{m.name}</h3>
-                  <Badge tone="success">已上线</Badge>
+                  <StatusBadge tone="success" label="已上线" />
                 </div>
                 <p className="wb-card__desc">{m.desc}</p>
               </Link>
@@ -61,7 +67,7 @@ export default async function OverviewPage() {
               <div key={m.key} className="wb-card" aria-disabled="true">
                 <div className="wb-card__head">
                   <h3 className="wb-card__title">{m.name}</h3>
-                  <Badge tone="muted">敬请期待</Badge>
+                  <StatusBadge tone="muted" label="敬请期待" />
                 </div>
                 <p className="wb-card__desc wb-card__desc--muted">{m.desc}</p>
               </div>

@@ -28,9 +28,33 @@ const LB_A = '00000000-0000-0000-0000-00000000aaaa';
 const LB_B = '00000000-0000-0000-0000-00000000bbbb';
 
 const SEEDS: readonly SeedAccountInput[] = [
-  { code: '1001', name: '库存现金', category: 'asset', direction: 'debit', parentCode: null, level: 1, isLeaf: true },
-  { code: '1002', name: '银行存款', category: 'asset', direction: 'debit', parentCode: null, level: 1, isLeaf: false },
-  { code: '100201', name: '工商银行', category: 'asset', direction: 'debit', parentCode: '1002', level: 2, isLeaf: true },
+  {
+    code: '1001',
+    name: '库存现金',
+    category: 'asset',
+    direction: 'debit',
+    parentCode: null,
+    level: 1,
+    isLeaf: true,
+  },
+  {
+    code: '1002',
+    name: '银行存款',
+    category: 'asset',
+    direction: 'debit',
+    parentCode: null,
+    level: 1,
+    isLeaf: false,
+  },
+  {
+    code: '100201',
+    name: '工商银行',
+    category: 'asset',
+    direction: 'debit',
+    parentCode: '1002',
+    level: 2,
+    isLeaf: true,
+  },
 ];
 
 function pgAvailable(): boolean {
@@ -44,7 +68,10 @@ function pgAvailable(): boolean {
 const PG_AVAILABLE = pgAvailable();
 
 function psql(db: string, sql: string): void {
-  execSync(`psql -p ${PORT} -d ${db} -v ON_ERROR_STOP=1 -q`, { input: sql, stdio: ['pipe', 'ignore', 'pipe'] });
+  execSync(`psql -p ${PORT} -d ${db} -v ON_ERROR_STOP=1 -q`, {
+    input: sql,
+    stdio: ['pipe', 'ignore', 'pipe'],
+  });
 }
 function migrationSql(name: string): string {
   return readFileSync(
@@ -60,9 +87,12 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS — account (ledger-scoped)', () =>
     for (const m of migrationDirs()) psql(TEST_DB, migrationSql(m));
     psql(
       'postgres',
-      `DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='${APP_ROLE}') THEN CREATE ROLE ${APP_ROLE} LOGIN PASSWORD '${APP_PW}'; END IF; END $$;`,
+      `DO $$ BEGIN CREATE ROLE ${APP_ROLE} LOGIN PASSWORD '${APP_PW}'; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`,
     );
-    psql(TEST_DB, `GRANT USAGE ON SCHEMA public TO ${APP_ROLE}; GRANT SELECT, INSERT, UPDATE ON "account" TO ${APP_ROLE};`);
+    psql(
+      TEST_DB,
+      `GRANT USAGE ON SCHEMA public TO ${APP_ROLE}; GRANT SELECT, INSERT, UPDATE ON "account" TO ${APP_ROLE};`,
+    );
     psql(
       TEST_DB,
       `INSERT INTO "organization"(id,name) VALUES ('${ORG}','Org');
@@ -100,7 +130,14 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS — account (ledger-scoped)', () =>
   it('WITH CHECK blocks creating an account in another ledger', async () => {
     await expect(
       withLedgerScope(LB_A, (tx) =>
-        createAccountTx(tx, { ledgerBookId: LB_B, code: '9999', name: 'x', category: 'asset', direction: 'debit', level: 1 }),
+        createAccountTx(tx, {
+          ledgerBookId: LB_B,
+          code: '9999',
+          name: 'x',
+          category: 'asset',
+          direction: 'debit',
+          level: 1,
+        }),
       ),
     ).rejects.toThrow();
   });

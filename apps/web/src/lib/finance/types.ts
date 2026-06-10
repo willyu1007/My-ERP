@@ -4,7 +4,7 @@
  * data-source from demo fixtures to the real /v1 API (P1–P5) must not change
  * them. Keep this file domain-typed and presentation-agnostic (no React).
  */
-import type { BadgeTone } from '@my-erp/ui';
+import type { CardTone } from '@my-erp/ui';
 
 /** 会计科目类别（《小企业会计准则》一级分类）。 */
 export type AccountCategory = 'asset' | 'liability' | 'equity' | 'cost' | 'profitLoss';
@@ -108,7 +108,7 @@ export const VOUCHER_STATUS_LABELS: Record<VoucherStatus, string> = {
 };
 
 /** 凭证状态 → Badge 语义色（领域 status→tone 映射，保持 @my-erp/ui 领域无关）。 */
-export function voucherStatusTone(status: VoucherStatus): BadgeTone | undefined {
+export function voucherStatusTone(status: VoucherStatus): CardTone | undefined {
   switch (status) {
     case 'pending':
       return 'warning';

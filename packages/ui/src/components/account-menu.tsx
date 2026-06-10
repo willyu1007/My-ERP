@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { IconChevronDown, IconLogout } from "./icons";
+import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
+import { IconChevronDown, IconLogout } from '@willyu1007/web-workbench';
 
 /** Bottom-of-sidebar account control (morethan ecosystem identity). */
 export function AccountMenu({
@@ -21,13 +21,13 @@ export function AccountMenu({
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === 'Escape') setOpen(false);
     };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
     return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
     };
   }, [open]);
 
@@ -41,7 +41,7 @@ export function AccountMenu({
         onClick={() => setOpen((o) => !o)}
       >
         <span className="wb-account__name">{accountName}</span>
-        <IconChevronDown size={13} style={{ color: "var(--mt-stone)", flexShrink: 0 }} />
+        <IconChevronDown size={13} style={{ color: 'var(--mt-stone)', flexShrink: 0 }} />
       </button>
       {open && signOutHref && (
         <div className="mt-menu wb-account__pop" role="menu">

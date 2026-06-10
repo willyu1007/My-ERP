@@ -1,4 +1,10 @@
-import { type CanActivate, type ExecutionContext, ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import {
+  type CanActivate,
+  type ExecutionContext,
+  ForbiddenException,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { defineAbilityFor } from '@my-erp/platform';
 import { PERMISSION_KEY, type RequiredPermission } from './permission.decorator';
@@ -14,10 +20,10 @@ export class PermissionGuard implements CanActivate {
   constructor(@Inject(Reflector) private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const required = this.reflector.getAllAndOverride<RequiredPermission | undefined>(PERMISSION_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const required = this.reflector.getAllAndOverride<RequiredPermission | undefined>(
+      PERMISSION_KEY,
+      [context.getHandler(), context.getClass()],
+    );
     if (!required) return true;
 
     const req = context.switchToHttp().getRequest<AuthedRequest>();

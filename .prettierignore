@@ -26,6 +26,3 @@ pnpm-lock.yaml
 /ops
 /ui
 /CHANGELOG.md
-
-# Vendored morethan workbench kit — kept in upstream style for easy re-sync
-/packages/ui/src

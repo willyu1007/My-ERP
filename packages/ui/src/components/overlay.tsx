@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useEffect, type ReactNode } from "react";
-import { IconX } from "./icons";
+import { useEffect, type ReactNode } from 'react';
+import { IconX } from '@willyu1007/web-workbench';
 
 function useEscape(open: boolean, onClose: () => void): void {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === "Escape") onClose();
+      if (e.key === 'Escape') onClose();
     };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 }
 
@@ -23,7 +23,7 @@ interface PanelProps {
   readonly footer?: ReactNode;
 }
 
-function PanelInner({ title, desc, children, footer, onClose }: Omit<PanelProps, "open">) {
+function PanelInner({ title, desc, children, footer, onClose }: Omit<PanelProps, 'open'>) {
   return (
     <>
       <div className="wb-panel__head">

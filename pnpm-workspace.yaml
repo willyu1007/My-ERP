@@ -2,6 +2,5 @@
 # Only used when repo.layout === "monorepo"
 
 packages:
-  - "apps/*"
-  - "packages/*"
-
+  - 'apps/*'
+  - 'packages/*'

@@ -27,7 +27,9 @@ describe('voucherBalanceError', () => {
     expect(voucherBalanceError([{ debit: '500000.00' }, { credit: '500000.00' }])).toBeNull();
   });
   it('accepts a balanced split (价税分离)', () => {
-    expect(voucherBalanceError([{ debit: '33900.00' }, { credit: '30000.00' }, { credit: '3900.00' }])).toBeNull();
+    expect(
+      voucherBalanceError([{ debit: '33900.00' }, { credit: '30000.00' }, { credit: '3900.00' }]),
+    ).toBeNull();
   });
   it('rejects unbalanced debits/credits', () => {
     expect(voucherBalanceError([{ debit: '100.00' }, { credit: '100.01' }])).toMatch(/借贷必平/);
@@ -36,7 +38,9 @@ describe('voucherBalanceError', () => {
     expect(voucherBalanceError([{ debit: '1.00' }])).toMatch(/two entry lines/);
   });
   it('rejects a line with both debit and credit', () => {
-    expect(voucherBalanceError([{ debit: '1.00', credit: '1.00' }, { credit: '1.00' }])).toMatch(/both/);
+    expect(voucherBalanceError([{ debit: '1.00', credit: '1.00' }, { credit: '1.00' }])).toMatch(
+      /both/,
+    );
   });
   it('rejects a line with neither amount, and a zero total', () => {
     expect(voucherBalanceError([{ debit: '1.00' }, {}])).toMatch(/debit or a credit/);

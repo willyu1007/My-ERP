@@ -8,7 +8,12 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { computeTrialBalance } from '@my-erp/finance-domain';
-import { disconnectDatabase, getOpeningBalancesTx, replaceOpeningBalancesTx, withLedgerScope } from './index';
+import {
+  disconnectDatabase,
+  getOpeningBalancesTx,
+  replaceOpeningBalancesTx,
+  withLedgerScope,
+} from './index';
 import { migrationDirs } from './apply-migrations';
 
 const PORT = 5432;
@@ -30,10 +35,16 @@ function pgAvailable(): boolean {
 const PG_AVAILABLE = pgAvailable();
 
 function psql(db: string, sql: string): void {
-  execSync(`psql -p ${PORT} -d ${db} -v ON_ERROR_STOP=1 -q`, { input: sql, stdio: ['pipe', 'ignore', 'pipe'] });
+  execSync(`psql -p ${PORT} -d ${db} -v ON_ERROR_STOP=1 -q`, {
+    input: sql,
+    stdio: ['pipe', 'ignore', 'pipe'],
+  });
 }
 function migrationSql(name: string): string {
-  return readFileSync(fileURLToPath(new URL(`../../../prisma/migrations/${name}/migration.sql`, import.meta.url)), 'utf8');
+  return readFileSync(
+    fileURLToPath(new URL(`../../../prisma/migrations/${name}/migration.sql`, import.meta.url)),
+    'utf8',
+  );
 }
 
 const OPENINGS = [
@@ -48,9 +59,12 @@ describe.skipIf(!PG_AVAILABLE)('P5 opening balances (期初建账)', () => {
     for (const m of migrationDirs()) psql(TEST_DB, migrationSql(m));
     psql(
       'postgres',
-      `DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='${APP_ROLE}') THEN CREATE ROLE ${APP_ROLE} LOGIN PASSWORD '${APP_PW}'; END IF; END $$;`,
+      `DO $$ BEGIN CREATE ROLE ${APP_ROLE} LOGIN PASSWORD '${APP_PW}'; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`,
     );
-    psql(TEST_DB, `GRANT USAGE ON SCHEMA public TO ${APP_ROLE}; GRANT SELECT, INSERT, DELETE ON "opening_balance" TO ${APP_ROLE};`);
+    psql(
+      TEST_DB,
+      `GRANT USAGE ON SCHEMA public TO ${APP_ROLE}; GRANT SELECT, INSERT, DELETE ON "opening_balance" TO ${APP_ROLE};`,
+    );
     psql(
       TEST_DB,
       `INSERT INTO "organization"(id,name) VALUES ('${ORG}','Org');
@@ -86,6 +100,8 @@ describe.skipIf(!PG_AVAILABLE)('P5 opening balances (期初建账)', () => {
   });
 
   it('WITH CHECK blocks opening balances written for another ledger', async () => {
-    await expect(withLedgerScope(LB_A, (tx) => replaceOpeningBalancesTx(tx, LB_B, OPENINGS))).rejects.toThrow();
+    await expect(
+      withLedgerScope(LB_A, (tx) => replaceOpeningBalancesTx(tx, LB_B, OPENINGS)),
+    ).rejects.toThrow();
   });
 });

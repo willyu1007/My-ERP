@@ -4,8 +4,13 @@ import { VoucherDetail } from './voucher-detail';
 
 export const dynamic = 'force-dynamic';
 
-export default async function VoucherDetailPage({ params }: { readonly params: { readonly id: string } }) {
-  const voucher = await getVoucher(params.id);
+export default async function VoucherDetailPage({
+  params,
+}: {
+  readonly params: Promise<{ readonly id: string }>;
+}) {
+  const { id } = await params;
+  const voucher = await getVoucher(id);
   if (!voucher) notFound();
   return <VoucherDetail voucher={voucher} />;
 }

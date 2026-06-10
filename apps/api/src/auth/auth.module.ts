@@ -20,6 +20,13 @@ import { PrincipalGuard } from './principal.guard';
     PrincipalGuard,
     LedgerScopeGuard,
   ],
-  exports: [AuthGuard, PermissionGuard, PrincipalGuard, LedgerScopeGuard, IDENTITY_PROVIDER, IDENTITY_RESOLVER],
+  exports: [
+    AuthGuard,
+    PermissionGuard,
+    PrincipalGuard,
+    LedgerScopeGuard,
+    IDENTITY_PROVIDER,
+    IDENTITY_RESOLVER,
+  ],
 })
 export class AuthModule {}

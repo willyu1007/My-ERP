@@ -1,4 +1,4 @@
-import '@my-erp/ui/styles.css';
+import '@willyu1007/web-workbench/styles/index.css';
 import type { ReactNode } from 'react';
 
 export const metadata = {

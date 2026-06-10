@@ -1,7 +1,12 @@
 import type { ExecutionContext } from '@nestjs/common';
 import { UnauthorizedException } from '@nestjs/common';
 import { describe, expect, it } from 'vitest';
-import { MockIdentityProvider, signDevToken, type Identity, type Principal } from '@my-erp/platform';
+import {
+  MockIdentityProvider,
+  signDevToken,
+  type Identity,
+  type Principal,
+} from '@my-erp/platform';
 import { AuthGuard } from './auth.guard';
 import type { IdentityResolver } from './identity-resolver';
 import type { AuthedRequest } from './request-context';
@@ -14,7 +19,10 @@ const stubResolver: IdentityResolver = {
   resolve: async (p: Principal): Promise<Identity> => ({ ...p, roles: ['accountant'] }),
 };
 
-function contextFor(headers: Record<string, string>): { req: AuthedRequest; ctx: ExecutionContext } {
+function contextFor(headers: Record<string, string>): {
+  req: AuthedRequest;
+  ctx: ExecutionContext;
+} {
   const req = { headers } as unknown as AuthedRequest;
   const ctx = { switchToHttp: () => ({ getRequest: () => req }) } as unknown as ExecutionContext;
   return { req, ctx };

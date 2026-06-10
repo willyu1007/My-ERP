@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import type { CreateItemDef } from '../model/nav';
-import { IconPlus } from './icons';
+import { IconPlus } from '@willyu1007/web-workbench';
 
 /** Sidebar "新增" item that opens a create menu. Items are supplied by the scenario. */
 export function SidebarCreate({

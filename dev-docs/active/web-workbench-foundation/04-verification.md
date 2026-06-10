@@ -54,3 +54,18 @@
 | 运行时 | `next start` → `curl :3200` | ✓ 试算平衡表渲染（工商银行/实收资本/管理费用，合计 785,000.00）；`/finance/ledger/100201` 明细账（期初/期末、运行余额 698,800.00、凭证号回链）；账簿各路由 200；坏科目码 → 404 |
 
 要点：账簿报表为派生数据，computation 在纯 `ledger.ts`（整数分、无浮点），经 data-source seam 暴露；期末余额按净额符号定借/贷。
+
+## 采用公共 web-workbench 包 — 2026-06-11
+
+| 验证项 | 命令 | 结果 |
+|---|---|---|
+| 包可解析 | `npm view @willyu1007/web-workbench version` | ✓ 0.1.0（GitHub Packages，~/.npmrc auth）|
+| Phase A 类型检查 | `pnpm typecheck` | ✓ 全绿（Next15/React19；修 async params）|
+| Phase A 构建/渲染 | `next build` + `next start` | ✓ 8 路由 build；`/`·vouchers·ledger/[code]·vouchers/[id] 全 200 |
+| Phase B 类型检查 | `pnpm typecheck` | ✓ 全绿（packages/ui chrome→包；apps/web facade→包）|
+| Phase B 构建 | `pnpm build` | ✓ 全包 + `next build` 8 路由 |
+| Lint / governance | `pnpm lint` · `pnpm ui:governance` | ✓ 无告警；feature 代码 token-only |
+| 单测 | `vitest run --exclude '**/*.integration.test.ts'` | ✓ 51 passed |
+| 渲染集成 | `next start` → curl | ✓ 各路由 200；My-ERP `AppShell`（wb-shell/sidebar/topbar）包裹**公共包**组件（wb-scene/wb-table/wb-segmented/mt-badge）；包样式表加载 |
+
+注：ListView 顶栏筛选为 `createPortal`（客户端），SSR HTML 中不出现属预期；共享 `TopbarSlotContext` 接线类型正确。db RLS 集成测试（6 文件）因测试隔离（残留 role）失败，与本次无关。

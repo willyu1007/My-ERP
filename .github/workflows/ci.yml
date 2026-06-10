@@ -43,6 +43,9 @@ jobs:
     name: Lint · Typecheck · Test · Build
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -50,6 +53,12 @@ jobs:
           node-version: '20'
       - name: Enable corepack (pnpm)
         run: corepack enable
+      - name: Authenticate to GitHub Packages (@willyu1007/web-workbench)
+        # The repo .npmrc already scopes @willyu1007 → npm.pkg.github.com; this appends
+        # the auth token at runtime (never committed). GITHUB_TOKEN suffices for same-owner
+        # packages with packages:read; if cross-repo read is denied, set a PACKAGES_TOKEN
+        # secret (a PAT with read:packages).
+        run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.PACKAGES_TOKEN || secrets.GITHUB_TOKEN }}" >> .npmrc
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Validate Prisma schema

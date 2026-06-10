@@ -1,4 +1,4 @@
-import { Badge, Section } from '@my-erp/ui';
+import { StatusBadge, Section } from '@my-erp/ui';
 
 type Health = { status: string; service: string; time: string };
 
@@ -28,9 +28,11 @@ export default async function HealthPage() {
 
       <Section title="API health">
         <div className="wb-row">
-          <Badge tone={ok ? 'success' : 'danger'} dot>
-            {health ? `${health.status} · ${health.service}` : 'api 不可达'}
-          </Badge>
+          <StatusBadge
+            tone={ok ? 'success' : 'danger'}
+            dot
+            label={health ? `${health.status} · ${health.service}` : 'api 不可达'}
+          />
           {health && <span className="wb-mono wb-muted">{health.time}</span>}
         </div>
         {!health && (
