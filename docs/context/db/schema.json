@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-06-10T08:31:08.278Z",
+  "updatedAt": "2026-06-10T09:02:52.496Z",
   "ssot": {
     "mode": "repo-prisma",
     "source": {
@@ -918,6 +918,17 @@
           "unique": false
         },
         {
+          "name": "openingPeriod",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "opening_period",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
           "name": "orgId",
           "type": "String",
           "nullable": false,
@@ -955,6 +966,15 @@
         {
           "field": "accounts",
           "to": "Account",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
+        },
+        {
+          "field": "openingBalances",
+          "to": "OpeningBalance",
           "optional": false,
           "list": true,
           "relationName": null,
@@ -1096,6 +1116,113 @@
           "fields": [
             "orgId",
             "userId"
+          ],
+          "name": null,
+          "map": null
+        }
+      ]
+    },
+    {
+      "name": "OpeningBalance",
+      "dbName": "opening_balance",
+      "schema": null,
+      "columns": [
+        {
+          "name": "accountCode",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "account_code",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "accountName",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "account_name",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "credit",
+          "type": "Decimal",
+          "nullable": true,
+          "list": false,
+          "dbName": null,
+          "dbType": "Decimal",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "debit",
+          "type": "Decimal",
+          "nullable": true,
+          "list": false,
+          "dbName": null,
+          "dbType": "Decimal",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "id",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": "Uuid",
+          "default": "uuid()",
+          "primaryKey": true,
+          "unique": false
+        },
+        {
+          "name": "ledgerBookId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "ledger_book_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "field": "ledgerBook",
+          "to": "LedgerBook",
+          "optional": false,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "ledgerBookId"
+          ],
+          "references": [
+            "id"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "type": "index",
+          "fields": [
+            "ledgerBookId"
+          ],
+          "name": null,
+          "map": null
+        },
+        {
+          "type": "unique",
+          "fields": [
+            "ledgerBookId",
+            "accountCode"
           ],
           "name": null,
           "map": null

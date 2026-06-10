@@ -137,6 +137,7 @@ export interface LedgerBookEntity {
   periodStructure: string;
   active: boolean;
   singlePersonMode: boolean;
+  openingPeriod: string | null;
   createdAt: Date;
 }
 
@@ -168,6 +169,7 @@ function toLedgerBook(b: {
   periodStructure: string;
   active: boolean;
   singlePersonMode: boolean;
+  openingPeriod: string | null;
   createdAt: Date;
 }): LedgerBookEntity {
   return {
@@ -179,6 +181,7 @@ function toLedgerBook(b: {
     periodStructure: b.periodStructure,
     active: b.active,
     singlePersonMode: b.singlePersonMode,
+    openingPeriod: b.openingPeriod,
     createdAt: b.createdAt,
   };
 }
@@ -797,6 +800,63 @@ export async function getPostedEntriesTx(tx: TxClient): Promise<PostedLineRow[]>
     date: l.voucher.date.toISOString().slice(0, 10),
     summary: l.summary,
   }));
+}
+
+/* ---- Opening balances (期初建账) ---- */
+
+export interface OpeningBalanceEntity {
+  accountCode: string;
+  accountName: string;
+  debit: string | null;
+  credit: string | null;
+}
+
+export interface OpeningBalanceInput {
+  accountCode: string;
+  accountName: string;
+  debit?: string | null;
+  credit?: string | null;
+}
+
+export async function getOpeningBalancesTx(tx: TxClient): Promise<OpeningBalanceEntity[]> {
+  const rows = await tx.openingBalance.findMany({ orderBy: { accountCode: 'asc' } });
+  return rows.map((o) => ({
+    accountCode: o.accountCode,
+    accountName: o.accountName,
+    debit: o.debit ? o.debit.toFixed(2) : null,
+    credit: o.credit ? o.credit.toFixed(2) : null,
+  }));
+}
+
+/** Replace the entire opening-balance set for the active ledger (delete + insert). */
+export async function replaceOpeningBalancesTx(
+  tx: TxClient,
+  ledgerBookId: string,
+  balances: readonly OpeningBalanceInput[],
+): Promise<void> {
+  await tx.openingBalance.deleteMany({ where: {} }); // RLS scopes deletion to the active ledger
+  if (balances.length > 0) {
+    await tx.openingBalance.createMany({
+      data: balances.map((b) => ({
+        ledgerBookId,
+        accountCode: b.accountCode,
+        accountName: b.accountName,
+        debit: b.debit ?? null,
+        credit: b.credit ?? null,
+      })),
+    });
+  }
+}
+
+/** Count vouchers that have an accounting effect (posted/reversed) — 期初建账 is
+ *  only allowed before the book has been used. */
+export async function countPostedVouchersTx(tx: TxClient): Promise<number> {
+  return tx.journalVoucher.count({ where: { status: { in: ['posted', 'reversed'] } } });
+}
+
+/** Set the ledger book's enabled period (org-scoped — call within withOrgScope). */
+export async function setLedgerOpeningPeriodTx(tx: TxClient, ledgerBookId: string, openingPeriod: string): Promise<void> {
+  await tx.ledgerBook.update({ where: { id: ledgerBookId }, data: { openingPeriod } });
 }
 
 export { Prisma } from '@prisma/client';

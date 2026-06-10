@@ -1,9 +1,9 @@
 # API Index
 
-> Auto-generated at 2026-06-10T08:48:10.075Z — do NOT hand-edit.
-> Source: `docs/context/api/openapi.yaml` (SHA-256: `6f796b44b19b...`)
+> Auto-generated at 2026-06-10T09:09:20.325Z — do NOT hand-edit.
+> Source: `docs/context/api/openapi.yaml` (SHA-256: `1a70a96560b1...`)
 
-Total endpoints: **23**
+Total endpoints: **25**
 
 | Method | Path | Summary | Auth | Input (required) | Output (core) | Errors |
 |--------|------|---------|------|------------------|---------------|--------|
@@ -30,3 +30,5 @@ Total endpoints: **23**
 | POST | /v1/vouchers/{id}/reverse | Reverse a posted voucher (红冲) — creates a posted reversal voucher | bearer | id | original, reversal | 400, 403, 404 |
 | GET | /v1/ledger/trial-balance | Trial balance (试算平衡表) — derived from posted vouchers | bearer | — | rows, totals, balanced | 401, 403 |
 | GET | /v1/ledger/accounts/{code} | Subsidiary ledger (明细分类账) for one account — derived, running balance | bearer | code | accountCode, accountName, opening, closing, rows | 401, 403 |
+| GET | /v1/opening-balances | Opening balances (期初余额) + the ledger's enabled period | bearer | — | openingPeriod, balances | 401, 403 |
+| PUT | /v1/opening-balances | Set the enabled period + replace opening balances (期初建账) | bearer | openingPeriod, balances | openingPeriod, balances | 400, 401, 403 |

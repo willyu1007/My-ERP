@@ -82,3 +82,24 @@ export function voucherBalanceError(lines: readonly VoucherLineAmounts[]): strin
   if (!debit.equals(credit)) return 'debits must equal credits (借贷必平)';
   return null;
 }
+
+/**
+ * Validate opening balances (期初余额) as a balanced set (启用期试算平衡). An empty
+ * set is a fresh book (valid). Each entry carries a debit XOR a credit; the
+ * totals must balance.
+ */
+export function openingBalanceError(openings: readonly VoucherLineAmounts[]): string | null {
+  if (openings.length === 0) return null;
+  let debit = Money.zero();
+  let credit = Money.zero();
+  for (const o of openings) {
+    const hasDebit = o.debit != null && o.debit !== '';
+    const hasCredit = o.credit != null && o.credit !== '';
+    if (hasDebit && hasCredit) return 'an opening balance cannot have both a debit and a credit';
+    if (!hasDebit && !hasCredit) return 'each opening balance must have a debit or a credit';
+    if (hasDebit) debit = debit.add(Money.of(o.debit as string));
+    if (hasCredit) credit = credit.add(Money.of(o.credit as string));
+  }
+  if (!debit.equals(credit)) return 'opening balances must be balanced (启用期借=贷)';
+  return null;
+}

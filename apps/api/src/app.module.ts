@@ -8,6 +8,7 @@ import { InvitationService } from './invitations/invitation.service';
 import { LedgerController } from './ledger/ledger.controller';
 import { LedgerBooksController } from './ledger-books/ledger-books.controller';
 import { MembersController } from './members/members.controller';
+import { OpeningBalancesController } from './opening-balances/opening-balances.controller';
 import { OrganizationController } from './organization/organization.controller';
 import { VouchersController } from './vouchers/vouchers.controller';
 
@@ -22,6 +23,7 @@ import { VouchersController } from './vouchers/vouchers.controller';
     AccountsController,
     VouchersController,
     LedgerController,
+    OpeningBalancesController,
   ],
   providers: [HealthService, InvitationService],
 })

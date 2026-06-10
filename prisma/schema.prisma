@@ -104,11 +104,14 @@ model LedgerBook {
   active          Boolean  @default(true)
   /// 单人模式（SoD 例外）：显式开启后允许制单人过账自己的凭证（强制二次确认 + 留痕）。
   singlePersonMode Boolean @default(false) @map("single_person_mode")
+  /// 启用期间（期初建账设定），如 "2026-06"；null = 未建账。
+  openingPeriod   String?  @map("opening_period")
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  accounts     Account[]
-  vouchers     JournalVoucher[]
+  organization    Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  accounts        Account[]
+  vouchers        JournalVoucher[]
+  openingBalances OpeningBalance[]
 
   @@index([orgId])
   @@map("ledger_book")
@@ -144,6 +147,24 @@ model JournalVoucher {
   @@unique([ledgerBookId, no])
   @@index([ledgerBookId, status])
   @@map("journal_voucher")
+}
+
+/// An opening balance (期初余额) per account for a ledger book. Ledger-scoped.
+/// Exactly one of debit/credit; the set must balance (启用期试算平衡). The derived
+/// ledger seeds 期初 from these.
+model OpeningBalance {
+  id           String   @id @default(uuid()) @db.Uuid
+  ledgerBookId String   @map("ledger_book_id") @db.Uuid
+  accountCode  String   @map("account_code")
+  accountName  String   @map("account_name")
+  debit        Decimal? @db.Decimal(18, 2)
+  credit       Decimal? @db.Decimal(18, 2)
+
+  ledgerBook LedgerBook @relation(fields: [ledgerBookId], references: [id], onDelete: Cascade)
+
+  @@unique([ledgerBookId, accountCode])
+  @@index([ledgerBookId])
+  @@map("opening_balance")
 }
 
 /// A single debit-or-credit line of a voucher. ledgerBookId is denormalized so

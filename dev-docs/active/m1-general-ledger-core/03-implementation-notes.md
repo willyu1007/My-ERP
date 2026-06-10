@@ -152,3 +152,25 @@
 **遗留 TODO（P4）**
 - 期间筛选（trial-balance/明细账按期间）；总账（汇总账）视图；导出（Excel/PDF，M3 范围）。
 - 前端 W2b 的 data-source 可切到这两个端点（demo→真）。
+
+## P5 — 期初建账（完成）
+
+**决策（实现期落定）**
+- 期初余额=可平衡集合，校验 `finance-domain.openingBalanceError`（空集=新账套合法；非空须借=贷、每项单边）。派生账簿（P4）的 `openings` 参数注入即纳入期初。
+- **跨作用域**：`opening_balance` 账套级（RLS）；`ledger_book.openingPeriod` 组织级。`PUT` 处理器先 `withLedgerScope`（守卫「未使用」+ 校验科目末级·启用 + 整组替换 + 审计），再 `withOrgScope`（设启用期）。
+- **期初建账须在使用前**：有 posted/reversed 凭证则拒（`countPostedVouchersTx>0 → 400`）。整组替换（delete+insert），无 UPDATE 策略。
+
+**改了什么**
+- Prisma：`OpeningBalance`（ledger-scoped，`@@unique[ledgerBookId,accountCode]`）+ `LedgerBook.openingPeriod`；迁移 `20260610190000_p5_opening_balance`（DDL + 账套级 RLS）。
+- `finance-domain`：`openingBalanceError`（启用期试算平衡）+ 3 单测。
+- `packages/db`：`OpeningBalanceEntity` + `getOpeningBalancesTx`/`replaceOpeningBalancesTx`（整组替换）/`countPostedVouchersTx`/`setLedgerOpeningPeriodTx`；`LedgerBookEntity.openingPeriod`。
+- `apps/api`：`OpeningBalancesController`（GET / PUT，校验 + 守卫 + 双作用域）；`LedgerController` 派生改传 `getOpeningBalancesTx`（期初纳入）。
+- 契约：openapi 增 opening-balances（25 endpoints）。
+
+**遗留 TODO（P5）**
+- 期初余额**批量导入**（Excel，exceljs，M3 范围；当前 PUT 整组录入已支持程序化导入）；往来/资金账户的辅助核算期初（账户级期初已支持，辅助维度待 M2/后续）。
+- openingPeriod 与凭证期间的关系校验（凭证日期须 ≥ 启用期）可后续加。
+
+## M1 收尾
+
+P0a/P0b/P1/P2/P3/P4/P5 全部完成并验证。总账核心闭环打通：组织/账套/邀请/权限 → 科目 → 凭证（借贷平衡/SoD/过账事务/红冲）→ 账簿（派生）→ 期初建账。25 API、78 测试（7 套 RLS/派生集成）、全程 Decimal 零浮点、账套级 RLS + WITH CHECK、凭证不可物理删、append-only 审计。每阶段独立提交 + 自审修复（P0b 守卫 DI、P1 token 泄漏、P2 编码树序、P3 红冲并发、P4 红冲漏记 等真 bug 均在 review 抓出）。

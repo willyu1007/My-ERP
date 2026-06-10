@@ -1,5 +1,5 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
-import { getPostedEntriesTx, withLedgerScope } from '@my-erp/db';
+import { getOpeningBalancesTx, getPostedEntriesTx, withLedgerScope } from '@my-erp/db';
 import { computeAccountLedger, computeTrialBalance } from '@my-erp/finance-domain';
 import { withSpan, type Identity } from '@my-erp/platform';
 import { AuthGuard } from '../auth/auth.guard';
@@ -21,13 +21,17 @@ export class LedgerController {
   @RequirePermission('read', 'Voucher')
   async trialBalance(@LedgerBookId() ledgerBookId: string, @CurrentIdentity() identity: Identity) {
     return withSpan('ledger.trial-balance', { userId: identity.userId, ledgerBookId, action: 'read' }, () =>
-      withLedgerScope(ledgerBookId, async (tx) => computeTrialBalance(await getPostedEntriesTx(tx), [])),
+      withLedgerScope(ledgerBookId, async (tx) =>
+        computeTrialBalance(await getPostedEntriesTx(tx), await getOpeningBalancesTx(tx)),
+      ),
     );
   }
 
   @Get('accounts/:code')
   @RequirePermission('read', 'Voucher')
   async accountLedger(@LedgerBookId() ledgerBookId: string, @Param('code') code: string) {
-    return withLedgerScope(ledgerBookId, async (tx) => computeAccountLedger(code, await getPostedEntriesTx(tx), []));
+    return withLedgerScope(ledgerBookId, async (tx) =>
+      computeAccountLedger(code, await getPostedEntriesTx(tx), await getOpeningBalancesTx(tx)),
+    );
   }
 }

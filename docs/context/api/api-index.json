@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-10T08:48:10.075Z",
+  "generatedAt": "2026-06-10T09:09:20.325Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "6f796b44b19be006edc744553a00e6a9a83c65ee6e72287b6d431ff05f461c0e",
+  "sourceChecksumSha256": "1a70a96560b12a08e066a4debe56369908576b52fbe9e2cabebf87bd70db9b17",
   "stats": {
-    "totalEndpoints": 23,
+    "totalEndpoints": 25,
     "byTag": {
       "system": 1,
       "organization": 1,
@@ -13,7 +13,8 @@
       "members": 1,
       "accounts": 5,
       "vouchers": 7,
-      "ledger": 2
+      "ledger": 2,
+      "opening-balances": 2
     }
   },
   "endpoints": [
@@ -825,6 +826,67 @@
       ],
       "example": {
         "curl": "curl -X GET '/v1/ledger/accounts/{code}' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/opening-balances",
+      "operationId": "getOpeningBalances",
+      "summary": "Opening balances (期初余额) + the ledger's enabled period",
+      "tag": "opening-balances",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "openingPeriod",
+          "balances"
+        ]
+      },
+      "errors": [
+        401,
+        403
+      ],
+      "example": {
+        "curl": "curl -X GET '/v1/opening-balances' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/v1/opening-balances",
+      "operationId": "setOpeningBalances",
+      "summary": "Set the enabled period + replace opening balances (期初建账)",
+      "tag": "opening-balances",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": {
+          "required": [
+            "openingPeriod",
+            "balances"
+          ],
+          "optional": []
+        }
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "openingPeriod",
+          "balances"
+        ]
+      },
+      "errors": [
+        400,
+        401,
+        403
+      ],
+      "example": {
+        "curl": "curl -X PUT '/v1/opening-balances' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"openingPeriod\":\"<openingPeriod>\",\"balances\":\"<balances>\"}'"
       }
     }
   ]

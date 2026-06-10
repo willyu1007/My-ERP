@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Money, isBalanced, voucherBalanceError } from './index';
+import { Money, isBalanced, openingBalanceError, voucherBalanceError } from './index';
 
 describe('Money', () => {
   it('adds without float error (0.1 + 0.2 === 0.30)', () => {
@@ -41,5 +41,18 @@ describe('voucherBalanceError', () => {
   it('rejects a line with neither amount, and a zero total', () => {
     expect(voucherBalanceError([{ debit: '1.00' }, {}])).toMatch(/debit or a credit/);
     expect(voucherBalanceError([{ debit: '0.00' }, { credit: '0.00' }])).toMatch(/cannot be zero/);
+  });
+});
+
+describe('openingBalanceError', () => {
+  it('accepts an empty set (fresh book) and a balanced set', () => {
+    expect(openingBalanceError([])).toBeNull();
+    expect(openingBalanceError([{ debit: '285000.00' }, { credit: '285000.00' }])).toBeNull();
+  });
+  it('rejects an unbalanced opening set', () => {
+    expect(openingBalanceError([{ debit: '100.00' }, { credit: '90.00' }])).toMatch(/启用期借=贷/);
+  });
+  it('rejects a two-sided opening', () => {
+    expect(openingBalanceError([{ debit: '1.00', credit: '1.00' }])).toMatch(/both/);
   });
 });

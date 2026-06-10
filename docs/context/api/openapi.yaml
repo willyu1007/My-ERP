@@ -410,6 +410,36 @@ paths:
           content: { application/json: { schema: { $ref: '#/components/schemas/AccountLedger' } } }
         '401': { description: Missing or invalid bearer token }
         '403': { description: Ledger not in org / lacks read }
+  /v1/opening-balances:
+    get:
+      operationId: getOpeningBalances
+      summary: Opening balances (期初余额) + the ledger's enabled period
+      tags: [opening-balances]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Opening balances
+          content: { application/json: { schema: { $ref: '#/components/schemas/OpeningBalances' } } }
+        '401': { description: Missing or invalid bearer token }
+        '403': { description: Ledger not in org / lacks read }
+    put:
+      operationId: setOpeningBalances
+      summary: Set the enabled period + replace opening balances (期初建账)
+      description: |
+        Enforces 启用期试算平衡 (借=贷), every account active + leaf, and that the book
+        has not yet been used (no posted/reversed vouchers). Replaces the whole set.
+      tags: [opening-balances]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/SetOpeningBalances' } } }
+      responses:
+        '200':
+          description: Saved
+          content: { application/json: { schema: { $ref: '#/components/schemas/OpeningBalances' } } }
+        '400': { description: Unbalanced / invalid / book already used }
+        '401': { description: Missing or invalid bearer token }
+        '403': { description: Lacks permission }
 components:
   securitySchemes:
     bearerAuth:
@@ -610,6 +640,34 @@ components:
         credit: { type: string }
         balance: { type: string }
         balanceDir: { type: string, enum: ['借', '贷', '平'] }
+    OpeningBalanceItem:
+      type: object
+      required: [accountCode, accountName]
+      properties:
+        accountCode: { type: string }
+        accountName: { type: string }
+        debit: { type: string, nullable: true }
+        credit: { type: string, nullable: true }
+    OpeningBalances:
+      type: object
+      required: [openingPeriod, balances]
+      properties:
+        openingPeriod: { type: string, nullable: true, example: '2026-06' }
+        balances: { type: array, items: { $ref: '#/components/schemas/OpeningBalanceItem' } }
+    SetOpeningBalances:
+      type: object
+      required: [openingPeriod, balances]
+      properties:
+        openingPeriod: { type: string, example: '2026-06' }
+        balances:
+          type: array
+          items:
+            type: object
+            required: [accountCode]
+            properties:
+              accountCode: { type: string }
+              debit: { type: string }
+              credit: { type: string }
     AccountLedger:
       type: object
       required: [accountCode, accountName, opening, rows, closing]
