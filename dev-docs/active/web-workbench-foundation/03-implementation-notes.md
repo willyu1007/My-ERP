@@ -113,6 +113,6 @@
 - **修复 RLS 集成测试隔离**：7 个 `*.integration.test.ts` 并行争用全局 role `myerp_rls_app`（`IF NOT EXISTS … CREATE ROLE` 非原子，TOCTOU 竞态）→ 改 `CREATE ROLE … EXCEPTION WHEN duplicate_object THEN NULL`（并发安全）。全量 `pnpm test` 78 passed（含 7 集成）。
 - **双轨/漂移清理**：① host `Badge`(children) 与公共包 `StatusBadge`(label) 双轨 → 迁移 8 处 `<Badge>`→`<StatusBadge>`、删 `packages/ui/badge.tsx`、`BadgeTone`→`CardTone`（单一 badge 源）；② `.prettierignore` 的 `/packages/ui/src` vendored-kit 忽略过时（kit 已外移）→ 取消并 `pnpm format` 规范化 chrome + 既有格式漂移（apps/api 等，纯格式）；③ 删 `packages/ui` 过时 `sideEffects:["*.css"]`（无 CSS）。
 
-**仍登记的发现（pre-existing，建议后续单独处理）**
-- 7 个集成测试**重复**了 psql/PORT/pgAvailable/migrationSql/role 设置（~25 行×7）→ 建议抽 `packages/db/src/test-pg.ts` 共享 harness 去冗余。
-- 集成测试 `PORT=5432` 硬编码（用本机原生 superuser pg；app 用 docker 5433）→ 建议改读 env，提升可移植性。
+**收尾发现（已处理，commit `8709eb2`）**
+- 7 个集成测试重复的 harness（psql/PORT/pgAvailable/migrationSql/role，~25 行×7）→ 已抽 `packages/db/src/test-pg.ts`（`createTestDb`/`dropTestDb`/`appDbUrl`/`ensureAppRole`），去冗余 net −184 行；7 文件统一 import。
+- 集成测试 `PORT` 硬编码 → 改读 `TEST_PG_PORT ?? 5432`（可移植）。全量 `pnpm test` 78 passed。
