@@ -81,7 +81,7 @@ export function NewVoucherClient({ accounts }: { readonly accounts: readonly Acc
   return (
     <div className="wb-scene wb-stack wb-stack--lg">
       <Breadcrumb
-        items={[{ label: '记账凭证', href: '/finance/vouchers' }, { label: '新增凭证' }]}
+        items={[{ label: '日常账务处理', href: '/finance/daily-accounting' }, { label: '录入凭证' }]}
       />
 
       <div className="mt-card">
@@ -234,7 +234,7 @@ export function NewVoucherClient({ accounts }: { readonly accounts: readonly Acc
             >
               保存草稿
             </button>
-            <Link href="/finance/vouchers" className="mt-btn mt-btn--ghost">
+            <Link href="/finance/daily-accounting" className="mt-btn mt-btn--ghost">
               取消
             </Link>
           </div>

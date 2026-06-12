@@ -17,7 +17,7 @@ const MODULES: readonly ModuleCard[] = [
     key: 'finance',
     name: '财务',
     desc: '会计总账 + 出纳资金。v1 首个模块。',
-    href: '/finance/vouchers',
+    href: '/finance/daily-accounting',
     active: true,
   },
   { key: 'purchase', name: '采购', desc: '采购申请、订单与供应商管理。', active: false },
@@ -43,7 +43,10 @@ export default async function OverviewPage() {
         </p>
       </div>
 
-      <Section title="财务 · 本期概览" link={{ href: '/finance/vouchers', label: '进入财务' }}>
+      <Section
+        title="财务 · 本期概览"
+        link={{ href: '/finance/daily-accounting', label: '进入财务' }}
+      >
         <StatStrip>
           <Stat label="凭证总数" value={vouchers.length} />
           <Stat label={VOUCHER_STATUS_LABELS.posted} value={posted} />

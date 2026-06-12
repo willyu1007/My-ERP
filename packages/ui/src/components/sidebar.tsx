@@ -72,8 +72,26 @@ export function Sidebar({
             <div key={group.label ?? `group-${gi}`} className="wb-nav__group">
               {group.label && <p className="wb-nav__group-label">{group.label}</p>}
               {group.items.map((item) => {
-                const active = (item.match ?? [item.href]).some((p) => matchPrefix(pathname, p));
+                const active =
+                  !item.soon && (item.match ?? [item.href]).some((p) => matchPrefix(pathname, p));
                 const count = item.badgeKey ? (badges[item.badgeKey] ?? 0) : 0;
+                if (item.soon) {
+                  return (
+                    <button
+                      key={item.href}
+                      type="button"
+                      className={`wb-nav__item${group.showIcons ? '' : ' wb-nav__item--noicon'}`}
+                      aria-disabled="true"
+                      disabled
+                    >
+                      {group.showIcons && item.icon && (
+                        <span className="wb-nav__icon">{item.icon}</span>
+                      )}
+                      <span className="wb-nav__label">{item.label}</span>
+                      <span className="wb-nav__soon">待上线</span>
+                    </button>
+                  );
+                }
                 return (
                   <Link
                     key={item.href}

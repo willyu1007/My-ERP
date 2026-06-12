@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { AppShell } from '@my-erp/ui';
 import { listVouchers } from '@/lib/finance/data-source';
-import { NAV_BADGE_VOUCHERS_PENDING, financeNav } from '@/lib/finance/scene-config';
+import { NAV_BADGE_DAILY_ACCOUNTING_OPEN, financeNav } from '@/lib/finance/scene-config';
 
 /**
  * Workbench route group — wraps every page in the domain-agnostic AppShell with
@@ -10,13 +10,14 @@ import { NAV_BADGE_VOUCHERS_PENDING, financeNav } from '@/lib/finance/scene-conf
  */
 export default async function WorkbenchLayout({ children }: { readonly children: ReactNode }) {
   const vouchers = await listVouchers();
-  const pendingCount = vouchers.filter((v) => v.status === 'pending').length;
+  const openDailyCount = vouchers.filter((v) => v.status === 'draft' || v.status === 'pending')
+    .length;
 
   return (
     <AppShell
       accountName="演示会计"
       nav={financeNav}
-      badges={{ [NAV_BADGE_VOUCHERS_PENDING]: pendingCount }}
+      badges={{ [NAV_BADGE_DAILY_ACCOUNTING_OPEN]: openDailyCount }}
     >
       {children}
     </AppShell>

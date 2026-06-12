@@ -5,33 +5,54 @@
  * finance module lives under the /finance namespace (future modules get theirs).
  */
 import type { ShellNav } from '@my-erp/ui';
-import { IconBook, IconClipboard, IconList } from '@my-erp/ui';
+import { IconBook, IconClipboard, IconClock, IconShield } from '@my-erp/ui';
 
-/** Badge key for the "待审核" count pill on the 记账凭证 nav item. */
-export const NAV_BADGE_VOUCHERS_PENDING = 'vouchersPending';
+/** Badge key for open daily-accounting work in the sidebar. */
+export const NAV_BADGE_DAILY_ACCOUNTING_OPEN = 'dailyAccountingOpen';
 
 export const financeNav: ShellNav = {
   home: { label: 'ERP 总览', href: '/' },
   groups: [
     {
-      label: '财务 · 总账',
+      label: '财务工作流',
       showIcons: true,
       items: [
         {
-          href: '/finance/vouchers',
-          label: '记账凭证',
+          href: '/finance/daily-accounting',
+          label: '日常账务处理',
           icon: <IconClipboard />,
-          match: ['/finance/vouchers'],
-          badgeKey: NAV_BADGE_VOUCHERS_PENDING,
+          match: ['/finance/daily-accounting', '/finance/vouchers'],
+          badgeKey: NAV_BADGE_DAILY_ACCOUNTING_OPEN,
         },
-        { href: '/finance/accounts', label: '会计科目', icon: <IconList /> },
-        { href: '/finance/ledger', label: '账簿', icon: <IconBook /> },
+        {
+          href: '/finance/period-close',
+          label: '期末结账',
+          icon: <IconClock />,
+          soon: true,
+        },
+      ],
+    },
+    {
+      label: '财务功能',
+      showIcons: true,
+      items: [{ href: '/finance/ledger', label: '账簿查询', icon: <IconBook /> }],
+    },
+    {
+      label: '财务设置',
+      showIcons: true,
+      items: [
+        {
+          href: '/finance/settings',
+          label: '账务设置',
+          icon: <IconShield />,
+          match: ['/finance/settings', '/finance/accounts'],
+        },
       ],
     },
   ],
-  create: [{ href: '/finance/vouchers/new', label: '新增凭证' }],
+  create: [{ href: '/finance/vouchers/new', label: '录入凭证' }],
   sections: [
-    { prefix: '/finance', label: '财务', href: '/finance/vouchers' },
+    { prefix: '/finance', label: '财务', href: '/finance/daily-accounting' },
     { prefix: '/system', label: '系统', href: '/system/health' },
   ],
 };

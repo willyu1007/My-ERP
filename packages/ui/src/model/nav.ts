@@ -10,6 +10,8 @@ export interface NavItemDef {
   readonly href: string;
   readonly label: string;
   readonly icon?: ReactNode;
+  /** Render as visible but unavailable, for planned workflow entries. */
+  readonly soon?: boolean;
   /** Extra path prefixes that also mark this item active. */
   readonly match?: readonly string[];
   /** Key into the badges map for a count pill. */

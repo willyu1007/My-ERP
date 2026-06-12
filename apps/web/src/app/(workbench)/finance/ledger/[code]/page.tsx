@@ -20,7 +20,7 @@ export default async function AccountLedgerPage({
     <div className="wb-scene wb-stack wb-stack--lg">
       <Breadcrumb
         items={[
-          { label: '账簿', href: '/finance/ledger' },
+          { label: '账簿查询', href: '/finance/ledger' },
           { label: `${account.code} ${account.name}` },
         ]}
       />

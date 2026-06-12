@@ -38,11 +38,11 @@
   - `format.ts` — `formatMoney`（千分位 2dp）/`formatPeriod`。
   - `fixtures.ts` — 12 个《小企业准则》常用科目 + 6 张凭证（各状态全覆盖；总额与 `balanced` 由分录**派生**，fixtures 永不失衡）。
   - `data-source.ts` — `listVouchers`/`getVoucher`/`listAccounts`，**唯一 demo→真切换点**（`TODO(P1–P5)` 注释 + 形状不变即可换 `@my-erp/api-client`）。
-  - `scene-config.tsx` — 财务 `ShellNav`（`home`=ERP 总览；财务模块 group：记账凭证/会计科目/账簿）。
+  - `scene-config.tsx` — 财务 `ShellNav` 初版（`home`=ERP 总览；后续 W2c 已调整为工作流/功能/设置）。
 - **路由组 `app/(workbench)/`**（薄页面）：
-  - `layout.tsx` — `AppShell` 外壳（注入 financeNav + 待审 badge，mock 身份）。
+  - `layout.tsx` — `AppShell` 外壳（注入 financeNav + 日常待处理 badge，mock 身份）。
   - `page.tsx`（`/`）— **ERP 总览**：财务本期 StatStrip + 模块卡（财务「已上线」/采购·库存·销售·人力「敬请期待」），落实「模块化平台、财务是首个模块」。
-  - `finance/vouchers/` — 列表（server→`VouchersClient`：`ListView`+`EntityTable`，工作流分段导航 制单/审核/过账/红冲 + 计数）；`[id]/` 详情（detail 模板 `wb-grid--sidebar`：分录表 + 摘要/状态/合计 card；审核/过账/红冲 演示动作 toast）；`new/` 制单（form 模板：多分录 + 科目下拉 + **前端借贷平衡校验**，不平/分录错禁止提交 + field 级错误）。
+  - `finance/vouchers/` — W1 初版为凭证列表；W2c 后已并入 `/finance/daily-accounting`，`/finance/vouchers` 仅保留 redirect。`[id]/` 详情（detail 模板 `wb-grid--sidebar`：分录表 + 摘要/状态/合计 card；审核/过账/红冲 演示动作 toast）与 `new/` 制单（form 模板：多分录 + 科目下拉 + **前端借贷平衡校验**，不平/分录错禁止提交 + field 级错误）保留为工作流内部深链。
   - `finance/accounts`·`finance/ledger` — 可点空状态页（W2 占位）；`system/health` — P0a 探活页迁入（带 force-dynamic）。
 
 **决策（实现期落定）**
@@ -116,3 +116,22 @@
 **收尾发现（已处理，commit `8709eb2`）**
 - 7 个集成测试重复的 harness（psql/PORT/pgAvailable/migrationSql/role，~25 行×7）→ 已抽 `packages/db/src/test-pg.ts`（`createTestDb`/`dropTestDb`/`appDbUrl`/`ensureAppRole`），去冗余 net −184 行；7 文件统一 import。
 - 集成测试 `PORT` 硬编码 → 改读 `TEST_PG_PORT ?? 5432`（可移植）。全量 `pnpm test` 78 passed。
+
+## W2c — 财务入口工作流化（完成）
+
+**改了什么**
+- `ShellNav` 增加 `soon` 支持；sidebar 对待上线工作流渲染为禁用项并显示 `待上线`，不改变 token/contract。
+- 财务 sidebar 从资源入口改为：
+  - 财务工作流：`日常账务处理`（可用，聚合待补全/待审核）+ `期末结账`（待上线）。
+  - 财务功能：`账簿查询`。
+  - 财务设置：`账务设置`（包含科目与期初等设置类操作）。
+- 新增 `/finance/daily-accounting` 作为唯一日常工作流入口；`/finance/vouchers` redirect 到该入口，凭证详情/录入保留为内部深链。
+- 新增 `/finance/settings` 聚合设置页；`/finance/accounts` 保留为设置内部页面，不再作为 sidebar 一级入口。
+- 首页财务入口、凭证录入取消按钮、凭证/账簿 breadcrumb 改到工作流/功能语义。
+- 删除旧 `VouchersClient` 资源列表组件，避免 `/finance/vouchers` redirect 后仍遗留第二套凭证队列 UI。
+- 日常账务处理队列金额排序复用 `toCents` 整数分，避免 UI 排序路径引入浮点金额。
+
+**决策**
+- `日常记账` 与 `资金收付` 不拆成两个一级工作流；资金收付后续作为日常账务处理里的资金来源/任务泳道。
+- `账务核对` 不作为工作流入口；v1 先以账簿查询/试算平衡承载，未来银行对账具备状态流转后可单独建工作流。
+- 建账、科目、期初、资金账户、审批规则归入设置类入口，不与日常工作流平级。

@@ -23,7 +23,7 @@
 | Lint | `pnpm lint` | ✓ 无告警 |
 | UI governance | `pnpm ui:governance` | ✓ validate OK + guard OK（19 feature 文件 token-only，零 inline-style/hex）|
 | 全量构建 | `pnpm build` | ✓ 全包 + `next build`；8 路由（`/`·accounts·ledger 静态，vouchers 三页 + health 为 `ƒ` force-dynamic）|
-| 运行时渲染 | `next start` → `curl :3200` | ✓ 全部 200；`/` ERP 总览（模块卡：财务「已上线」+ 采购/库存/销售/人力「敬请期待」）；`/finance/vouchers` 6 张凭证 + 工作流分段导航；`/finance/vouchers/v-003` 详情（价税分离分录 + 借贷平衡）；`/finance/vouchers/new` 制单（借贷不平指示 + 保存草稿禁用）；坏 id → 404 |
+| 运行时渲染 | `next start` → `curl :3200` | ✓ W1 当时全部 200；`/` ERP 总览（模块卡：财务「已上线」+ 采购/库存/销售/人力「敬请期待」）；凭证队列、`/finance/vouchers/v-003` 详情（价税分离分录 + 借贷平衡）、`/finance/vouchers/new` 制单（借贷不平指示 + 保存草稿禁用）；坏 id → 404。W2c 后凭证队列 canonical 路由为 `/finance/daily-accounting`，`/finance/vouchers` 仅 redirect。 |
 
 要点：领域无关 ↔ 财务语义边界守住（`packages/ui` 零财务词汇；VM/标签/fixtures/data-source 全在 `apps/web/src/lib/finance`）；前端借贷平衡用整数分精确计算（零浮点，镜像 `@my-erp/finance-domain` 的 `isBalanced`，服务层不变式留待 M1 P3）；data-source 为唯一 demo→真切换点（`TODO(P1–P5)` 注释在位）。
 
@@ -69,3 +69,19 @@
 | 渲染集成 | `next start` → curl | ✓ 各路由 200；My-ERP `AppShell`（wb-shell/sidebar/topbar）包裹**公共包**组件（wb-scene/wb-table/wb-segmented/mt-badge）；包样式表加载 |
 
 注：ListView 顶栏筛选为 `createPortal`（客户端），SSR HTML 中不出现属预期；共享 `TopbarSlotContext` 接线类型正确。db RLS 集成测试（6 文件）因测试隔离（残留 role）失败，与本次无关。
+
+## W2c — 财务入口工作流化 — 2026-06-12
+
+| 验证项 | 命令 | 结果 |
+|---|---|---|
+| UI 类型检查 | `pnpm --filter @my-erp/ui typecheck` | ✓ 通过 |
+| Web 类型检查 | `pnpm --filter @my-erp/web typecheck` | ✓ 通过 |
+| Web 构建 | `pnpm --filter @my-erp/web build` | ✓ 新增 `/finance/daily-accounting` 与 `/finance/settings`；`/finance/vouchers` 为动态 redirect（121 B，无旧列表 bundle） |
+| Lint | `pnpm lint` | ✓ 通过；清理后无 unused import |
+| UI governance | `pnpm ui:governance` | ✓ validate OK + guard OK（25 feature files token-only；旧 `VouchersClient` 删除后减少 1 个 feature file）|
+| 公共 UI suite | `node .ai/tests/run.mjs --suite ui` | ✗ 仓库缺 `.ai/skills/features/ui/ui-governance-gate/scripts/ui_gate.py`，suite 在 ui-governance-gate 启动前失败；最新证据 `.ai/.tmp/tests/ui/20260612-022512-74787b`；本轮可用 gate 已由 `pnpm ui:governance` 覆盖 |
+| 路由 | `curl :3200` | ✓ `/`、`/finance/daily-accounting`、`/finance/vouchers/new`、`/finance/vouchers/v-003`、`/finance/ledger`、`/finance/ledger/100201`、`/finance/accounts`、`/finance/settings` 均 200；`/finance/vouchers` 307 → `/finance/daily-accounting` |
+| 视觉 | Browser + Playwright | ✓ 桌面与移动 drawer 只显示「财务工作流 / 财务功能 / 财务设置」；`期末结账` 显示 `待上线`；不再出现「记账凭证 / 会计科目 / 账簿」同级入口 |
+| 本地服务 | `env ... pnpm dev` | ✓ Web `:3200` 与 API `:8000` 已启动；API `/health` 为 `degraded`（当前未启 `localhost:5433` 开发库） |
+
+要点：本轮只改变 Web 信息架构与 demo 页面表达；后端 API、Prisma schema、财务状态机均未变更。清理复查已删除旧资源列表双轨，金额排序不使用浮点。

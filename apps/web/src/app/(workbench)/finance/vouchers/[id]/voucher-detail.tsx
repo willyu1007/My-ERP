@@ -29,7 +29,7 @@ export function VoucherDetail({ voucher }: { readonly voucher: VoucherVM }) {
   return (
     <div className="wb-scene wb-stack wb-stack--lg">
       <Breadcrumb
-        items={[{ label: '记账凭证', href: '/finance/vouchers' }, { label: voucher.no }]}
+        items={[{ label: '日常账务处理', href: '/finance/daily-accounting' }, { label: voucher.no }]}
       />
 
       <div className="wb-grid wb-grid--sidebar">

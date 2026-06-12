@@ -1,10 +1,7 @@
-import { listVouchers } from '@/lib/finance/data-source';
-import { VouchersClient } from './vouchers-client';
+import { redirect } from 'next/navigation';
 
-// Demo data-source today; force-dynamic keeps the seam honest for the real API.
 export const dynamic = 'force-dynamic';
 
-export default async function VouchersPage() {
-  const vouchers = await listVouchers();
-  return <VouchersClient vouchers={vouchers} />;
+export default function VouchersPage() {
+  redirect('/finance/daily-accounting');
 }
