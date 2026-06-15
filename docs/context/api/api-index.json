@@ -1,16 +1,17 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-10T09:09:20.325Z",
+  "generatedAt": "2026-06-13T09:07:51.572Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "1a70a96560b12a08e066a4debe56369908576b52fbe9e2cabebf87bd70db9b17",
+  "sourceChecksumSha256": "b9d528d7229ef1d3cf125902c2417dcf42a10057768ab97c5708cdf74ca9d897",
   "stats": {
-    "totalEndpoints": 25,
+    "totalEndpoints": 28,
     "byTag": {
       "system": 1,
       "organization": 1,
       "ledger-books": 2,
       "invitations": 4,
       "members": 1,
+      "work-items": 3,
       "accounts": 5,
       "vouchers": 7,
       "ledger": 2,
@@ -293,6 +294,134 @@
       ],
       "example": {
         "curl": "curl -X GET '/v1/members' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/work-items",
+      "operationId": "listWorkItems",
+      "summary": "List task-kernel work items (org-scoped; ledger scope applies when present)",
+      "tag": "work-items",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [
+          "view",
+          "status",
+          "sourceType",
+          "sourceId",
+          "limit",
+          "cursor"
+        ],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": []
+      },
+      "errors": [
+        400,
+        401,
+        403
+      ],
+      "example": {
+        "curl": "curl -X GET '/v1/work-items' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/work-items/{id}",
+      "operationId": "getWorkItem",
+      "summary": "Work item detail with backend-computed actions",
+      "tag": "work-items",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id"
+        ],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "orgId",
+          "ledgerBookId",
+          "moduleKey",
+          "workflowKey",
+          "workflowVersion",
+          "workItemType",
+          "sourceType",
+          "sourceId",
+          "status",
+          "subStatus",
+          "priority",
+          "assignedRole",
+          "assigneeUserId",
+          "availableAt",
+          "createdBy",
+          "version",
+          "titleKey",
+          "metadata",
+          "createdAt",
+          "updatedAt",
+          "availableActions",
+          "claimedAt",
+          "dueAt",
+          "completedAt",
+          "canceledAt",
+          "completedBy"
+        ]
+      },
+      "errors": [
+        401,
+        403,
+        404
+      ],
+      "example": {
+        "curl": "curl -X GET '/v1/work-items/{id}' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/work-items/{id}/actions/{actionKey}",
+      "operationId": "actOnWorkItem",
+      "summary": "Execute a backend-authorized work item action",
+      "tag": "work-items",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id",
+          "actionKey"
+        ],
+        "query": [],
+        "body": {
+          "required": [
+            "expectedVersion"
+          ],
+          "optional": [
+            "confirmSinglePerson",
+            "reason"
+          ]
+        }
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "workItem",
+          "source"
+        ]
+      },
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/work-items/{id}/actions/{actionKey}' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"expectedVersion\":\"<expectedVersion>\"}'"
       }
     },
     {

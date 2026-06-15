@@ -2,7 +2,6 @@ import {
   BadRequestException,
   Body,
   Controller,
-  ForbiddenException,
   Get,
   HttpCode,
   NotFoundException,
@@ -23,6 +22,7 @@ import {
   setVoucherStatusTx,
   updateDraftVoucherTx,
   withLedgerScope,
+  withScope,
   type LedgerBookEntity,
   type TxClient,
   type VoucherLineInput,
@@ -37,6 +37,7 @@ import { LedgerBookId } from '../auth/ledger-book-id.decorator';
 import { LedgerScopeGuard } from '../auth/ledger-scope.guard';
 import { RequirePermission } from '../auth/permission.decorator';
 import { PermissionGuard } from '../auth/permission.guard';
+import { createVoucherReviewWorkItemTx, postVoucherReviewTx } from '../work-items/voucher-workflow';
 
 interface ParsedLine {
   accountCode: string;
@@ -206,7 +207,7 @@ export class VouchersController {
     @CurrentIdentity() identity: Identity,
     @Param('id') id: string,
   ) {
-    return withLedgerScope(ledgerBookId, async (tx) => {
+    return withScope(identity.orgId, ledgerBookId, async (tx) => {
       const voucher = await getVoucherTx(tx, id);
       if (!voucher) throw new NotFoundException('voucher not found');
       if (voucher.status !== 'draft')
@@ -220,6 +221,12 @@ export class VouchersController {
         entityType: 'Voucher',
         entityId: id,
         ledgerBookId,
+      });
+      await createVoucherReviewWorkItemTx(tx, {
+        orgId: identity.orgId,
+        ledgerBookId,
+        voucherId: id,
+        actorId: identity.userId,
       });
       return getVoucherTx(tx, id);
     });
@@ -243,35 +250,15 @@ export class VouchersController {
     const confirmSinglePerson = Boolean(
       (body as Record<string, unknown> | null)?.confirmSinglePerson,
     );
-    return withLedgerScope(ledgerBookId, async (tx) => {
-      const voucher = await getVoucherTx(tx, id);
-      if (!voucher) throw new NotFoundException('voucher not found');
-      if (voucher.status !== 'pending')
-        throw new BadRequestException(`cannot post a ${voucher.status} voucher`);
-      const error = voucherBalanceError(voucher.lines);
-      if (error) throw new BadRequestException(error);
-
-      const selfPost = voucher.maker === identity.userId;
-      if (selfPost && !(book.singlePersonMode && confirmSinglePerson)) {
-        throw new ForbiddenException(
-          'the maker cannot post their own voucher (职责分离); enable single-person mode and confirm to override',
-        );
-      }
-      await setVoucherStatusTx(tx, id, {
-        status: 'posted',
-        checker: identity.userId,
-        postedAt: new Date(),
-      });
-      await appendAuditRecordTx(tx, {
-        actorId: identity.userId,
-        action: selfPost ? 'POST_VOUCHER_SINGLE_PERSON' : 'POST_VOUCHER',
-        entityType: 'Voucher',
-        entityId: id,
+    return withScope(identity.orgId, ledgerBookId, (tx) =>
+      postVoucherReviewTx(tx, {
         ledgerBookId,
-        ...(selfPost ? { metadata: { singlePerson: true } } : {}),
-      });
-      return getVoucherTx(tx, id);
-    });
+        book,
+        identity,
+        voucherId: id,
+        confirmSinglePerson,
+      }),
+    );
   }
 
   /**

@@ -45,9 +45,14 @@ model Organization {
   name      String
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  memberships Membership[]
-  ledgerBooks LedgerBook[]
-  invitations Invitation[]
+  memberships    Membership[]
+  ledgerBooks    LedgerBook[]
+  invitations    Invitation[]
+  workItems      WorkItem[]
+  workItemEvents WorkItemEvent[]
+  outboxEvents   OutboxEvent[]
+  intakes        Intake[]
+  attachments    Attachment[]
 
   @@map("organization")
 }
@@ -95,26 +100,131 @@ model Membership {
 /// financial rows are ledger-scoped by this id. baseCurrency 2dp; fiscalYear =
 /// 启用年度; periodStructure "12+1" = 自然年 12 期 + 年结期.
 model LedgerBook {
-  id              String   @id @default(uuid()) @db.Uuid
-  orgId           String   @map("org_id") @db.Uuid
-  name            String
-  baseCurrency    String   @map("base_currency")
-  fiscalYear      Int      @map("fiscal_year")
-  periodStructure String   @default("12+1") @map("period_structure")
-  active          Boolean  @default(true)
+  id               String   @id @default(uuid()) @db.Uuid
+  orgId            String   @map("org_id") @db.Uuid
+  name             String
+  baseCurrency     String   @map("base_currency")
+  fiscalYear       Int      @map("fiscal_year")
+  periodStructure  String   @default("12+1") @map("period_structure")
+  active           Boolean  @default(true)
   /// 单人模式（SoD 例外）：显式开启后允许制单人过账自己的凭证（强制二次确认 + 留痕）。
-  singlePersonMode Boolean @default(false) @map("single_person_mode")
+  singlePersonMode Boolean  @default(false) @map("single_person_mode")
   /// 启用期间（期初建账设定），如 "2026-06"；null = 未建账。
-  openingPeriod   String?  @map("opening_period")
-  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  openingPeriod    String?  @map("opening_period")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   organization    Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
   accounts        Account[]
   vouchers        JournalVoucher[]
   openingBalances OpeningBalance[]
+  workItems       WorkItem[]
+  workItemEvents  WorkItemEvent[]
+  outboxEvents    OutboxEvent[]
+  intakes         Intake[]
+  attachments     Attachment[]
 
   @@index([orgId])
   @@map("ledger_book")
+}
+
+/// A platform work item (待办/工作项). Current queue state only; source business
+/// entities (voucher/payment/etc.) remain the business-state source of truth.
+/// orgId is mandatory; ledgerBookId is set for finance ledger-scoped sources.
+model WorkItem {
+  id              String    @id @default(uuid()) @db.Uuid
+  orgId           String    @map("org_id") @db.Uuid
+  ledgerBookId    String?   @map("ledger_book_id") @db.Uuid
+  moduleKey       String    @map("module_key")
+  workflowKey     String    @map("workflow_key")
+  workflowVersion String    @map("workflow_version")
+  workItemType    String    @map("work_item_type")
+  sourceType      String    @map("source_type")
+  sourceId        String    @map("source_id") @db.Uuid
+  dedupeKey       String    @map("dedupe_key")
+  status          String
+  subStatus       String    @map("sub_status")
+  priority        String    @default("normal")
+  assignedRole    String    @map("assigned_role")
+  assigneeUserId  String?   @map("assignee_user_id")
+  claimedAt       DateTime? @map("claimed_at") @db.Timestamptz(6)
+  availableAt     DateTime  @default(now()) @map("available_at") @db.Timestamptz(6)
+  dueAt           DateTime? @map("due_at") @db.Timestamptz(6)
+  completedAt     DateTime? @map("completed_at") @db.Timestamptz(6)
+  canceledAt      DateTime? @map("canceled_at") @db.Timestamptz(6)
+  createdBy       String    @map("created_by")
+  completedBy     String?   @map("completed_by")
+  version         Int       @default(1)
+  titleKey        String    @map("title_key")
+  metadata        Json?
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  ledgerBook   LedgerBook?     @relation(fields: [ledgerBookId], references: [id], onDelete: Cascade)
+  events       WorkItemEvent[]
+  outboxEvents OutboxEvent[]
+
+  @@index([orgId, status])
+  @@index([ledgerBookId, status])
+  @@index([assigneeUserId, status])
+  @@index([assignedRole, status])
+  @@index([sourceType, sourceId])
+  @@index([dedupeKey])
+  @@map("work_item")
+}
+
+/// Append-only transition history for WorkItem. Never updated or deleted.
+model WorkItemEvent {
+  id           String   @id @default(uuid()) @db.Uuid
+  workItemId   String   @map("work_item_id") @db.Uuid
+  orgId        String   @map("org_id") @db.Uuid
+  ledgerBookId String?  @map("ledger_book_id") @db.Uuid
+  eventType    String   @map("event_type")
+  actionKey    String?  @map("action_key")
+  fromStatus   String?  @map("from_status")
+  toStatus     String?  @map("to_status")
+  actorId      String   @map("actor_id")
+  reason       String?
+  metadata     Json?
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workItem     WorkItem     @relation(fields: [workItemId], references: [id], onDelete: Restrict)
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  ledgerBook   LedgerBook?  @relation(fields: [ledgerBookId], references: [id], onDelete: Cascade)
+
+  @@index([workItemId, createdAt])
+  @@index([orgId, createdAt])
+  @@index([ledgerBookId, createdAt])
+  @@map("work_item_event")
+}
+
+/// Transactional metadata-only outbox event. Payloads sent toward My-Chat MUST
+/// never include financial details; detailed context is fetched from ERP after
+/// authorization.
+model OutboxEvent {
+  id            String    @id @default(uuid()) @db.Uuid
+  orgId         String    @map("org_id") @db.Uuid
+  ledgerBookId  String?   @map("ledger_book_id") @db.Uuid
+  workItemId    String?   @map("work_item_id") @db.Uuid
+  eventType     String    @map("event_type")
+  sourceType    String    @map("source_type")
+  sourceId      String?   @map("source_id") @db.Uuid
+  payload       Json
+  status        String    @default("pending")
+  attempts      Int       @default(0)
+  nextAttemptAt DateTime? @map("next_attempt_at") @db.Timestamptz(6)
+  dispatchedAt  DateTime? @map("dispatched_at") @db.Timestamptz(6)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  ledgerBook   LedgerBook?  @relation(fields: [ledgerBookId], references: [id], onDelete: Cascade)
+  workItem     WorkItem?    @relation(fields: [workItemId], references: [id], onDelete: SetNull)
+
+  @@index([orgId, status, createdAt])
+  @@index([ledgerBookId, status, createdAt])
+  @@index([workItemId])
+  @@map("outbox_event")
 }
 
 /// A journal voucher (记账凭证). Ledger-scoped. Money is NUMERIC (never float).
@@ -211,4 +321,61 @@ model Account {
   @@unique([ledgerBookId, code])
   @@index([ledgerBookId])
   @@map("account")
+}
+
+/// A stored capture attachment (票据/凭据原件) for T-004 intake. Bytes live in
+/// object storage (referenced by storageKey), never inline. Append-only intent
+/// (accounting archive). Ledger-scoped (org + ledger via RLS).
+model Attachment {
+  id           String   @id @default(uuid()) @db.Uuid
+  orgId        String   @map("org_id") @db.Uuid
+  ledgerBookId String   @map("ledger_book_id") @db.Uuid
+  storageKey   String   @map("storage_key")
+  contentType  String   @map("content_type")
+  byteSize     Int      @map("byte_size")
+  sha256       String
+  createdBy    String   @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  ledgerBook   LedgerBook   @relation(fields: [ledgerBookId], references: [id], onDelete: Cascade)
+  intakes      Intake[]
+
+  @@index([orgId])
+  @@index([ledgerBookId])
+  @@map("attachment")
+}
+
+/// A capture intake (业务事件捕获) — domain-agnostic. An economic event (photo /
+/// pdf / text) captured from web/chat, extracted, drafted into a voucher, then
+/// confirmed. Ledger-scoped (org + ledger via RLS). `extraction` JSON and the
+/// attachment are ERP-only financial detail; never sent to My-Chat. `version`
+/// guards the one-shot extracted→drafted transition (optimistic concurrency).
+model Intake {
+  id           String   @id @default(uuid()) @db.Uuid
+  orgId        String   @map("org_id") @db.Uuid
+  ledgerBookId String   @map("ledger_book_id") @db.Uuid
+  source       String   @default("web")
+  kind         String
+  status       String   @default("received")
+  attachmentId String?  @map("attachment_id") @db.Uuid
+  extraction   Json?
+  confidence   Decimal? @db.Decimal(4, 3)
+  needsReview  Boolean  @default(false) @map("needs_review")
+  targetType   String?  @map("target_type")
+  targetId     String?  @map("target_id") @db.Uuid
+  channelRef   String?  @map("channel_ref")
+  createdBy    String   @map("created_by")
+  version      Int      @default(0)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  ledgerBook   LedgerBook   @relation(fields: [ledgerBookId], references: [id], onDelete: Cascade)
+  attachment   Attachment?  @relation(fields: [attachmentId], references: [id], onDelete: SetNull)
+
+  @@index([orgId, status])
+  @@index([ledgerBookId, status])
+  @@index([targetType, targetId])
+  @@map("intake")
 }

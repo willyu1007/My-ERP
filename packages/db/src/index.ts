@@ -137,6 +137,25 @@ export async function withScope<T>(
   });
 }
 
+/**
+ * Run `fn` with mandatory org scope and optional ledger scope. Platform task
+ * queries use this because WorkItem rows are always org-scoped, while finance
+ * work items add a ledger scope when the caller has an active ledger.
+ */
+export async function withOptionalLedgerScope<T>(
+  orgId: string,
+  ledgerBookId: string | null | undefined,
+  fn: (tx: TxClient) => Promise<T>,
+): Promise<T> {
+  return getPrisma().$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT set_config('app.current_org', ${orgId}, true)`;
+    if (ledgerBookId) {
+      await tx.$executeRaw`SELECT set_config('app.current_ledger', ${ledgerBookId}, true)`;
+    }
+    return fn(tx);
+  });
+}
+
 /* ---- Platform domain entities + repositories (org-scoped) ---- */
 
 export interface OrganizationEntity {
@@ -951,6 +970,728 @@ export async function setLedgerOpeningPeriodTx(
   openingPeriod: string,
 ): Promise<void> {
   await tx.ledgerBook.update({ where: { id: ledgerBookId }, data: { openingPeriod } });
+}
+
+/* ---- Work item kernel + metadata-only outbox (org + optional ledger scoped) ---- */
+
+export const ACTIVE_WORK_ITEM_STATUSES = ['open', 'claimed', 'waiting', 'returned'] as const;
+
+export interface WorkItemEntity {
+  id: string;
+  orgId: string;
+  ledgerBookId: string | null;
+  moduleKey: string;
+  workflowKey: string;
+  workflowVersion: string;
+  workItemType: string;
+  sourceType: string;
+  sourceId: string;
+  dedupeKey: string;
+  status: string;
+  subStatus: string;
+  priority: string;
+  assignedRole: string;
+  assigneeUserId: string | null;
+  claimedAt: Date | null;
+  availableAt: Date;
+  dueAt: Date | null;
+  completedAt: Date | null;
+  canceledAt: Date | null;
+  createdBy: string;
+  completedBy: string | null;
+  version: number;
+  titleKey: string;
+  metadata: unknown;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface WorkItemEventEntity {
+  id: string;
+  workItemId: string;
+  orgId: string;
+  ledgerBookId: string | null;
+  eventType: string;
+  actionKey: string | null;
+  fromStatus: string | null;
+  toStatus: string | null;
+  actorId: string;
+  reason: string | null;
+  metadata: unknown;
+  createdAt: Date;
+}
+
+export interface CreateWorkItemInput {
+  orgId: string;
+  ledgerBookId?: string | null;
+  moduleKey: string;
+  workflowKey: string;
+  workflowVersion: string;
+  workItemType: string;
+  sourceType: string;
+  sourceId: string;
+  dedupeKey: string;
+  status?: string;
+  subStatus: string;
+  priority?: string;
+  assignedRole: string;
+  assigneeUserId?: string | null;
+  availableAt?: Date;
+  dueAt?: Date | null;
+  createdBy: string;
+  titleKey: string;
+  metadata?: unknown;
+}
+
+export interface WorkItemListFilters {
+  view?: string;
+  actorId: string;
+  roles: readonly string[];
+  status?: string;
+  sourceType?: string;
+  sourceId?: string;
+  includeClosed?: boolean;
+  limit?: number;
+  cursor?: string;
+}
+
+export interface AppendWorkItemEventInput {
+  workItemId: string;
+  orgId: string;
+  ledgerBookId?: string | null;
+  eventType: string;
+  actionKey?: string | null;
+  fromStatus?: string | null;
+  toStatus?: string | null;
+  actorId: string;
+  reason?: string | null;
+  metadata?: unknown;
+}
+
+export interface WorkItemTransitionInput {
+  id: string;
+  actorId: string;
+  actionKey: string;
+  toStatus: string;
+  toSubStatus: string;
+  expectedVersion?: number;
+  reason?: string | null;
+  metadata?: unknown;
+  completedBy?: string | null;
+  canceled?: boolean;
+  assigneeUserId?: string | null;
+  claimedAt?: Date | null;
+}
+
+export interface AppendOutboxEventInput {
+  orgId: string;
+  ledgerBookId?: string | null;
+  workItemId?: string | null;
+  eventType: string;
+  sourceType: string;
+  sourceId?: string | null;
+  payload: unknown;
+}
+
+type WorkItemRow = {
+  id: string;
+  orgId: string;
+  ledgerBookId: string | null;
+  moduleKey: string;
+  workflowKey: string;
+  workflowVersion: string;
+  workItemType: string;
+  sourceType: string;
+  sourceId: string;
+  dedupeKey: string;
+  status: string;
+  subStatus: string;
+  priority: string;
+  assignedRole: string;
+  assigneeUserId: string | null;
+  claimedAt: Date | null;
+  availableAt: Date;
+  dueAt: Date | null;
+  completedAt: Date | null;
+  canceledAt: Date | null;
+  createdBy: string;
+  completedBy: string | null;
+  version: number;
+  titleKey: string;
+  metadata: Prisma.JsonValue | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type WorkItemEventRow = {
+  id: string;
+  workItemId: string;
+  orgId: string;
+  ledgerBookId: string | null;
+  eventType: string;
+  actionKey: string | null;
+  fromStatus: string | null;
+  toStatus: string | null;
+  actorId: string;
+  reason: string | null;
+  metadata: Prisma.JsonValue | null;
+  createdAt: Date;
+};
+
+function jsonOrNull(value: unknown): Prisma.InputJsonValue | typeof Prisma.JsonNull {
+  return value === undefined || value === null ? Prisma.JsonNull : (value as Prisma.InputJsonValue);
+}
+
+function toWorkItem(row: WorkItemRow): WorkItemEntity {
+  return {
+    id: row.id,
+    orgId: row.orgId,
+    ledgerBookId: row.ledgerBookId,
+    moduleKey: row.moduleKey,
+    workflowKey: row.workflowKey,
+    workflowVersion: row.workflowVersion,
+    workItemType: row.workItemType,
+    sourceType: row.sourceType,
+    sourceId: row.sourceId,
+    dedupeKey: row.dedupeKey,
+    status: row.status,
+    subStatus: row.subStatus,
+    priority: row.priority,
+    assignedRole: row.assignedRole,
+    assigneeUserId: row.assigneeUserId,
+    claimedAt: row.claimedAt,
+    availableAt: row.availableAt,
+    dueAt: row.dueAt,
+    completedAt: row.completedAt,
+    canceledAt: row.canceledAt,
+    createdBy: row.createdBy,
+    completedBy: row.completedBy,
+    version: row.version,
+    titleKey: row.titleKey,
+    metadata: row.metadata ?? null,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+function toWorkItemEvent(row: WorkItemEventRow): WorkItemEventEntity {
+  return {
+    id: row.id,
+    workItemId: row.workItemId,
+    orgId: row.orgId,
+    ledgerBookId: row.ledgerBookId,
+    eventType: row.eventType,
+    actionKey: row.actionKey,
+    fromStatus: row.fromStatus,
+    toStatus: row.toStatus,
+    actorId: row.actorId,
+    reason: row.reason,
+    metadata: row.metadata ?? null,
+    createdAt: row.createdAt,
+  };
+}
+
+function activeStatusWhere(): Prisma.StringFilter {
+  return { in: [...ACTIVE_WORK_ITEM_STATUSES] };
+}
+
+function isActiveWorkItemStatus(status: string): boolean {
+  return (ACTIVE_WORK_ITEM_STATUSES as readonly string[]).includes(status);
+}
+
+function viewWhere(filters: WorkItemListFilters): Prisma.WorkItemWhereInput {
+  const where: Prisma.WorkItemWhereInput = {};
+  if (filters.status) {
+    where.status = filters.status;
+  } else if (!filters.includeClosed) {
+    where.status = activeStatusWhere();
+  }
+  if (filters.sourceType) where.sourceType = filters.sourceType;
+  if (filters.sourceId) where.sourceId = filters.sourceId;
+
+  const roles = [...filters.roles];
+  const roleMatch: Prisma.WorkItemWhereInput =
+    roles.length > 0 ? { assignedRole: { in: roles } } : { assignedRole: { in: [] } };
+
+  switch (filters.view ?? 'my_tasks') {
+    case 'role_queue':
+      where.AND = [...(Array.isArray(where.AND) ? where.AND : []), roleMatch];
+      break;
+    case 'created_by_me':
+      where.createdBy = filters.actorId;
+      break;
+    case 'handled_by_me':
+      where.events = { some: { actorId: filters.actorId } };
+      break;
+    case 'supervision':
+    case 'audit_readonly':
+      break;
+    case 'my_tasks':
+    default:
+      where.OR = [
+        { assigneeUserId: filters.actorId },
+        { AND: [roleMatch, { assigneeUserId: null }] },
+      ];
+      break;
+  }
+
+  return where;
+}
+
+export async function createWorkItemTx(
+  tx: TxClient,
+  input: CreateWorkItemInput,
+): Promise<WorkItemEntity> {
+  return (await createWorkItemWithResultTx(tx, input)).item;
+}
+
+export async function createWorkItemWithResultTx(
+  tx: TxClient,
+  input: CreateWorkItemInput,
+): Promise<{ item: WorkItemEntity; created: boolean }> {
+  const existing = await tx.workItem.findFirst({
+    where: { dedupeKey: input.dedupeKey, status: activeStatusWhere() },
+  });
+  if (existing) return { item: toWorkItem(existing), created: false };
+
+  const created = await tx.workItem.create({
+    data: {
+      orgId: input.orgId,
+      ledgerBookId: input.ledgerBookId ?? null,
+      moduleKey: input.moduleKey,
+      workflowKey: input.workflowKey,
+      workflowVersion: input.workflowVersion,
+      workItemType: input.workItemType,
+      sourceType: input.sourceType,
+      sourceId: input.sourceId,
+      dedupeKey: input.dedupeKey,
+      status: input.status ?? 'open',
+      subStatus: input.subStatus,
+      priority: input.priority ?? 'normal',
+      assignedRole: input.assignedRole,
+      assigneeUserId: input.assigneeUserId ?? null,
+      availableAt: input.availableAt ?? new Date(),
+      dueAt: input.dueAt ?? null,
+      createdBy: input.createdBy,
+      titleKey: input.titleKey,
+      ...(input.metadata !== undefined ? { metadata: jsonOrNull(input.metadata) } : {}),
+    },
+  });
+  await appendWorkItemEventTx(tx, {
+    workItemId: created.id,
+    orgId: created.orgId,
+    ledgerBookId: created.ledgerBookId,
+    eventType: 'work_item.created',
+    toStatus: created.status,
+    actorId: input.createdBy,
+  });
+  return { item: toWorkItem(created), created: true };
+}
+
+export async function getWorkItemTx(tx: TxClient, id: string): Promise<WorkItemEntity | null> {
+  const row = await tx.workItem.findUnique({ where: { id } });
+  return row ? toWorkItem(row) : null;
+}
+
+export async function listWorkItemsTx(
+  tx: TxClient,
+  filters: WorkItemListFilters,
+): Promise<WorkItemEntity[]> {
+  const rows = await tx.workItem.findMany({
+    where: viewWhere(filters),
+    take: filters.limit ?? 50,
+    ...(filters.cursor ? { cursor: { id: filters.cursor }, skip: 1 } : {}),
+    orderBy: [{ dueAt: 'asc' }, { availableAt: 'asc' }, { createdAt: 'desc' }, { id: 'asc' }],
+  });
+  return rows.map(toWorkItem);
+}
+
+export async function listWorkItemEventsTx(
+  tx: TxClient,
+  workItemId: string,
+): Promise<WorkItemEventEntity[]> {
+  const rows = await tx.workItemEvent.findMany({
+    where: { workItemId },
+    orderBy: { createdAt: 'asc' },
+  });
+  return rows.map(toWorkItemEvent);
+}
+
+export async function hasWorkItemEventByActorTx(
+  tx: TxClient,
+  workItemId: string,
+  actorId: string,
+): Promise<boolean> {
+  const row = await tx.workItemEvent.findFirst({
+    where: { workItemId, actorId },
+    select: { id: true },
+  });
+  return Boolean(row);
+}
+
+export async function appendWorkItemEventTx(
+  tx: TxClient,
+  input: AppendWorkItemEventInput,
+): Promise<WorkItemEventEntity> {
+  const created = await tx.workItemEvent.create({
+    data: {
+      workItemId: input.workItemId,
+      orgId: input.orgId,
+      ledgerBookId: input.ledgerBookId ?? null,
+      eventType: input.eventType,
+      actionKey: input.actionKey ?? null,
+      fromStatus: input.fromStatus ?? null,
+      toStatus: input.toStatus ?? null,
+      actorId: input.actorId,
+      reason: input.reason ?? null,
+      ...(input.metadata !== undefined ? { metadata: jsonOrNull(input.metadata) } : {}),
+    },
+  });
+  return toWorkItemEvent(created);
+}
+
+export async function claimWorkItemTx(
+  tx: TxClient,
+  id: string,
+  actorId: string,
+  expectedVersion?: number,
+): Promise<WorkItemEntity | null> {
+  const current = await tx.workItem.findUnique({ where: { id } });
+  if (!current || !isActiveWorkItemStatus(current.status)) return null;
+  const updated = await tx.workItem.updateMany({
+    where: {
+      id,
+      status: { in: ['open', 'returned'] },
+      assigneeUserId: null,
+      ...(expectedVersion !== undefined ? { version: expectedVersion } : {}),
+    },
+    data: {
+      status: 'claimed',
+      assigneeUserId: actorId,
+      claimedAt: new Date(),
+      version: { increment: 1 },
+    },
+  });
+  if (updated.count !== 1) return null;
+  const after = await tx.workItem.findUniqueOrThrow({ where: { id } });
+  await appendWorkItemEventTx(tx, {
+    workItemId: after.id,
+    orgId: after.orgId,
+    ledgerBookId: after.ledgerBookId,
+    eventType: 'work_item.claimed',
+    actionKey: 'claim',
+    fromStatus: current.status,
+    toStatus: after.status,
+    actorId,
+  });
+  return toWorkItem(after);
+}
+
+export async function transitionWorkItemTx(
+  tx: TxClient,
+  input: WorkItemTransitionInput,
+): Promise<WorkItemEntity | null> {
+  const current = await tx.workItem.findUnique({ where: { id: input.id } });
+  if (!current || !isActiveWorkItemStatus(current.status)) return null;
+
+  const completedAt = input.toStatus === 'completed' ? new Date() : undefined;
+  const canceledAt = input.canceled || input.toStatus === 'canceled' ? new Date() : undefined;
+  const updated = await tx.workItem.updateMany({
+    where: {
+      id: input.id,
+      status: activeStatusWhere(),
+      ...(input.expectedVersion !== undefined ? { version: input.expectedVersion } : {}),
+    },
+    data: {
+      status: input.toStatus,
+      subStatus: input.toSubStatus,
+      ...(input.assigneeUserId !== undefined ? { assigneeUserId: input.assigneeUserId } : {}),
+      ...(input.claimedAt !== undefined ? { claimedAt: input.claimedAt } : {}),
+      ...(completedAt ? { completedAt } : {}),
+      ...(canceledAt ? { canceledAt } : {}),
+      ...(input.completedBy !== undefined ? { completedBy: input.completedBy } : {}),
+      version: { increment: 1 },
+    },
+  });
+  if (updated.count !== 1) return null;
+
+  const after = await tx.workItem.findUniqueOrThrow({ where: { id: input.id } });
+  await appendWorkItemEventTx(tx, {
+    workItemId: after.id,
+    orgId: after.orgId,
+    ledgerBookId: after.ledgerBookId,
+    eventType: `work_item.${input.toStatus}`,
+    actionKey: input.actionKey,
+    fromStatus: current.status,
+    toStatus: after.status,
+    actorId: input.actorId,
+    reason: input.reason ?? null,
+    metadata: input.metadata,
+  });
+  return toWorkItem(after);
+}
+
+export async function completeActiveWorkItemsForSourceTx(
+  tx: TxClient,
+  input: {
+    sourceType: string;
+    sourceId: string;
+    actorId: string;
+    actionKey?: string;
+    workItemType?: string;
+  },
+): Promise<WorkItemEntity[]> {
+  const rows = await tx.workItem.findMany({
+    where: {
+      sourceType: input.sourceType,
+      sourceId: input.sourceId,
+      status: activeStatusWhere(),
+      ...(input.workItemType ? { workItemType: input.workItemType } : {}),
+    },
+  });
+  const completed: WorkItemEntity[] = [];
+  for (const row of rows) {
+    const item = await transitionWorkItemTx(tx, {
+      id: row.id,
+      actorId: input.actorId,
+      actionKey: input.actionKey ?? 'complete',
+      toStatus: 'completed',
+      toSubStatus: 'done',
+      completedBy: input.actorId,
+    });
+    if (item) completed.push(item);
+  }
+  return completed;
+}
+
+export async function cancelWorkItemTx(
+  tx: TxClient,
+  id: string,
+  actorId: string,
+  expectedVersion?: number,
+): Promise<WorkItemEntity | null> {
+  return transitionWorkItemTx(tx, {
+    id,
+    actorId,
+    actionKey: 'cancel',
+    toStatus: 'canceled',
+    toSubStatus: 'done',
+    canceled: true,
+    expectedVersion,
+  });
+}
+
+export async function appendOutboxEventTx(
+  tx: TxClient,
+  input: AppendOutboxEventInput,
+): Promise<void> {
+  await tx.outboxEvent.create({
+    data: {
+      orgId: input.orgId,
+      ledgerBookId: input.ledgerBookId ?? null,
+      workItemId: input.workItemId ?? null,
+      eventType: input.eventType,
+      sourceType: input.sourceType,
+      sourceId: input.sourceId ?? null,
+      payload: input.payload as Prisma.InputJsonValue,
+    },
+  });
+}
+
+// ---- T-004 capture intake (ledger-scoped: call within withScope/withLedgerScope) ----
+
+export interface AttachmentEntity {
+  id: string;
+  orgId: string;
+  ledgerBookId: string;
+  storageKey: string;
+  contentType: string;
+  byteSize: number;
+  sha256: string;
+  createdBy: string;
+  createdAt: Date;
+}
+
+export interface CreateAttachmentInput {
+  orgId: string;
+  ledgerBookId: string;
+  storageKey: string;
+  contentType: string;
+  byteSize: number;
+  sha256: string;
+  createdBy: string;
+}
+
+export interface IntakeEntity {
+  id: string;
+  orgId: string;
+  ledgerBookId: string;
+  source: string;
+  kind: string;
+  status: string;
+  attachmentId: string | null;
+  extraction: unknown;
+  confidence: number | null;
+  needsReview: boolean;
+  targetType: string | null;
+  targetId: string | null;
+  channelRef: string | null;
+  createdBy: string;
+  version: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateIntakeInput {
+  orgId: string;
+  ledgerBookId: string;
+  source?: string;
+  kind: string;
+  status?: string;
+  attachmentId?: string | null;
+  channelRef?: string | null;
+  createdBy: string;
+}
+
+/** Patch an intake. `expectedVersion` makes the extracted→drafted transition one-shot. */
+export interface UpdateIntakeInput {
+  status?: string;
+  extraction?: unknown;
+  confidence?: number | null;
+  needsReview?: boolean;
+  targetType?: string | null;
+  targetId?: string | null;
+  expectedVersion?: number;
+}
+
+type AttachmentRow = {
+  id: string;
+  orgId: string;
+  ledgerBookId: string;
+  storageKey: string;
+  contentType: string;
+  byteSize: number;
+  sha256: string;
+  createdBy: string;
+  createdAt: Date;
+};
+
+type IntakeRow = {
+  id: string;
+  orgId: string;
+  ledgerBookId: string;
+  source: string;
+  kind: string;
+  status: string;
+  attachmentId: string | null;
+  extraction: Prisma.JsonValue | null;
+  confidence: Prisma.Decimal | null;
+  needsReview: boolean;
+  targetType: string | null;
+  targetId: string | null;
+  channelRef: string | null;
+  createdBy: string;
+  version: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+function toAttachment(row: AttachmentRow): AttachmentEntity {
+  return {
+    id: row.id,
+    orgId: row.orgId,
+    ledgerBookId: row.ledgerBookId,
+    storageKey: row.storageKey,
+    contentType: row.contentType,
+    byteSize: row.byteSize,
+    sha256: row.sha256,
+    createdBy: row.createdBy,
+    createdAt: row.createdAt,
+  };
+}
+
+function toIntake(row: IntakeRow): IntakeEntity {
+  return {
+    id: row.id,
+    orgId: row.orgId,
+    ledgerBookId: row.ledgerBookId,
+    source: row.source,
+    kind: row.kind,
+    status: row.status,
+    attachmentId: row.attachmentId,
+    extraction: row.extraction ?? null,
+    confidence: row.confidence === null ? null : row.confidence.toNumber(),
+    needsReview: row.needsReview,
+    targetType: row.targetType,
+    targetId: row.targetId,
+    channelRef: row.channelRef,
+    createdBy: row.createdBy,
+    version: row.version,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export async function createAttachmentTx(
+  tx: TxClient,
+  input: CreateAttachmentInput,
+): Promise<AttachmentEntity> {
+  const row = await tx.attachment.create({ data: { ...input } });
+  return toAttachment(row);
+}
+
+export async function createIntakeTx(tx: TxClient, input: CreateIntakeInput): Promise<IntakeEntity> {
+  const row = await tx.intake.create({
+    data: {
+      orgId: input.orgId,
+      ledgerBookId: input.ledgerBookId,
+      source: input.source ?? 'web',
+      kind: input.kind,
+      status: input.status ?? 'received',
+      attachmentId: input.attachmentId ?? null,
+      channelRef: input.channelRef ?? null,
+      createdBy: input.createdBy,
+    },
+  });
+  return toIntake(row);
+}
+
+export async function getIntakeTx(tx: TxClient, id: string): Promise<IntakeEntity | null> {
+  const row = await tx.intake.findUnique({ where: { id } });
+  return row ? toIntake(row) : null;
+}
+
+export async function listIntakesTx(
+  tx: TxClient,
+  filters?: { status?: string; limit?: number },
+): Promise<IntakeEntity[]> {
+  const rows = await tx.intake.findMany({
+    where: filters?.status ? { status: filters.status } : {},
+    orderBy: { createdAt: 'desc' },
+    take: Math.min(filters?.limit ?? 50, 200),
+  });
+  return rows.map(toIntake);
+}
+
+/** Version-guarded patch; returns null when the expected version no longer matches. */
+export async function updateIntakeTx(
+  tx: TxClient,
+  id: string,
+  input: UpdateIntakeInput,
+): Promise<IntakeEntity | null> {
+  const data: Prisma.IntakeUpdateManyMutationInput = { version: { increment: 1 } };
+  if (input.status !== undefined) data.status = input.status;
+  if (input.extraction !== undefined) data.extraction = jsonOrNull(input.extraction);
+  if (input.confidence !== undefined) data.confidence = input.confidence;
+  if (input.needsReview !== undefined) data.needsReview = input.needsReview;
+  if (input.targetType !== undefined) data.targetType = input.targetType;
+  if (input.targetId !== undefined) data.targetId = input.targetId;
+  const res = await tx.intake.updateMany({
+    where: input.expectedVersion === undefined ? { id } : { id, version: input.expectedVersion },
+    data,
+  });
+  if (res.count === 0) return null;
+  return getIntakeTx(tx, id);
 }
 
 export { Prisma } from '@prisma/client';

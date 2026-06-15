@@ -183,6 +183,97 @@ paths:
                 items: { $ref: '#/components/schemas/Membership' }
         '401': { description: Missing or invalid bearer token }
         '403': { description: Caller lacks read permission }
+  /v1/work-items:
+    get:
+      operationId: listWorkItems
+      summary: List task-kernel work items (org-scoped; ledger scope applies when present)
+      description: |
+        Visibility and actionability are separate. The response includes
+        backend-computed `availableActions`; frontends must not infer task
+        permissions from local role names.
+      tags: [work-items]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: view
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [my_tasks, role_queue, created_by_me, handled_by_me, supervision, audit_readonly]
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [open, claimed, waiting, returned, completed, canceled]
+        - { name: sourceType, in: query, required: false, schema: { type: string } }
+        - { name: sourceId, in: query, required: false, schema: { type: string, format: uuid } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+        - { name: cursor, in: query, required: false, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Work items visible to the caller
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/WorkItem' }
+        '400': { description: Invalid view/status/sourceId/limit/cursor filter }
+        '401': { description: Missing or invalid bearer token }
+        '403': { description: Caller lacks read permission or supervision view access }
+  /v1/work-items/{id}:
+    get:
+      operationId: getWorkItem
+      summary: Work item detail with backend-computed actions
+      tags: [work-items]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200':
+          description: Work item
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkItem' }
+        '401': { description: Missing or invalid bearer token }
+        '403': { description: Caller lacks read permission }
+        '404': { description: Work item not found in caller scope }
+  /v1/work-items/{id}/actions/{actionKey}:
+    post:
+      operationId: actOnWorkItem
+      summary: Execute a backend-authorized work item action
+      description: |
+        `complete` for finance voucher-review tasks posts the source voucher and
+        completes the work item in one transaction. Stale `expectedVersion`
+        values are rejected.
+      tags: [work-items]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: actionKey, in: path, required: true, schema: { $ref: '#/components/schemas/WorkItemAction' } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WorkItemActionRequest' }
+      responses:
+        '200':
+          description: Action executed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [workItem]
+                properties:
+                  workItem: { $ref: '#/components/schemas/WorkItem' }
+                  source:
+                    oneOf:
+                      - { $ref: '#/components/schemas/Voucher' }
+                      - { type: 'null' }
+        '400': { description: Invalid action or source state }
+        '401': { description: Missing or invalid bearer token }
+        '403': { description: Action not available to caller }
+        '404': { description: Work item or source not found }
+        '409': { description: Stale version or no longer actionable }
   /v1/accounts:
     get:
       operationId: listAccounts
@@ -524,6 +615,101 @@ components:
       required: [token]
       properties:
         token: { type: string }
+    WorkItemStatus:
+      type: string
+      enum: [open, claimed, waiting, returned, completed, canceled]
+    PlatformSubStatus:
+      type: string
+      enum:
+        - pending_completion
+        - pending_confirmation
+        - pending_review
+        - pending_correction
+        - pending_external
+        - pending_system
+        - blocked
+        - ready
+        - done
+    WorkItemAction:
+      type: string
+      enum: [claim, complete, return, assign, cancel]
+    WorkItemPriority:
+      type: string
+      enum: [low, normal, high, urgent]
+    WorkItem:
+      type: object
+      required:
+        - id
+        - orgId
+        - ledgerBookId
+        - moduleKey
+        - workflowKey
+        - workflowVersion
+        - workItemType
+        - sourceType
+        - sourceId
+        - status
+        - subStatus
+        - priority
+        - assignedRole
+        - assigneeUserId
+        - availableAt
+        - createdBy
+        - version
+        - titleKey
+        - metadata
+        - createdAt
+        - updatedAt
+        - availableActions
+      properties:
+        id: { type: string, format: uuid }
+        orgId: { type: string, format: uuid }
+        ledgerBookId: { type: string, format: uuid, nullable: true }
+        moduleKey: { type: string, example: finance }
+        workflowKey: { type: string, example: daily-accounting }
+        workflowVersion: { type: string, example: v1 }
+        workItemType: { type: string, example: voucher.review }
+        sourceType: { type: string, example: JournalVoucher }
+        sourceId: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/WorkItemStatus' }
+        subStatus:
+          oneOf:
+            - { $ref: '#/components/schemas/PlatformSubStatus' }
+            - { type: string }
+        priority: { $ref: '#/components/schemas/WorkItemPriority' }
+        assignedRole: { type: string, example: supervisor }
+        assigneeUserId: { type: string, nullable: true }
+        claimedAt: { type: string, format: date-time, nullable: true }
+        availableAt: { type: string, format: date-time }
+        dueAt: { type: string, format: date-time, nullable: true }
+        completedAt: { type: string, format: date-time, nullable: true }
+        canceledAt: { type: string, format: date-time, nullable: true }
+        createdBy: { type: string }
+        completedBy: { type: string, nullable: true }
+        version: { type: integer }
+        titleKey: { type: string }
+        metadata:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Metadata-only; must not contain amounts, account lines, bank details, counterparties, summaries, attachments, OCR text, or comments.
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        availableActions:
+          type: array
+          items: { $ref: '#/components/schemas/WorkItemAction' }
+    WorkItemActionRequest:
+      type: object
+      required: [expectedVersion]
+      properties:
+        expectedVersion:
+          type: integer
+          description: Optimistic concurrency version from the WorkItem response.
+        confirmSinglePerson:
+          type: boolean
+          description: Required only when single-person mode allows a maker to post their own voucher.
+        reason:
+          type: string
     Account:
       type: object
       required: [id, ledgerBookId, code, name, category, direction, level, isLeaf, auxTypes, active, createdAt]

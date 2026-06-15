@@ -1,6 +1,7 @@
 import Decimal from 'decimal.js';
 
 export * from './ledger';
+export * from './posting-template';
 
 /**
  * Money — amounts are always exact decimals, never IEEE floats (hard constraint).

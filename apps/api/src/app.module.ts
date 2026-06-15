@@ -11,6 +11,8 @@ import { MembersController } from './members/members.controller';
 import { OpeningBalancesController } from './opening-balances/opening-balances.controller';
 import { OrganizationController } from './organization/organization.controller';
 import { VouchersController } from './vouchers/vouchers.controller';
+import { WorkItemsController } from './work-items/work-items.controller';
+import { WorkItemsService } from './work-items/work-items.service';
 
 @Module({
   imports: [AuthModule],
@@ -22,9 +24,10 @@ import { VouchersController } from './vouchers/vouchers.controller';
     MembersController,
     AccountsController,
     VouchersController,
+    WorkItemsController,
     LedgerController,
     OpeningBalancesController,
   ],
-  providers: [HealthService, InvitationService],
+  providers: [HealthService, InvitationService, WorkItemsService],
 })
 export class AppModule {}

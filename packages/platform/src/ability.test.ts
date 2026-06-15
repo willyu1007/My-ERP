@@ -20,8 +20,10 @@ describe('CASL abilities (RBAC + operation-level + SoD)', () => {
   it('viewer is read-only', () => {
     const a = defineAbilityFor(id(['viewer']));
     expect(a.can('read', 'Voucher')).toBe(true);
+    expect(a.can('read', 'WorkItem')).toBe(true);
     expect(a.can('create', 'Voucher')).toBe(false);
     expect(a.can('post', 'Voucher')).toBe(false);
+    expect(a.can('claim', 'WorkItem')).toBe(false);
   });
 
   it('admin manages all (within scope)', () => {
@@ -35,5 +37,18 @@ describe('CASL abilities (RBAC + operation-level + SoD)', () => {
     expect(a.can('create', 'Voucher')).toBe(true);
     expect(a.can('post', 'Voucher')).toBe(false);
     expect(a.can('reverse', 'Voucher')).toBe(false);
+  });
+
+  it('task operations are explicit and role-scoped', () => {
+    const accountant = defineAbilityFor(id(['accountant']));
+    expect(accountant.can('read', 'WorkItem')).toBe(true);
+    expect(accountant.can('claim', 'WorkItem')).toBe(true);
+    expect(accountant.can('complete', 'WorkItem')).toBe(true);
+    expect(accountant.can('assign', 'WorkItem')).toBe(false);
+    expect(accountant.can('cancel', 'WorkItem')).toBe(false);
+
+    const supervisor = defineAbilityFor(id(['supervisor']));
+    expect(supervisor.can('assign', 'WorkItem')).toBe(true);
+    expect(supervisor.can('cancel', 'WorkItem')).toBe(true);
   });
 });

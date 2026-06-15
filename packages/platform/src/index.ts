@@ -7,5 +7,7 @@ export * from './ability';
 export * from './account';
 export * from './invitation';
 export * from './logging';
+export * from './workflow';
+export * from './capture';
 
 export const PLATFORM_PACKAGE = '@my-erp/platform' as const;

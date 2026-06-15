@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-06-10T09:02:52.496Z",
+  "updatedAt": "2026-06-15T00:21:50.039Z",
   "ssot": {
     "mode": "repo-prisma",
     "source": {
@@ -190,6 +190,167 @@
       ]
     },
     {
+      "name": "Attachment",
+      "dbName": "attachment",
+      "schema": null,
+      "columns": [
+        {
+          "name": "byteSize",
+          "type": "Int",
+          "nullable": false,
+          "list": false,
+          "dbName": "byte_size",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "contentType",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "content_type",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "created_at",
+          "dbType": "Timestamptz",
+          "default": "now()",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "createdBy",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "created_by",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "id",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": "Uuid",
+          "default": "uuid()",
+          "primaryKey": true,
+          "unique": false
+        },
+        {
+          "name": "ledgerBookId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "ledger_book_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "orgId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "org_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "sha256",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "storageKey",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "storage_key",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "field": "intakes",
+          "to": "Intake",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
+        },
+        {
+          "field": "ledgerBook",
+          "to": "LedgerBook",
+          "optional": false,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "ledgerBookId"
+          ],
+          "references": [
+            "id"
+          ]
+        },
+        {
+          "field": "organization",
+          "to": "Organization",
+          "optional": false,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "orgId"
+          ],
+          "references": [
+            "id"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "type": "index",
+          "fields": [
+            "ledgerBookId"
+          ],
+          "name": null,
+          "map": null
+        },
+        {
+          "type": "index",
+          "fields": [
+            "orgId"
+          ],
+          "name": null,
+          "map": null
+        }
+      ]
+    },
+    {
       "name": "AuditRecord",
       "dbName": "audit_record",
       "schema": null,
@@ -299,6 +460,270 @@
           "fields": [
             "ledgerBookId",
             "createdAt"
+          ],
+          "name": null,
+          "map": null
+        }
+      ]
+    },
+    {
+      "name": "Intake",
+      "dbName": "intake",
+      "schema": null,
+      "columns": [
+        {
+          "name": "attachmentId",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "attachment_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "channelRef",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "channel_ref",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "confidence",
+          "type": "Decimal",
+          "nullable": true,
+          "list": false,
+          "dbName": null,
+          "dbType": "Decimal",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "created_at",
+          "dbType": "Timestamptz",
+          "default": "now()",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "createdBy",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "created_by",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "extraction",
+          "type": "Json",
+          "nullable": true,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "id",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": "Uuid",
+          "default": "uuid()",
+          "primaryKey": true,
+          "unique": false
+        },
+        {
+          "name": "kind",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "ledgerBookId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "ledger_book_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "needsReview",
+          "type": "Boolean",
+          "nullable": false,
+          "list": false,
+          "dbName": "needs_review",
+          "dbType": null,
+          "default": "false",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "orgId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "org_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "source",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "\"web\"",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "status",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "\"received\"",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "targetId",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "target_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "targetType",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "target_type",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "updated_at",
+          "dbType": "Timestamptz",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "version",
+          "type": "Int",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "0",
+          "primaryKey": false,
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "field": "attachment",
+          "to": "Attachment",
+          "optional": true,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "attachmentId"
+          ],
+          "references": [
+            "id"
+          ]
+        },
+        {
+          "field": "ledgerBook",
+          "to": "LedgerBook",
+          "optional": false,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "ledgerBookId"
+          ],
+          "references": [
+            "id"
+          ]
+        },
+        {
+          "field": "organization",
+          "to": "Organization",
+          "optional": false,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "orgId"
+          ],
+          "references": [
+            "id"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "type": "index",
+          "fields": [
+            "ledgerBookId",
+            "status"
+          ],
+          "name": null,
+          "map": null
+        },
+        {
+          "type": "index",
+          "fields": [
+            "orgId",
+            "status"
+          ],
+          "name": null,
+          "map": null
+        },
+        {
+          "type": "index",
+          "fields": [
+            "targetType",
+            "targetId"
           ],
           "name": null,
           "map": null
@@ -973,6 +1398,24 @@
           "references": []
         },
         {
+          "field": "attachments",
+          "to": "Attachment",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
+        },
+        {
+          "field": "intakes",
+          "to": "Intake",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
+        },
+        {
           "field": "openingBalances",
           "to": "OpeningBalance",
           "optional": false,
@@ -995,8 +1438,35 @@
           ]
         },
         {
+          "field": "outboxEvents",
+          "to": "OutboxEvent",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
+        },
+        {
           "field": "vouchers",
           "to": "JournalVoucher",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
+        },
+        {
+          "field": "workItemEvents",
+          "to": "WorkItemEvent",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
+        },
+        {
+          "field": "workItems",
+          "to": "WorkItem",
           "optional": false,
           "list": true,
           "relationName": null,
@@ -1270,6 +1740,24 @@
       ],
       "relations": [
         {
+          "field": "attachments",
+          "to": "Attachment",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
+        },
+        {
+          "field": "intakes",
+          "to": "Intake",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
+        },
+        {
           "field": "invitations",
           "to": "Invitation",
           "optional": false,
@@ -1295,9 +1783,882 @@
           "relationName": null,
           "fields": [],
           "references": []
+        },
+        {
+          "field": "outboxEvents",
+          "to": "OutboxEvent",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
+        },
+        {
+          "field": "workItemEvents",
+          "to": "WorkItemEvent",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
+        },
+        {
+          "field": "workItems",
+          "to": "WorkItem",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
         }
       ],
       "indexes": []
+    },
+    {
+      "name": "OutboxEvent",
+      "dbName": "outbox_event",
+      "schema": null,
+      "columns": [
+        {
+          "name": "attempts",
+          "type": "Int",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "0",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "created_at",
+          "dbType": "Timestamptz",
+          "default": "now()",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "dispatchedAt",
+          "type": "DateTime",
+          "nullable": true,
+          "list": false,
+          "dbName": "dispatched_at",
+          "dbType": "Timestamptz",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "eventType",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "event_type",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "id",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": "Uuid",
+          "default": "uuid()",
+          "primaryKey": true,
+          "unique": false
+        },
+        {
+          "name": "ledgerBookId",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "ledger_book_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "nextAttemptAt",
+          "type": "DateTime",
+          "nullable": true,
+          "list": false,
+          "dbName": "next_attempt_at",
+          "dbType": "Timestamptz",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "orgId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "org_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "payload",
+          "type": "Json",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "sourceId",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "source_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "sourceType",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "source_type",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "status",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "\"pending\"",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "updated_at",
+          "dbType": "Timestamptz",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "workItemId",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "work_item_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "field": "ledgerBook",
+          "to": "LedgerBook",
+          "optional": true,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "ledgerBookId"
+          ],
+          "references": [
+            "id"
+          ]
+        },
+        {
+          "field": "organization",
+          "to": "Organization",
+          "optional": false,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "orgId"
+          ],
+          "references": [
+            "id"
+          ]
+        },
+        {
+          "field": "workItem",
+          "to": "WorkItem",
+          "optional": true,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "workItemId"
+          ],
+          "references": [
+            "id"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "type": "index",
+          "fields": [
+            "ledgerBookId",
+            "status",
+            "createdAt"
+          ],
+          "name": null,
+          "map": null
+        },
+        {
+          "type": "index",
+          "fields": [
+            "orgId",
+            "status",
+            "createdAt"
+          ],
+          "name": null,
+          "map": null
+        },
+        {
+          "type": "index",
+          "fields": [
+            "workItemId"
+          ],
+          "name": null,
+          "map": null
+        }
+      ]
+    },
+    {
+      "name": "WorkItem",
+      "dbName": "work_item",
+      "schema": null,
+      "columns": [
+        {
+          "name": "assignedRole",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "assigned_role",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "assigneeUserId",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "assignee_user_id",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "availableAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "available_at",
+          "dbType": "Timestamptz",
+          "default": "now()",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "canceledAt",
+          "type": "DateTime",
+          "nullable": true,
+          "list": false,
+          "dbName": "canceled_at",
+          "dbType": "Timestamptz",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "claimedAt",
+          "type": "DateTime",
+          "nullable": true,
+          "list": false,
+          "dbName": "claimed_at",
+          "dbType": "Timestamptz",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "completedAt",
+          "type": "DateTime",
+          "nullable": true,
+          "list": false,
+          "dbName": "completed_at",
+          "dbType": "Timestamptz",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "completedBy",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "completed_by",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "created_at",
+          "dbType": "Timestamptz",
+          "default": "now()",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "createdBy",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "created_by",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "dedupeKey",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "dedupe_key",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "dueAt",
+          "type": "DateTime",
+          "nullable": true,
+          "list": false,
+          "dbName": "due_at",
+          "dbType": "Timestamptz",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "id",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": "Uuid",
+          "default": "uuid()",
+          "primaryKey": true,
+          "unique": false
+        },
+        {
+          "name": "ledgerBookId",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "ledger_book_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "metadata",
+          "type": "Json",
+          "nullable": true,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "moduleKey",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "module_key",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "orgId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "org_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "priority",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "\"normal\"",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "sourceId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "source_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "sourceType",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "source_type",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "status",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "subStatus",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "sub_status",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "titleKey",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "title_key",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "updated_at",
+          "dbType": "Timestamptz",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "version",
+          "type": "Int",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "1",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "workflowKey",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "workflow_key",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "workflowVersion",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "workflow_version",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "workItemType",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "work_item_type",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "field": "events",
+          "to": "WorkItemEvent",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
+        },
+        {
+          "field": "ledgerBook",
+          "to": "LedgerBook",
+          "optional": true,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "ledgerBookId"
+          ],
+          "references": [
+            "id"
+          ]
+        },
+        {
+          "field": "organization",
+          "to": "Organization",
+          "optional": false,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "orgId"
+          ],
+          "references": [
+            "id"
+          ]
+        },
+        {
+          "field": "outboxEvents",
+          "to": "OutboxEvent",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
+        }
+      ],
+      "indexes": [
+        {
+          "type": "index",
+          "fields": [
+            "assignedRole",
+            "status"
+          ],
+          "name": null,
+          "map": null
+        },
+        {
+          "type": "index",
+          "fields": [
+            "assigneeUserId",
+            "status"
+          ],
+          "name": null,
+          "map": null
+        },
+        {
+          "type": "index",
+          "fields": [
+            "dedupeKey"
+          ],
+          "name": null,
+          "map": null
+        },
+        {
+          "type": "index",
+          "fields": [
+            "ledgerBookId",
+            "status"
+          ],
+          "name": null,
+          "map": null
+        },
+        {
+          "type": "index",
+          "fields": [
+            "orgId",
+            "status"
+          ],
+          "name": null,
+          "map": null
+        },
+        {
+          "type": "index",
+          "fields": [
+            "sourceType",
+            "sourceId"
+          ],
+          "name": null,
+          "map": null
+        }
+      ]
+    },
+    {
+      "name": "WorkItemEvent",
+      "dbName": "work_item_event",
+      "schema": null,
+      "columns": [
+        {
+          "name": "actionKey",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "action_key",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "actorId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "actor_id",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "created_at",
+          "dbType": "Timestamptz",
+          "default": "now()",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "eventType",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "event_type",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "fromStatus",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "from_status",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "id",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": "Uuid",
+          "default": "uuid()",
+          "primaryKey": true,
+          "unique": false
+        },
+        {
+          "name": "ledgerBookId",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "ledger_book_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "metadata",
+          "type": "Json",
+          "nullable": true,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "orgId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "org_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "reason",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "toStatus",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "to_status",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "workItemId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "work_item_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "field": "ledgerBook",
+          "to": "LedgerBook",
+          "optional": true,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "ledgerBookId"
+          ],
+          "references": [
+            "id"
+          ]
+        },
+        {
+          "field": "organization",
+          "to": "Organization",
+          "optional": false,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "orgId"
+          ],
+          "references": [
+            "id"
+          ]
+        },
+        {
+          "field": "workItem",
+          "to": "WorkItem",
+          "optional": false,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "workItemId"
+          ],
+          "references": [
+            "id"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "type": "index",
+          "fields": [
+            "ledgerBookId",
+            "createdAt"
+          ],
+          "name": null,
+          "map": null
+        },
+        {
+          "type": "index",
+          "fields": [
+            "orgId",
+            "createdAt"
+          ],
+          "name": null,
+          "map": null
+        },
+        {
+          "type": "index",
+          "fields": [
+            "workItemId",
+            "createdAt"
+          ],
+          "name": null,
+          "map": null
+        }
+      ]
     }
   ],
   "notes": "Generated from Prisma schema.prisma (SSOT: repo-prisma)."
