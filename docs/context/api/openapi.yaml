@@ -476,6 +476,67 @@ paths:
         '400': { description: Not posted / already reversed }
         '403': { description: Lacks reverse permission }
         '404': { description: Not found }
+  /v1/intakes:
+    get:
+      operationId: listIntakes
+      summary: List capture intakes (ledger-scoped; optional status filter)
+      tags: [intakes]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: status, in: query, required: false, schema: { type: string, enum: [received, extracting, extracted, drafted, confirmed, discarded, failed] } }
+      responses:
+        '200':
+          description: Intakes
+          content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Intake' } } } }
+        '401': { description: Missing or invalid bearer token }
+        '403': { description: Ledger not in org / lacks read }
+    post:
+      operationId: captureIntake
+      summary: Capture an economic event (photo/pdf/text) for extraction → voucher draft
+      tags: [intakes]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CaptureIntake' } } }
+      responses:
+        '201':
+          description: Created (status=received); extraction runs next
+          content: { application/json: { schema: { $ref: '#/components/schemas/Intake' } } }
+        '400': { description: Invalid body / unsupported kind / attachment too large }
+        '401': { description: Missing or invalid bearer token }
+        '403': { description: Lacks create permission }
+  /v1/intakes/{id}:
+    get:
+      operationId: getIntake
+      summary: Intake detail (includes extraction; ERP-only, never sent to My-Chat)
+      tags: [intakes]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: Intake, content: { application/json: { schema: { $ref: '#/components/schemas/Intake' } } } }
+        '404': { description: Not found }
+  /v1/intakes/{id}/extract:
+    post:
+      operationId: extractIntake
+      summary: Run extraction on a received intake (received → extracted)
+      tags: [intakes]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: Extracted, content: { application/json: { schema: { $ref: '#/components/schemas/Intake' } } } }
+        '400': { description: No attachment / not extractable / invalid extraction }
+        '404': { description: Not found }
+  /v1/intakes/{id}/discard:
+    post:
+      operationId: discardIntake
+      summary: Discard an intake (→ discarded); any draft voucher remains a draft
+      tags: [intakes]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: Discarded, content: { application/json: { schema: { $ref: '#/components/schemas/Intake' } } } }
+        '400': { description: Cannot discard a confirmed intake }
+        '404': { description: Not found }
   /v1/ledger/trial-balance:
     get:
       operationId: getTrialBalance
@@ -785,6 +846,63 @@ components:
               debit: { type: string }
               credit: { type: string }
               cashFlowItem: { type: string }
+    ExtractionField:
+      type: object
+      required: [value, confidence]
+      properties:
+        value: { type: string }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+    ExtractionResult:
+      type: object
+      description: 'ERP-internal extractor output; financial detail allowed, never sent to My-Chat.'
+      required: [docType, fields, confidence, needsReview, extractor]
+      properties:
+        docType: { type: string, enum: [bank_slip, invoice, receipt, unknown] }
+        fields:
+          type: object
+          properties:
+            date: { $ref: '#/components/schemas/ExtractionField' }
+            amount: { $ref: '#/components/schemas/ExtractionField' }
+            direction: { $ref: '#/components/schemas/ExtractionField' }
+            counterparty: { $ref: '#/components/schemas/ExtractionField' }
+            summary: { $ref: '#/components/schemas/ExtractionField' }
+            docNo: { $ref: '#/components/schemas/ExtractionField' }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        needsReview: { type: boolean }
+        raw: { type: string }
+        extractor:
+          type: object
+          required: [name, version]
+          properties: { name: { type: string }, version: { type: string } }
+    Intake:
+      type: object
+      required: [id, orgId, ledgerBookId, source, kind, status, needsReview, createdBy, version, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        orgId: { type: string, format: uuid }
+        ledgerBookId: { type: string, format: uuid }
+        source: { type: string, enum: [web, chat, email, api] }
+        kind: { type: string, enum: [image, pdf, text, structured] }
+        status: { type: string, enum: [received, extracting, extracted, drafted, confirmed, discarded, failed] }
+        attachmentId: { type: string, format: uuid, nullable: true }
+        extraction: { allOf: [{ $ref: '#/components/schemas/ExtractionResult' }], nullable: true }
+        confidence: { type: number, minimum: 0, maximum: 1, nullable: true }
+        needsReview: { type: boolean }
+        targetType: { type: string, nullable: true }
+        targetId: { type: string, format: uuid, nullable: true }
+        createdBy: { type: string }
+        version: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    CaptureIntake:
+      type: object
+      required: [kind, contentType, contentBase64]
+      properties:
+        source: { type: string, enum: [web, chat, email, api], default: web }
+        kind: { type: string, enum: [image, pdf, text, structured] }
+        contentType: { type: string }
+        contentBase64: { type: string, description: 'Base64-encoded attachment bytes (≤10MB).' }
+        channelRef: { type: string, description: 'Opaque correlation to the source message; no content.' }
     TrialBalanceRow:
       type: object
       required: [accountCode, accountName, openingDebit, openingCredit, periodDebit, periodCredit, closingDebit, closingCredit]

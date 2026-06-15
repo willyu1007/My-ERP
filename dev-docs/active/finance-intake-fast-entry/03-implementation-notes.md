@@ -115,9 +115,34 @@ Notes:
   discard=cancel, read), avoiding new action verbs in the kernel.
 - No DB/OpenAPI/context change in S3 (those land in S4).
 
+## S4 — Intake API + seam adapters + outbox (done 2026-06-15)
+
+What changed (all under `apps/api/src/intakes/`):
+- **Seam adapters**: `LocalObjectStore` (local disk, content-addressed by sha256, `OBJECT_STORE_DIR`
+  env; real archival deferred — B) and `MockExtractor` (deterministic `ExtractionResult` by kind;
+  real OCR deferred — A). Provided via DI tokens `OBJECT_STORE`/`EXTRACTOR` in `app.module` so the
+  real adapters drop in.
+- **`IntakeService`**: `capture` (`ObjectStore.put` → `createAttachmentTx` + `createIntakeTx` +
+  `intake.received` outbox, in `withScope` so RLS sees org+ledger), `list`/`detail` (scoped),
+  `extract` (mock → validate `ExtractionResultSchema` → `updateIntakeTx(extracted)` version-guarded →
+  `intake.extracted` outbox), `discard`. Capture body is **base64-in-JSON** (no multer dep; ≤10MB);
+  real multipart can come later behind the same storage seam.
+- **`IntakesController`**: `POST /v1/intakes`, `GET /v1/intakes`, `GET /:id`, `POST /:id/extract`,
+  `POST /:id/discard` — `AuthGuard`+`PermissionGuard`+`LedgerScopeGuard`, `@RequirePermission` on the
+  `Intake` subject, `@LedgerBookId`.
+- **`intake-outbox.ts`**: metadata-only envelope (reuses `OutboxEventEnvelopeSchema`); a unit test
+  proves the extracted amount/counterparty never leak into the payload.
+- `packages/db`: added `getAttachmentTx`.
+- **OpenAPI**: `/v1/intakes` paths + `Intake`/`ExtractionResult`/`ExtractionField`/`CaptureIntake`
+  schemas; `api-index` regenerated (33 endpoints); `ctl-openapi-quality verify` passes.
+
+Notes:
+- The `extract` endpoint is explicit in S4; **S5 chains extract → high-confidence auto-draft (G1)**.
+- Runtime smoke confirmed the route is wired (Nest starts, `/v1/intakes` 401 without a token).
+
 ## Open items / next
-- **S4** — intake API + seams: `ObjectStore` (local) + `Extractor` (mock) adapters, capture/list/
-  detail/draft/discard endpoints (contract-first OpenAPI), metadata-only outbox on capture/draft.
-- **Live verification of the `/v1` read/write path** is deferred: it needs a running API + DB + seed
-  (env + seed + `pnpm --filter @my-erp/api dev`). Typecheck/tests cover the wiring.
-- Consider a small dev seed (org/ledger/membership) helper to make the live path one-command.
+- **S5** — posting-template → auto-draft → confirm: on `extracted`, build the draft, create the
+  voucher draft + `voucher.confirm` work item transactionally (version-guarded), confidence routing;
+  wire the web confirm surface (reuse `<VoucherFastEntry>`) + a minimal capture/upload affordance.
+- **Live verification of the `/v1` read/write path** is deferred: needs a running API + DB + seed.
+- Consider a small dev seed (org/ledger/membership/accounts) helper to make the live path one-command.

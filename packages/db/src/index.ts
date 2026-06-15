@@ -1640,6 +1640,11 @@ export async function createAttachmentTx(
   return toAttachment(row);
 }
 
+export async function getAttachmentTx(tx: TxClient, id: string): Promise<AttachmentEntity | null> {
+  const row = await tx.attachment.findUnique({ where: { id } });
+  return row ? toAttachment(row) : null;
+}
+
 export async function createIntakeTx(tx: TxClient, input: CreateIntakeInput): Promise<IntakeEntity> {
   const row = await tx.intake.create({
     data: {

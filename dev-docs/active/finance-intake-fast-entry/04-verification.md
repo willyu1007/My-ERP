@@ -47,11 +47,21 @@ The migration applies cleanly to a fresh test DB via the shared `test-pg` harnes
 mapping (bank line inferred, contra left open → `complete=false`) and unmatched/amount-less → null. The
 existing `ability.test` still passes with the added `Intake` subject/grants.
 
+## 2026-06-15 — S4 (intake API + seam adapters + outbox)
+
+| Check | Command | Result |
+|---|---|---|
+| Typecheck | `pnpm typecheck` | pass (incl. api-client regen from the updated OpenAPI) |
+| Tests | `pnpm test` | pass — **25 files / 111 tests** (+3: `mock-extractor`, `intake-outbox`) |
+| API index | `ctl-api-index.mjs generate` + `verify` | 33 endpoints; up-to-date |
+| OpenAPI quality | `ctl-openapi-quality.mjs verify` | passed |
+| Runtime smoke | `pnpm --filter @my-erp/api dev` + curl | Nest starts clean; `/health` 200; `GET`/`POST /v1/intakes` → 401 without a token (route + guard wired) |
+
 ## Not yet verified (explicit)
 - Interactive keyboard flow (Tab/Enter/combobox/auto-balance) was not automated in a browser session;
   verified by static render + component logic. A manual or Playwright pass is a later check.
-- Live `/v1` read/write round-trip (S1b) still pending a running API + seed.
-- The capture pipeline end-to-end (capture→extract→draft→confirm) lands + gets tested in S4/S5.
+- Live `/v1` round-trip (capture/create/submit) still pending a running API + seed.
+- The full capture→extract→**draft→confirm** chain lands + gets tested in S5.
 - **Live `/v1` read/write round-trip** (data-source cutover against a running API): NOT verified in
   this session. It requires a running `apps/api` + Postgres + seeded org/ledger/membership/accounts
   and an `API_DEV_TOKEN`. The wiring typechecks and the fixture fallback keeps the app green without

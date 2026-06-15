@@ -30,7 +30,10 @@ generated, confirmable artifact.
   posting-template registry (`packages/finance-domain`), `voucher.confirm` workItemType +
   `Extractor`/`ObjectStore` seams + CASL `Intake` actions (`packages/platform`). Verified by typecheck
   + 108 tests (incl. two-schema-boundary + posting-template tests).
-- **Next: S4** — intake API + local/mock seam adapters + metadata-only outbox.
+- **S4 done** (2026-06-15): intake API (`apps/api/src/intakes/`) — `LocalObjectStore` + `MockExtractor`
+  seam adapters, capture/list/detail/extract/discard endpoints, metadata-only outbox, OpenAPI + api-index
+  (33 endpoints). Verified by typecheck, 111 tests, openapi quality, and a runtime route smoke.
+- **Next: S5** — posting-template → auto-draft → confirm (closes the capture loop).
 
 ## Top-level decisions (2026-06-14 alignment)
 - **α** Capture-first inversion is the central bet (voucher = generated/confirmed artifact; manual

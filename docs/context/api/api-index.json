@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-13T09:07:51.572Z",
+  "generatedAt": "2026-06-15T14:19:35.802Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "b9d528d7229ef1d3cf125902c2417dcf42a10057768ab97c5708cdf74ca9d897",
+  "sourceChecksumSha256": "48f6947ece6ecfb860a427390d2fbab85de0e9f94d161f28a202558ea7e9c428",
   "stats": {
-    "totalEndpoints": 28,
+    "totalEndpoints": 33,
     "byTag": {
       "system": 1,
       "organization": 1,
@@ -14,6 +14,7 @@
       "work-items": 3,
       "accounts": 5,
       "vouchers": 7,
+      "intakes": 5,
       "ledger": 2,
       "opening-balances": 2
     }
@@ -895,6 +896,212 @@
       ],
       "example": {
         "curl": "curl -X POST '/v1/vouchers/{id}/reverse' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/intakes",
+      "operationId": "listIntakes",
+      "summary": "List capture intakes (ledger-scoped; optional status filter)",
+      "tag": "intakes",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [
+          "status"
+        ],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": []
+      },
+      "errors": [
+        401,
+        403
+      ],
+      "example": {
+        "curl": "curl -X GET '/v1/intakes' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/intakes",
+      "operationId": "captureIntake",
+      "summary": "Capture an economic event (photo/pdf/text) for extraction → voucher draft",
+      "tag": "intakes",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": {
+          "required": [
+            "kind",
+            "contentType",
+            "contentBase64"
+          ],
+          "optional": [
+            "source",
+            "channelRef"
+          ]
+        }
+      },
+      "output": {
+        "successStatus": 201,
+        "coreFields": [
+          "id",
+          "orgId",
+          "ledgerBookId",
+          "source",
+          "kind",
+          "status",
+          "needsReview",
+          "createdBy",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "attachmentId",
+          "extraction",
+          "confidence",
+          "targetType",
+          "targetId"
+        ]
+      },
+      "errors": [
+        400,
+        401,
+        403
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/intakes' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"kind\":\"<kind>\",\"contentType\":\"<contentType>\",\"contentBase64\":\"<contentBase64>\"}'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/intakes/{id}",
+      "operationId": "getIntake",
+      "summary": "Intake detail (includes extraction; ERP-only, never sent to My-Chat)",
+      "tag": "intakes",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id"
+        ],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "orgId",
+          "ledgerBookId",
+          "source",
+          "kind",
+          "status",
+          "needsReview",
+          "createdBy",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "attachmentId",
+          "extraction",
+          "confidence",
+          "targetType",
+          "targetId"
+        ]
+      },
+      "errors": [
+        404
+      ],
+      "example": {
+        "curl": "curl -X GET '/v1/intakes/{id}' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/intakes/{id}/extract",
+      "operationId": "extractIntake",
+      "summary": "Run extraction on a received intake (received → extracted)",
+      "tag": "intakes",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id"
+        ],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "orgId",
+          "ledgerBookId",
+          "source",
+          "kind",
+          "status",
+          "needsReview",
+          "createdBy",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "attachmentId",
+          "extraction",
+          "confidence",
+          "targetType",
+          "targetId"
+        ]
+      },
+      "errors": [
+        400,
+        404
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/intakes/{id}/extract' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/intakes/{id}/discard",
+      "operationId": "discardIntake",
+      "summary": "Discard an intake (→ discarded); any draft voucher remains a draft",
+      "tag": "intakes",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id"
+        ],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "orgId",
+          "ledgerBookId",
+          "source",
+          "kind",
+          "status",
+          "needsReview",
+          "createdBy",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "attachmentId",
+          "extraction",
+          "confidence",
+          "targetType",
+          "targetId"
+        ]
+      },
+      "errors": [
+        400,
+        404
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/intakes/{id}/discard' -H 'Authorization: Bearer <token>'"
       }
     },
     {

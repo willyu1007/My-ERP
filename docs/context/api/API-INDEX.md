@@ -1,9 +1,9 @@
 # API Index
 
-> Auto-generated at 2026-06-13T09:07:51.572Z — do NOT hand-edit.
-> Source: `docs/context/api/openapi.yaml` (SHA-256: `b9d528d7229e...`)
+> Auto-generated at 2026-06-15T14:19:35.802Z — do NOT hand-edit.
+> Source: `docs/context/api/openapi.yaml` (SHA-256: `48f6947ece6e...`)
 
-Total endpoints: **28**
+Total endpoints: **33**
 
 | Method | Path | Summary | Auth | Input (required) | Output (core) | Errors |
 |--------|------|---------|------|------------------|---------------|--------|
@@ -31,6 +31,11 @@ Total endpoints: **28**
 | POST | /v1/vouchers/{id}/submit | Submit a draft for review (draft → pending); enforces 借贷必平 | bearer | id | id, ledgerBookId, no, date, period, status, summary, totalDebit, totalCredit, maker, lines, checker, postedAt, reversalOf, reversedBy, attachments | 400, 404 |
 | POST | /v1/vouchers/{id}/post | Post a pending voucher (pending → posted; SoD — maker ≠ poster) | bearer | id | id, ledgerBookId, no, date, period, status, summary, totalDebit, totalCredit, maker, lines, checker, postedAt, reversalOf, reversedBy, attachments | 400, 403, 404 |
 | POST | /v1/vouchers/{id}/reverse | Reverse a posted voucher (红冲) — creates a posted reversal voucher | bearer | id | original, reversal | 400, 403, 404 |
+| GET | /v1/intakes | List capture intakes (ledger-scoped; optional status filter) | bearer | — | — | 401, 403 |
+| POST | /v1/intakes | Capture an economic event (photo/pdf/text) for extraction → voucher draft | bearer | kind, contentType, contentBase64 | id, orgId, ledgerBookId, source, kind, status, needsReview, createdBy, version, createdAt, updatedAt, attachmentId, extraction, confidence, targetType, targetId | 400, 401, 403 |
+| GET | /v1/intakes/{id} | Intake detail (includes extraction; ERP-only, never sent to My-Chat) | bearer | id | id, orgId, ledgerBookId, source, kind, status, needsReview, createdBy, version, createdAt, updatedAt, attachmentId, extraction, confidence, targetType, targetId | 404 |
+| POST | /v1/intakes/{id}/extract | Run extraction on a received intake (received → extracted) | bearer | id | id, orgId, ledgerBookId, source, kind, status, needsReview, createdBy, version, createdAt, updatedAt, attachmentId, extraction, confidence, targetType, targetId | 400, 404 |
+| POST | /v1/intakes/{id}/discard | Discard an intake (→ discarded); any draft voucher remains a draft | bearer | id | id, orgId, ledgerBookId, source, kind, status, needsReview, createdBy, version, createdAt, updatedAt, attachmentId, extraction, confidence, targetType, targetId | 400, 404 |
 | GET | /v1/ledger/trial-balance | Trial balance (试算平衡表) — derived from posted vouchers | bearer | — | rows, totals, balanced | 401, 403 |
 | GET | /v1/ledger/accounts/{code} | Subsidiary ledger (明细分类账) for one account — derived, running balance | bearer | code | accountCode, accountName, opening, closing, rows | 401, 403 |
 | GET | /v1/opening-balances | Opening balances (期初余额) + the ledger's enabled period | bearer | — | openingPeriod, balances | 401, 403 |
