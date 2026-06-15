@@ -25,6 +25,7 @@
     "db:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
     "db:studio": "prisma studio --schema prisma/schema.prisma",
     "db:sync-context": "node .ai/scripts/ctl-db-ssot.mjs sync-to-context",
+    "dev:seed": "node scripts/dev-seed.mjs",
     "infra:up": "docker compose -f infra/docker-compose.yml up -d",
     "infra:down": "docker compose -f infra/docker-compose.yml down",
     "ui:validate": "python3 .ai/skills/features/ui/ui-system-bootstrap/scripts/ui_specctl.py --repo-root . validate",

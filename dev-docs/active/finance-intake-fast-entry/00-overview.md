@@ -37,7 +37,11 @@ generated, confirmable artifact.
   auto-draft (G1); `draftVoucherFromIntakeTx` builds + persists the voucher draft + a `voucher.confirm`
   work item transactionally (version-guarded), confidence routing; submit completes the confirm task.
   Verified by typecheck + 115 tests (helpers + persistence-chain integration).
-- **Next: S5b (web)** confirm/capture surface + a dev seed for live e2e, then **S6** wrap-up.
+- **Live e2e verified** (2026-06-15): added `pnpm dev:seed` (`scripts/dev-seed.mjs`); brought up
+  docker PG + API + web and proved capture → extract → **auto-draft** → confirm-workitem on real `/v1`,
+  and the web daily-accounting page rendering the real draft (S1b cutover). See `04-verification`.
+- **Next: S5b (web)** confirm surface (open a drafted voucher prefilled in `<VoucherFastEntry>`,
+  complete + submit), then **S6** wrap-up.
 
 ## Top-level decisions (2026-06-14 alignment)
 - **α** Capture-first inversion is the central bet (voucher = generated/confirmed artifact; manual

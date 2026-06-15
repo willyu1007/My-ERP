@@ -31,6 +31,9 @@ dist/
 *.tsbuildinfo
 out/
 
+# Local dev object storage (LocalObjectStore attachments)
+.data/
+
 # Env (never commit real secrets; use .env.example)
 .env
 .env.*

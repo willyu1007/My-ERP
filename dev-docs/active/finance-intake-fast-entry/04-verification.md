@@ -69,9 +69,27 @@ existing `ability.test` still passes with the added `Intake` subject/grants.
 chain (extracted intake → voucher draft + `voucher.confirm` work item, version-guarded one-shot) under
 org+ledger RLS.
 
+## 2026-06-15 — LIVE end-to-end on real `/v1` ✅
+
+Setup (one-command): `pnpm infra:up` (docker PG 5433) · `pnpm db:deploy` · `pnpm dev:seed`
+(`scripts/dev-seed.mjs` — org/ledger/membership + 6 leaf accounts + an `API_DEV_TOKEN`).
+
+| Step | Call | Result |
+|---|---|---|
+| Capture | `POST /v1/intakes` (image, base64) | intake `received` |
+| Extract → auto-draft (G1) | `POST /v1/intakes/:id/extract` | intake `drafted`, confidence 0.95, `targetType=JournalVoucher` |
+| Drafted voucher | `GET /v1/vouchers/:id` | `记-2026-06-002` draft, `银行收款`, line **1002 银行存款 debit 1234.56** (contra left open) |
+| Confirm task | `GET /v1/work-items?sourceId=…` | `voucher.confirm`, open, **`pending_completion`**, role accountant |
+| Web cutover (S1b) | `/finance/daily-accounting` with `API_BASE_URL`+`API_DEV_TOKEN` | SSR renders the real draft (`银行收款`, `记-2026-06`) + fast-entry grid — real `/v1`, not fixtures |
+
+This validates S1b (web cutover), S4 (capture), and S5 (auto-draft) against a live API + Postgres.
+Note: the dev API connects as the DB owner, so Postgres RLS is bypassed on the dev box (single tenant);
+RLS isolation itself is enforced + covered by the integration tests.
+
 ## Not yet verified (explicit)
-- Interactive keyboard flow + the web confirm/capture surface (S5b) — structural only until a seed exists.
-- Live `/v1` end-to-end (capture → extract → auto-draft → confirm/submit) — pending a running API + seed.
+- The web **confirm** surface (S5b: open a drafted voucher prefilled in `<VoucherFastEntry>`, add the
+  contra, submit) — not yet wired; the backend confirm=submit path is live-verified via `/v1`.
+- Interactive keyboard flow in a real browser session (vs SSR render + logic).
 - **Live `/v1` read/write round-trip** (data-source cutover against a running API): NOT verified in
   this session. It requires a running `apps/api` + Postgres + seeded org/ledger/membership/accounts
   and an `API_DEV_TOKEN`. The wiring typechecks and the fixture fallback keeps the app green without
