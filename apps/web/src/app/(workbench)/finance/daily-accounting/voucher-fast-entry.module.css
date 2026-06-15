@@ -1,0 +1,90 @@
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.head,
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: var(--sp-2);
+  align-items: start;
+}
+
+.head {
+  padding: 0 var(--sp-1);
+  color: var(--fg-3);
+  font-size: 12px;
+}
+
+.cell {
+  min-width: 0;
+}
+
+.combo {
+  position: relative;
+}
+
+.menu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: var(--sp-1);
+  background: var(--bg-float);
+  border: 1px solid var(--border-1);
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+}
+
+.option {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: baseline;
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--fg-2);
+}
+
+.optionActive {
+  background: var(--bg-hover);
+  color: var(--fg-1);
+}
+
+.optionCode {
+  font-family: var(--font-mono);
+  color: var(--fg-3);
+}
+
+.menuEmpty {
+  padding: var(--sp-2);
+  color: var(--fg-3);
+  font-size: 13px;
+}
+
+.del {
+  align-self: center;
+}
+
+.totals {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+@media (max-width: 720px) {
+  .head {
+    display: none;
+  }
+
+  .row {
+    grid-template-columns: 1fr 1fr;
+  }
+}

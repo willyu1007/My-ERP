@@ -5,46 +5,42 @@
  * finance module lives under the /finance namespace (future modules get theirs).
  */
 import type { ShellNav } from '@my-erp/ui';
-import { IconBook, IconClipboard, IconClock, IconShield } from '@my-erp/ui';
 
 /** Badge key for open daily-accounting work in the sidebar. */
 export const NAV_BADGE_DAILY_ACCOUNTING_OPEN = 'dailyAccountingOpen';
 
 export const financeNav: ShellNav = {
-  home: { label: 'ERP 总览', href: '/' },
+  home: { label: '看板', href: '/' },
   groups: [
     {
-      label: '财务工作流',
-      showIcons: true,
+      label: '工作流',
+      showIcons: false,
       items: [
         {
           href: '/finance/daily-accounting',
-          label: '日常账务处理',
-          icon: <IconClipboard />,
+          label: '凭证处理',
           match: ['/finance/daily-accounting', '/finance/vouchers'],
           badgeKey: NAV_BADGE_DAILY_ACCOUNTING_OPEN,
         },
         {
           href: '/finance/period-close',
           label: '期末结账',
-          icon: <IconClock />,
           soon: true,
         },
       ],
     },
     {
-      label: '财务功能',
-      showIcons: true,
-      items: [{ href: '/finance/ledger', label: '账簿查询', icon: <IconBook /> }],
+      label: '查询',
+      showIcons: false,
+      items: [{ href: '/finance/ledger', label: '账簿查询' }],
     },
     {
-      label: '财务设置',
-      showIcons: true,
+      label: '设置',
+      showIcons: false,
       items: [
         {
           href: '/finance/settings',
           label: '账务设置',
-          icon: <IconShield />,
           match: ['/finance/settings', '/finance/accounts'],
         },
       ],

@@ -1,0 +1,25 @@
+.queueScope :global(.wb-list__title),
+.queueScope :global(.wb-list__note) {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.drawerText {
+  margin: var(--sp-2) 0 0;
+  color: var(--fg-2);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.drawerFlow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+  color: var(--fg-2);
+  font-size: 13px;
+  line-height: 1.5;
+}

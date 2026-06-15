@@ -1,83 +1,109 @@
-import Link from 'next/link';
-import { StatusBadge, Section, Stat, StatStrip } from '@my-erp/ui';
+import {
+  EntityRow,
+  Hub,
+  IconBook,
+  IconClipboard,
+  type WorkflowModule,
+} from '@my-erp/ui';
 import { listVouchers } from '@/lib/finance/data-source';
-import { VOUCHER_STATUS_LABELS } from '@/lib/finance/types';
+import { formatDate, formatMoney } from '@/lib/finance/format';
+import { VOUCHER_STATUS_LABELS, type VoucherVM } from '@/lib/finance/types';
 
-/** ERP-level overview. Finance is the first module; others are placeholders. */
-interface ModuleCard {
-  readonly key: string;
-  readonly name: string;
-  readonly desc: string;
-  readonly href?: string;
-  readonly active: boolean;
+function attentionFor(voucher: VoucherVM) {
+  if (voucher.status === 'draft') {
+    return {
+      id: voucher.id,
+      title: `${voucher.no} 待补全`,
+      detail: `${formatDate(voucher.date)} · ${voucher.summary} · ${formatMoney(voucher.totalDebit)} CNY`,
+      tone: 'warning' as const,
+      href: `/finance/vouchers/${voucher.id}`,
+      cta: '补全凭证',
+      workflow: '凭证',
+    };
+  }
+  if (voucher.status === 'pending') {
+    return {
+      id: voucher.id,
+      title: `${voucher.no} 待审核`,
+      detail: `${formatDate(voucher.date)} · ${voucher.summary} · ${formatMoney(voucher.totalDebit)} CNY`,
+      tone: 'accent' as const,
+      href: `/finance/vouchers/${voucher.id}`,
+      cta: '去审核',
+      workflow: '凭证',
+    };
+  }
+  return null;
 }
 
-const MODULES: readonly ModuleCard[] = [
-  {
-    key: 'finance',
-    name: '财务',
-    desc: '会计总账 + 出纳资金。v1 首个模块。',
-    href: '/finance/daily-accounting',
-    active: true,
-  },
-  { key: 'purchase', name: '采购', desc: '采购申请、订单与供应商管理。', active: false },
-  { key: 'inventory', name: '库存', desc: '出入库、库存核算与盘点。', active: false },
-  { key: 'sales', name: '销售', desc: '报价、订单与客户管理。', active: false },
-  { key: 'hr', name: '人力', desc: '组织、人员与薪酬。', active: false },
-];
+function financeModule(vouchers: readonly VoucherVM[]): WorkflowModule {
+  const draft = vouchers.filter((v) => v.status === 'draft');
+  const pending = vouchers.filter((v) => v.status === 'pending');
+  const posted = vouchers.filter((v) => v.status === 'posted');
+  const reversed = vouchers.filter((v) => v.status === 'reversed');
+  const attention = vouchers.map(attentionFor).filter((item): item is NonNullable<typeof item> =>
+    Boolean(item),
+  );
+
+  return {
+    key: 'finance-vouchers',
+    label: '凭证',
+    accent: 'accent',
+    stats: [
+      { label: '待处理', value: draft.length + pending.length },
+      { label: '待补全', value: draft.length },
+      { label: '待审核', value: pending.length },
+      { label: '本期已过账', value: posted.length },
+    ],
+    attention,
+    highlights: [
+      {
+        title: '本期概览',
+        link: { href: '/finance/daily-accounting', label: '进入凭证处理' },
+        body: (
+          <div className="wb-list wb-list--framed">
+            <EntityRow
+              model={{
+                href: '/finance/daily-accounting',
+                title: '凭证队列',
+                note: '从待补全和待审核队列继续处理，不展示静态流程说明。',
+                metrics: [{ label: '待处理', value: draft.length + pending.length }],
+                status: { tone: 'warning', label: '待处理' },
+              }}
+            />
+            <EntityRow
+              model={{
+                href: '/finance/ledger',
+                title: '账簿查询',
+                note: '查看本期已过账凭证形成的账簿与余额。',
+                metrics: [{ label: '已过账', value: posted.length }],
+                status: { tone: 'success', label: VOUCHER_STATUS_LABELS.posted },
+              }}
+            />
+            <EntityRow
+              model={{
+                title: '纠错留痕',
+                note: '纠错只通过作废或红冲保留痕迹，不提供物理删除入口。',
+                metrics: [{ label: '已红冲', value: reversed.length }],
+                status: {
+                  tone: reversed.length > 0 ? 'danger' : 'muted',
+                  label: VOUCHER_STATUS_LABELS.reversed,
+                },
+              }}
+            />
+          </div>
+        ),
+      },
+    ],
+    quickActions: [
+      { href: '/finance/vouchers/new', label: '录入凭证', icon: <IconClipboard size={15} /> },
+      { href: '/finance/ledger', label: '账簿查询', icon: <IconBook size={15} /> },
+    ],
+  };
+}
 
 export const dynamic = 'force-dynamic';
 
-export default async function OverviewPage() {
+export default async function DashboardPage() {
   const vouchers = await listVouchers();
-  const posted = vouchers.filter((v) => v.status === 'posted').length;
-  const pending = vouchers.filter((v) => v.status === 'pending').length;
-  const draft = vouchers.filter((v) => v.status === 'draft').length;
-
-  return (
-    <div className="wb-scene wb-stack wb-stack--lg">
-      <div className="wb-stack wb-stack--sm">
-        <h1 className="wb-section__title">morethan · my-erp</h1>
-        <p className="wb-muted">
-          模块化智能 erp 平台。财务是第一个模块，后续按需扩展（采购 / 库存 / 销售 / 人力…）。
-        </p>
-      </div>
-
-      <Section
-        title="财务 · 本期概览"
-        link={{ href: '/finance/daily-accounting', label: '进入财务' }}
-      >
-        <StatStrip>
-          <Stat label="凭证总数" value={vouchers.length} />
-          <Stat label={VOUCHER_STATUS_LABELS.posted} value={posted} />
-          <Stat label={VOUCHER_STATUS_LABELS.pending} value={pending} />
-          <Stat label={VOUCHER_STATUS_LABELS.draft} value={draft} />
-        </StatStrip>
-      </Section>
-
-      <Section title="模块">
-        <div className="wb-cardgrid">
-          {MODULES.map((m) =>
-            m.active && m.href ? (
-              <Link key={m.key} href={m.href} className="wb-card">
-                <div className="wb-card__head">
-                  <h3 className="wb-card__title">{m.name}</h3>
-                  <StatusBadge tone="success" label="已上线" />
-                </div>
-                <p className="wb-card__desc">{m.desc}</p>
-              </Link>
-            ) : (
-              <div key={m.key} className="wb-card" aria-disabled="true">
-                <div className="wb-card__head">
-                  <h3 className="wb-card__title">{m.name}</h3>
-                  <StatusBadge tone="muted" label="敬请期待" />
-                </div>
-                <p className="wb-card__desc wb-card__desc--muted">{m.desc}</p>
-              </div>
-            ),
-          )}
-        </div>
-      </Section>
-    </div>
-  );
+  return <Hub modules={[financeModule(vouchers)]} />;
 }
