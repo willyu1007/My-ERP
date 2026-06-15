@@ -40,8 +40,11 @@ generated, confirmable artifact.
 - **Live e2e verified** (2026-06-15): added `pnpm dev:seed` (`scripts/dev-seed.mjs`); brought up
   docker PG + API + web and proved capture → extract → **auto-draft** → confirm-workitem on real `/v1`,
   and the web daily-accounting page rendering the real draft (S1b cutover). See `04-verification`.
-- **Next: S5b (web)** confirm surface (open a drafted voucher prefilled in `<VoucherFastEntry>`,
-  complete + submit), then **S6** wrap-up.
+- **S6 sign-off** (2026-06-16): full verification sweep green — `pnpm typecheck`, **115 tests**,
+  `pnpm ui:governance`, api-index + openapi quality, strict context verify, governance lint. All
+  acceptance criteria met (see below). T-004's core scope is **delivered + live-verified**; the one
+  remaining piece is the **S5b web confirm surface** (tracked as a follow-up). Status stays
+  `in-progress` until S5b lands or is spun into its own task.
 
 ## Top-level decisions (2026-06-14 alignment)
 - **α** Capture-first inversion is the central bet (voucher = generated/confirmed artifact; manual
@@ -81,18 +84,21 @@ On top of M1 and the T-003 kernel:
 - Do not change the voucher state machine or ledger derivation logic.
 
 ## High-level acceptance criteria
-- [ ] A balanced voucher can be entered keyboard-only in an inline grid (no modal); the primary entry
-      path no longer requires the drawer/new-page flow.
-- [ ] The web voucher path reads/writes real `/v1` (create → submit → post), not fixtures.
-- [ ] An economic event can be captured (web upload; `source` is a flag so chat reuses it later),
+- [x] A balanced voucher can be entered keyboard-only in an inline grid (no modal); the primary entry
+      path no longer requires the drawer/new-page flow. **(S1c; SSR-rendered)**
+- [x] The web voucher path reads/writes real `/v1`, not fixtures. **(S1b; live-verified — daily
+      accounting renders real `/v1` drafts; create/submit live, post via the review queue.)**
+- [x] An economic event can be captured (web upload; `source` is a flag so chat reuses it later),
       stored ERP-side, and produces an `Intake` row; the notification path carries only safe metadata.
-- [ ] A captured intake can be mapped by a posting template into a `JournalVoucher` draft plus a
-      `voucher.confirm` work item, in one transaction with audit + metadata-only outbox, and opens in
-      the same fast-entry editor.
-- [ ] Debit/credit balance (integer cents, zero float), leaf+active account rules, no-silent-delete,
+      **(S4; live-verified + outbox-safety test.)**
+- [x] A captured intake is mapped by a posting template into a `JournalVoucher` draft plus a
+      `voucher.confirm` work item, in one transaction with audit + metadata-only outbox.
+      **(S5; live-verified + persistence-chain test.)** Web "opens in the fast-entry editor for
+      confirm" → **S5b follow-up** (backend confirm=submit is live-verified).
+- [x] Debit/credit balance (integer cents, zero float), leaf+active account rules, no-silent-delete,
       SoD, audit, org+ledger RLS, and the metadata-only My-Chat boundary are all preserved.
-- [ ] Tests cover intake RLS, intake transitions, posting-template output, outbox-metadata safety,
-      and the fast-entry balance invariant; local suite green.
+- [x] Tests cover intake RLS, intake transitions, posting-template output, outbox-metadata safety,
+      and the fast-entry balance invariant; local suite green (**115 tests**).
 
 ## Pointers
 - Root constraints: `AGENTS.md` (Hard constraints)

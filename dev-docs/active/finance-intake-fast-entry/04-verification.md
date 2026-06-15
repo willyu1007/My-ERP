@@ -86,6 +86,18 @@ This validates S1b (web cutover), S4 (capture), and S5 (auto-draft) against a li
 Note: the dev API connects as the DB owner, so Postgres RLS is bypassed on the dev box (single tenant);
 RLS isolation itself is enforced + covered by the integration tests.
 
+## 2026-06-16 — S6 final sweep (all green)
+
+| Check | Command | Result |
+|---|---|---|
+| Typecheck | `pnpm typecheck` | pass (9 projects) |
+| Tests | `pnpm test` | **115 tests / 27 files** pass |
+| UI governance | `pnpm ui:governance` | pass (token-only, 29 feature files) |
+| API index | `ctl-api-index.mjs verify` | up-to-date |
+| OpenAPI quality | `ctl-openapi-quality.mjs verify` | passed |
+| Context layer | `ctl-context.mjs verify --strict` | passed (after `ctl-context touch` refreshed api-openapi/api-index hashes → `docs/context/registry.json`) |
+| Governance lint | `ctl-project-governance.mjs lint --check` | passed (only the pre-existing T-001 warning) |
+
 ## Not yet verified (explicit)
 - The web **confirm** surface (S5b: open a drafted voucher prefilled in `<VoucherFastEntry>`, add the
   contra, submit) — not yet wired; the backend confirm=submit path is live-verified via `/v1`.

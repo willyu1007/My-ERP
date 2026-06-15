@@ -161,10 +161,21 @@ What changed:
 Verification: `draft.test.ts` (flatten/route/auto-draft helpers) + `intake-draft.integration.test.ts`
 (extracted intake → voucher draft + `voucher.confirm` work item, version-guarded one-shot).
 
+## Dev seed + live e2e (done 2026-06-15)
+- `scripts/dev-seed.mjs` (`pnpm dev:seed`): idempotent org/ledger/membership + leaf accounts + a minted
+  `API_DEV_TOKEN`. Run after `pnpm infra:up && pnpm db:deploy`.
+- Proved the whole loop on real `/v1`: capture → extract → auto-draft → confirm-workitem, and the web
+  daily-accounting page rendering the real draft (S1b cutover). See `04-verification`. `.data/` (local
+  object-store output) is gitignored.
+
+## S6 sign-off (done 2026-06-16)
+- Full sweep green (typecheck, 115 tests, ui:governance, api-index, openapi quality, strict context
+  verify, governance lint). Acceptance criteria ticked in `00-overview`.
+- T-004 core scope **delivered + live-verified**. Status stays `in-progress` for the one follow-up:
+
 ## Open items / next
-- **S5b (web)** — reuse `<VoucherFastEntry>` for the confirm surface (add `initialDraft`/edit mode so
-  a drafted voucher opens prefilled and 提交 updates+submits), a "待确认" queue entry, a minimal
-  capture/upload affordance, and intake methods on `@my-erp/api-client`. Live-verifiable with a seed.
-- **Dev seed + live e2e**: a one-command seed (org/ledger/membership/accounts + `API_DEV_TOKEN`) would
-  light up the whole loop (S1b cutover, S4 capture, S5 draft→confirm) for real `/v1` verification.
-- **S6** — full verification sweep + docs; tick acceptance criteria.
+- **S5b (web confirm surface)** — reuse `<VoucherFastEntry>` (add `initialDraft`/edit mode so a drafted
+  voucher opens prefilled and 提交 updates+submits), a "待确认" queue entry, a capture/upload affordance,
+  and intake methods on `@my-erp/api-client`. The backend confirm=submit is already live-verified.
+- Deferred behind seams: real OCR (A), object-storage backend (B), chat inbound (ε); and **T-005**
+  (contract aggregate).
