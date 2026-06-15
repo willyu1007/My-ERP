@@ -6,10 +6,15 @@
   "main": "./dist/index.js",
   "types": "./src/index.ts",
   "scripts": {
+    "prebuild": "pnpm codegen",
     "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "pretypecheck": "pnpm codegen",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "codegen": "openapi-typescript ../../docs/context/api/openapi.yaml -o src/generated/schema.ts"
   },
   "devDependencies": {
+    "@types/node": "^20.14.0",
+    "openapi-typescript": "^7.13.0",
     "typescript": "^5.5.0"
   }
 }

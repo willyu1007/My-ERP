@@ -12,7 +12,7 @@
     "schema": "prisma/schema.prisma"
   },
   "scripts": {
-    "postinstall": "prisma generate --schema prisma/schema.prisma",
+    "postinstall": "prisma generate --schema prisma/schema.prisma && pnpm --filter @my-erp/api-client codegen",
     "dev": "pnpm --filter \"./packages/*\" build && pnpm --parallel --filter \"@my-erp/api\" --filter \"@my-erp/web\" dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
