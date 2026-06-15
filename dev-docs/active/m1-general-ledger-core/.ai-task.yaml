@@ -2,5 +2,5 @@ version: 1
 task_id: T-001
 project: main
 slug: m1-general-ledger-core
-status: in_progress
+status: done
 updated: "2026-06-10"

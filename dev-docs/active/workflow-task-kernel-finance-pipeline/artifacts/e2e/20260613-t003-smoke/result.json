@@ -1,0 +1,37 @@
+{
+  "runId": "t003-e2e-20260613112657",
+  "orgId": "ef316b67-e8e0-4b10-9926-d339c0ba5b25",
+  "ledgerBookId": "4304325e-8157-41e9-aeae-0202dddf1a2a",
+  "voucherId": "5d585d69-8e8c-4018-b0ae-b0621fc7cf6c",
+  "workItemId": "8eadc7c7-3791-4afa-a36f-445353a82988",
+  "httpBaseUrl": "http://localhost:8000",
+  "finalVoucherStatus": "posted",
+  "finalWorkItemStatus": "completed",
+  "eventTypes": [
+    "work_item.created",
+    "work_item.claimed",
+    "work_item.completed"
+  ],
+  "outboxEventTypes": [
+    "work_item.created",
+    "work_item.claimed",
+    "work_item.completed"
+  ],
+  "checks": [
+    "seeded org and invited members",
+    "health ok",
+    "authenticated org scope",
+    "ledger book created via API",
+    "standard chart seeded via API",
+    "leaf accounts loaded through ledger-scoped API",
+    "balanced draft voucher created via API",
+    "voucher submitted and review task emitted",
+    "supervisor queue sees actionable review work item",
+    "negative role_queue visibility for accountant",
+    "negative audit_readonly permission for viewer",
+    "negative action body validation",
+    "work item claimed with optimistic version",
+    "work item completion posts voucher",
+    "database side effects and metadata-only outbox verified"
+  ]
+}

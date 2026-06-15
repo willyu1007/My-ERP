@@ -1,0 +1,9 @@
+{
+  "env": "dev",
+  "generated_at_utc": "2026-06-12T11:04:26Z",
+  "values": {
+    "APP_ENV": "dev",
+    "PORT": 8000,
+    "SERVICE_NAME": "your-service"
+  }
+}

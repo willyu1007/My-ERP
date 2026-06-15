@@ -25,11 +25,11 @@ requirements: []
 tasks:
   - id: T-001
     slug: m1-general-ledger-core
-    status: planned
+    status: done
     milestone_id: M-000
     feature_id: F-000
     dev_docs_path: dev-docs/active/m1-general-ledger-core
-    updated: 2026-06-06
+    updated: 2026-06-12
   - id: T-002
     slug: web-workbench-foundation
     status: planned
@@ -37,3 +37,24 @@ tasks:
     feature_id: F-000
     dev_docs_path: dev-docs/active/web-workbench-foundation
     updated: 2026-06-09
+  - id: T-003
+    slug: workflow-task-kernel-finance-pipeline
+    status: in-progress
+    milestone_id: M-000
+    feature_id: F-000
+    dev_docs_path: dev-docs/active/workflow-task-kernel-finance-pipeline
+    updated: 2026-06-13
+  - id: T-004
+    slug: finance-intake-fast-entry
+    status: in-progress
+    milestone_id: M-000
+    feature_id: F-000
+    dev_docs_path: dev-docs/active/finance-intake-fast-entry
+    updated: 2026-06-15
+  - id: T-005
+    slug: finance-contract-transaction-lifecycle
+    status: planned
+    milestone_id: M-000
+    feature_id: F-000
+    dev_docs_path: dev-docs/active/finance-contract-transaction-lifecycle
+    updated: 2026-06-14

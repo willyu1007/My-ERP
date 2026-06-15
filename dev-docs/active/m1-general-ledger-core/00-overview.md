@@ -4,6 +4,7 @@
 My-ERP 已完成初始化（脚手架 + 契约），但尚无任何财务领域实现。M1 要落地**总账核心闭环**与平台底座，使会计能完成「建科目 → 制单 → 审核 → 过账 → 余额/账簿 → 期初建账」的最小可用闭环。
 
 ## Status
+- State: done
 - **🎉 M1 总账核心闭环完成（P0–P5 全部实现并验证）** —— 见 04-verification。在 `main` 上实现（不另开分支）。每阶段独立提交 + 自审修复。后端总账闭环：组织/账套/邀请/权限 → 科目体系 → 凭证（借贷平衡/SoD/过账/红冲）→ 账簿（派生）→ 期初建账，全程合规可审计。
 - P0b：mock 身份、`AuthGuard`/CASL `PermissionGuard`、`audit_record` RLS、审计、结构化日志（OTel SDK/testcontainers 推迟）。
 - P1：组织/成员/账套（两级作用域 org+ledger）+ 角色落库（Membership=RBAC SSOT）+ 账套 CRUD + 邀请流（发起/接受/撤销，禁止自助，`PrincipalGuard` 解鸡生蛋）+ 成员管理。

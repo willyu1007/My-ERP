@@ -25,12 +25,15 @@ Project: `main`
 <!-- AUTO-GENERATED:START dashboard -->
 ## Summary
 
-- Tasks: 2 (planned: 2, in-progress: 0, blocked: 0, done: 0, archived: 0)
+- Tasks: 5 (planned: 2, in-progress: 2, blocked: 0, done: 1, archived: 0)
 
 ## Recent tasks
 
 | Task | Status | Feature | Dev Docs |
 | --- | --- | --- | --- |
+| T-004 finance-intake-fast-entry | in-progress | F-000 | dev-docs/active/finance-intake-fast-entry |
+| T-005 finance-contract-transaction-lifecycle | planned | F-000 | dev-docs/active/finance-contract-transaction-lifecycle |
+| T-003 workflow-task-kernel-finance-pipeline | in-progress | F-000 | dev-docs/active/workflow-task-kernel-finance-pipeline |
+| T-001 m1-general-ledger-core | done | F-000 | dev-docs/active/m1-general-ledger-core |
 | T-002 web-workbench-foundation | planned | F-000 | dev-docs/active/web-workbench-foundation |
-| T-001 m1-general-ledger-core | planned | F-000 | dev-docs/active/m1-general-ledger-core |
 <!-- AUTO-GENERATED:END dashboard -->

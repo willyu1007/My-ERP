@@ -4,6 +4,7 @@
 My-ERP 的 `apps/web` 从 P0a 骨架演进为可复用 web workbench。当前 IA 以「按角色组织的财务工作流」为主入口，凭证、科目、账簿只作为工作流、功能或设置内部视图，不作为 sidebar 同级资源入口。The-Education（同生态、同 `ui/` 契约）已有验证过的 workbench 套件，可移植。
 
 ## Status
+- State: planned
 - **W2c done / W2d next** —— W0、W1、W2a（科目树）、W2b（账簿：试算平衡 + 明细账）、W2c（财务入口工作流化）均完成并验证（见 04-verification）。在 `main` 上实现（沿用 P0a：不另开分支）。
 - 架构修正（W1）：首页是 **ERP 整体**（模块化平台，财务是第一个模块），财务模块按 `/finance/` 命名空间；凭证二级导航按 **工作流动作**（制单/审核/过账/红冲）组织。
 - W2a：`/finance/accounts` 科目树（多级 + 辅助核算 + 启停）；`AccountVM` 扩展 parentCode/level/auxTypes/active；凭证分录挂末级；制单下拉仅末级且启用。
