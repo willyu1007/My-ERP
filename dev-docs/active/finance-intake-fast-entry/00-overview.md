@@ -33,7 +33,11 @@ generated, confirmable artifact.
 - **S4 done** (2026-06-15): intake API (`apps/api/src/intakes/`) — `LocalObjectStore` + `MockExtractor`
   seam adapters, capture/list/detail/extract/discard endpoints, metadata-only outbox, OpenAPI + api-index
   (33 endpoints). Verified by typecheck, 111 tests, openapi quality, and a runtime route smoke.
-- **Next: S5** — posting-template → auto-draft → confirm (closes the capture loop).
+- **S5 (backend) done** (2026-06-15): auto-draft pipeline — `extract` chains to high-confidence
+  auto-draft (G1); `draftVoucherFromIntakeTx` builds + persists the voucher draft + a `voucher.confirm`
+  work item transactionally (version-guarded), confidence routing; submit completes the confirm task.
+  Verified by typecheck + 115 tests (helpers + persistence-chain integration).
+- **Next: S5b (web)** confirm/capture surface + a dev seed for live e2e, then **S6** wrap-up.
 
 ## Top-level decisions (2026-06-14 alignment)
 - **α** Capture-first inversion is the central bet (voucher = generated/confirmed artifact; manual

@@ -1,9 +1,9 @@
 # API Index
 
-> Auto-generated at 2026-06-15T14:19:35.802Z — do NOT hand-edit.
-> Source: `docs/context/api/openapi.yaml` (SHA-256: `48f6947ece6e...`)
+> Auto-generated at 2026-06-15T14:46:48.871Z — do NOT hand-edit.
+> Source: `docs/context/api/openapi.yaml` (SHA-256: `af6e2452e850...`)
 
-Total endpoints: **33**
+Total endpoints: **34**
 
 | Method | Path | Summary | Auth | Input (required) | Output (core) | Errors |
 |--------|------|---------|------|------------------|---------------|--------|
@@ -35,6 +35,7 @@ Total endpoints: **33**
 | POST | /v1/intakes | Capture an economic event (photo/pdf/text) for extraction → voucher draft | bearer | kind, contentType, contentBase64 | id, orgId, ledgerBookId, source, kind, status, needsReview, createdBy, version, createdAt, updatedAt, attachmentId, extraction, confidence, targetType, targetId | 400, 401, 403 |
 | GET | /v1/intakes/{id} | Intake detail (includes extraction; ERP-only, never sent to My-Chat) | bearer | id | id, orgId, ledgerBookId, source, kind, status, needsReview, createdBy, version, createdAt, updatedAt, attachmentId, extraction, confidence, targetType, targetId | 404 |
 | POST | /v1/intakes/{id}/extract | Run extraction on a received intake (received → extracted) | bearer | id | id, orgId, ledgerBookId, source, kind, status, needsReview, createdBy, version, createdAt, updatedAt, attachmentId, extraction, confidence, targetType, targetId | 400, 404 |
+| POST | /v1/intakes/{id}/draft | Build a voucher draft from an extracted intake (extracted → drafted) | bearer | id | id, orgId, ledgerBookId, source, kind, status, needsReview, createdBy, version, createdAt, updatedAt, attachmentId, extraction, confidence, targetType, targetId | 400, 404 |
 | POST | /v1/intakes/{id}/discard | Discard an intake (→ discarded); any draft voucher remains a draft | bearer | id | id, orgId, ledgerBookId, source, kind, status, needsReview, createdBy, version, createdAt, updatedAt, attachmentId, extraction, confidence, targetType, targetId | 400, 404 |
 | GET | /v1/ledger/trial-balance | Trial balance (试算平衡表) — derived from posted vouchers | bearer | — | rows, totals, balanced | 401, 403 |
 | GET | /v1/ledger/accounts/{code} | Subsidiary ledger (明细分类账) for one account — derived, running balance | bearer | code | accountCode, accountName, opening, closing, rows | 401, 403 |

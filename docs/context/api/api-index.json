@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-15T14:19:35.802Z",
+  "generatedAt": "2026-06-15T14:46:48.871Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "48f6947ece6ecfb860a427390d2fbab85de0e9f94d161f28a202558ea7e9c428",
+  "sourceChecksumSha256": "af6e2452e8506176cbe6b3d0998d64268ab03eec6012f1b40a4bb75a1b8e4051",
   "stats": {
-    "totalEndpoints": 33,
+    "totalEndpoints": 34,
     "byTag": {
       "system": 1,
       "organization": 1,
@@ -14,7 +14,7 @@
       "work-items": 3,
       "accounts": 5,
       "vouchers": 7,
-      "intakes": 5,
+      "intakes": 6,
       "ledger": 2,
       "opening-balances": 2
     }
@@ -1059,6 +1059,49 @@
       ],
       "example": {
         "curl": "curl -X POST '/v1/intakes/{id}/extract' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/intakes/{id}/draft",
+      "operationId": "draftIntake",
+      "summary": "Build a voucher draft from an extracted intake (extracted → drafted)",
+      "tag": "intakes",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id"
+        ],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "orgId",
+          "ledgerBookId",
+          "source",
+          "kind",
+          "status",
+          "needsReview",
+          "createdBy",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "attachmentId",
+          "extraction",
+          "confidence",
+          "targetType",
+          "targetId"
+        ]
+      },
+      "errors": [
+        400,
+        404
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/intakes/{id}/draft' -H 'Authorization: Bearer <token>'"
       }
     },
     {

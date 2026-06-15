@@ -57,11 +57,21 @@ existing `ability.test` still passes with the added `Intake` subject/grants.
 | OpenAPI quality | `ctl-openapi-quality.mjs verify` | passed |
 | Runtime smoke | `pnpm --filter @my-erp/api dev` + curl | Nest starts clean; `/health` 200; `GET`/`POST /v1/intakes` → 401 without a token (route + guard wired) |
 
+## 2026-06-15 — S5 backend (auto-draft pipeline)
+
+| Check | Command | Result |
+|---|---|---|
+| Typecheck | `pnpm typecheck` | pass |
+| Tests | `pnpm test` | pass — **27 files / 115 tests** (+4: `intakes/draft.test`, `db/intake-draft.integration`) |
+| API index / quality | `ctl-api-index.mjs generate` + `ctl-openapi-quality.mjs verify` | regenerated; quality passed |
+
+`draft.test` covers flatten/auto-draft/confidence-routing; `intake-draft.integration` proves the
+chain (extracted intake → voucher draft + `voucher.confirm` work item, version-guarded one-shot) under
+org+ledger RLS.
+
 ## Not yet verified (explicit)
-- Interactive keyboard flow (Tab/Enter/combobox/auto-balance) was not automated in a browser session;
-  verified by static render + component logic. A manual or Playwright pass is a later check.
-- Live `/v1` round-trip (capture/create/submit) still pending a running API + seed.
-- The full capture→extract→**draft→confirm** chain lands + gets tested in S5.
+- Interactive keyboard flow + the web confirm/capture surface (S5b) — structural only until a seed exists.
+- Live `/v1` end-to-end (capture → extract → auto-draft → confirm/submit) — pending a running API + seed.
 - **Live `/v1` read/write round-trip** (data-source cutover against a running API): NOT verified in
   this session. It requires a running `apps/api` + Postgres + seeded org/ledger/membership/accounts
   and an `API_DEV_TOKEN`. The wiring typechecks and the fixture fallback keeps the app green without

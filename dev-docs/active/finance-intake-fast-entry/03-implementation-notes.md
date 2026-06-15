@@ -140,9 +140,31 @@ Notes:
 - The `extract` endpoint is explicit in S4; **S5 chains extract → high-confidence auto-draft (G1)**.
 - Runtime smoke confirmed the route is wired (Nest starts, `/v1/intakes` 401 without a token).
 
+## S5 (backend) — posting-template → auto-draft → confirm (done 2026-06-15)
+
+What changed:
+- `apps/api/src/intakes/draft.ts`: `flattenExtraction` (ExtractionResult → PostingExtraction),
+  `shouldAutoDraft` (G1: template matches + confidence ≥ 0.8), `confirmSubStatus` (complete + high →
+  `pending_confirmation`, else `pending_completion`), and `draftVoucherFromIntakeTx` — in one tx:
+  build the draft (posting template), persist the voucher with **only account-bearing lines** (the
+  contra line has no account → left for the human; `JournalEntryLine.accountCode` is NOT NULL),
+  `updateIntakeTx(drafted, target, expectedVersion)` (version-guarded one-shot), open a
+  `voucher.confirm` work item, audit, and metadata-only outbox.
+- `IntakeService`: `extract()` auto-drafts inline when `shouldAutoDraft` (G1); explicit
+  `draft()` + `POST /v1/intakes/:id/draft` for retry/manual.
+- `work-items/voucher-workflow.ts`: `createVoucherConfirmWorkItemTx` (dedupe per voucher; routed
+  subStatus).
+- `vouchers.controller` submit: now **completes active `voucher.confirm` work items** (confirm =
+  submit closes the accountant's confirm task) and then opens the supervisor review task.
+- OpenAPI `/v1/intakes/:id/draft`; api-index regenerated.
+
+Verification: `draft.test.ts` (flatten/route/auto-draft helpers) + `intake-draft.integration.test.ts`
+(extracted intake → voucher draft + `voucher.confirm` work item, version-guarded one-shot).
+
 ## Open items / next
-- **S5** — posting-template → auto-draft → confirm: on `extracted`, build the draft, create the
-  voucher draft + `voucher.confirm` work item transactionally (version-guarded), confidence routing;
-  wire the web confirm surface (reuse `<VoucherFastEntry>`) + a minimal capture/upload affordance.
-- **Live verification of the `/v1` read/write path** is deferred: needs a running API + DB + seed.
-- Consider a small dev seed (org/ledger/membership/accounts) helper to make the live path one-command.
+- **S5b (web)** — reuse `<VoucherFastEntry>` for the confirm surface (add `initialDraft`/edit mode so
+  a drafted voucher opens prefilled and 提交 updates+submits), a "待确认" queue entry, a minimal
+  capture/upload affordance, and intake methods on `@my-erp/api-client`. Live-verifiable with a seed.
+- **Dev seed + live e2e**: a one-command seed (org/ledger/membership/accounts + `API_DEV_TOKEN`) would
+  light up the whole loop (S1b cutover, S4 capture, S5 draft→confirm) for real `/v1` verification.
+- **S6** — full verification sweep + docs; tick acceptance criteria.

@@ -54,6 +54,17 @@ export class IntakesController {
     return this.service.extract(identity, ledgerBookId, id);
   }
 
+  @Post(':id/draft')
+  @HttpCode(200)
+  @RequirePermission('update', 'Intake')
+  async draft(
+    @LedgerBookId() ledgerBookId: string,
+    @CurrentIdentity() identity: Identity,
+    @Param('id') id: string,
+  ) {
+    return this.service.draft(identity, ledgerBookId, id);
+  }
+
   @Post(':id/discard')
   @HttpCode(200)
   @RequirePermission('cancel', 'Intake')

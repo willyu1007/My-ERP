@@ -26,6 +26,7 @@ import {
   type IntakeSource,
 } from '@my-erp/contracts';
 import type { Extractor, Identity, ObjectStore } from '@my-erp/platform';
+import { draftVoucherFromIntakeTx, shouldAutoDraft } from './draft';
 import { appendIntakeOutboxEventTx } from './intake-outbox';
 import { EXTRACTOR, OBJECT_STORE } from './tokens';
 
@@ -176,7 +177,36 @@ export class IntakeService {
       });
       if (!updated) throw new ConflictException('intake changed concurrently');
       await appendIntakeOutboxEventTx(tx, updated, 'intake.extracted', occurredAt);
+      // G1: high-confidence + template-matched captures auto-draft inline.
+      if (shouldAutoDraft(parsed.data)) {
+        const drafted = await draftVoucherFromIntakeTx(tx, {
+          identity,
+          ledgerBookId,
+          intake: updated,
+          occurredAt,
+        });
+        return toIntakeDto(drafted);
+      }
       return toIntakeDto(updated);
+    });
+  }
+
+  /** Build a voucher draft from an already-extracted intake (manual/retry path). */
+  async draft(identity: Identity, ledgerBookId: string, id: string): Promise<Intake> {
+    const occurredAt = new Date().toISOString();
+    return withScope(identity.orgId, ledgerBookId, async (tx) => {
+      const intake = await getIntakeTx(tx, id);
+      if (!intake) throw new NotFoundException('intake not found');
+      if (intake.status !== 'extracted') {
+        throw new BadRequestException(`cannot draft a ${intake.status} intake`);
+      }
+      const drafted = await draftVoucherFromIntakeTx(tx, {
+        identity,
+        ledgerBookId,
+        intake,
+        occurredAt,
+      });
+      return toIntakeDto(drafted);
     });
   }
 

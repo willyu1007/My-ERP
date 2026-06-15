@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import {
   appendAuditRecordTx,
+  completeActiveWorkItemsForSourceTx,
   countVouchersInPeriodTx,
   createReversalVoucherTx,
   createVoucherTx,
@@ -37,7 +38,12 @@ import { LedgerBookId } from '../auth/ledger-book-id.decorator';
 import { LedgerScopeGuard } from '../auth/ledger-scope.guard';
 import { RequirePermission } from '../auth/permission.decorator';
 import { PermissionGuard } from '../auth/permission.guard';
-import { createVoucherReviewWorkItemTx, postVoucherReviewTx } from '../work-items/voucher-workflow';
+import {
+  appendWorkItemOutboxEventTx,
+  createVoucherReviewWorkItemTx,
+  postVoucherReviewTx,
+  VOUCHER_CONFIRM_WORK_ITEM_TYPE,
+} from '../work-items/voucher-workflow';
 
 interface ParsedLine {
   accountCode: string;
@@ -222,6 +228,18 @@ export class VouchersController {
         entityId: id,
         ledgerBookId,
       });
+      // Confirming a capture-generated draft (T-004): submitting it closes the
+      // accountant's voucher.confirm task and opens the supervisor's review task.
+      const confirmed = await completeActiveWorkItemsForSourceTx(tx, {
+        sourceType: 'JournalVoucher',
+        sourceId: id,
+        actorId: identity.userId,
+        actionKey: 'complete',
+        workItemType: VOUCHER_CONFIRM_WORK_ITEM_TYPE,
+      });
+      for (const item of confirmed) {
+        await appendWorkItemOutboxEventTx(tx, item, 'work_item.completed', 'complete');
+      }
       await createVoucherReviewWorkItemTx(tx, {
         orgId: identity.orgId,
         ledgerBookId,

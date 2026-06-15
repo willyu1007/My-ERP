@@ -526,6 +526,17 @@ paths:
         '200': { description: Extracted, content: { application/json: { schema: { $ref: '#/components/schemas/Intake' } } } }
         '400': { description: No attachment / not extractable / invalid extraction }
         '404': { description: Not found }
+  /v1/intakes/{id}/draft:
+    post:
+      operationId: draftIntake
+      summary: Build a voucher draft from an extracted intake (extracted → drafted)
+      tags: [intakes]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: Drafted, content: { application/json: { schema: { $ref: '#/components/schemas/Intake' } } } }
+        '400': { description: Not extracted / no valid extraction }
+        '404': { description: Not found }
   /v1/intakes/{id}/discard:
     post:
       operationId: discardIntake

@@ -106,6 +106,45 @@ export async function createVoucherReviewWorkItemTx(
   return result.item;
 }
 
+export const VOUCHER_CONFIRM_WORK_ITEM_TYPE = 'voucher.confirm';
+
+/** A capture-generated voucher draft awaiting accountant confirmation (T-004 S5).
+ *  Completing it = submitting the draft (draft → pending); posting stays in the
+ *  review queue. subStatus routes by confidence/completeness. */
+export async function createVoucherConfirmWorkItemTx(
+  tx: TxClient,
+  input: {
+    orgId: string;
+    ledgerBookId: string;
+    voucherId: string;
+    actorId: string;
+    subStatus: 'pending_confirmation' | 'pending_completion';
+  },
+): Promise<WorkItemEntity> {
+  const result = await createWorkItemWithResultTx(tx, {
+    orgId: input.orgId,
+    ledgerBookId: input.ledgerBookId,
+    moduleKey: VOUCHER_REVIEW_WORKFLOW.moduleKey,
+    workflowKey: VOUCHER_REVIEW_WORKFLOW.workflowKey,
+    workflowVersion: VOUCHER_REVIEW_WORKFLOW.workflowVersion,
+    workItemType: VOUCHER_CONFIRM_WORK_ITEM_TYPE,
+    sourceType: 'JournalVoucher',
+    sourceId: input.voucherId,
+    dedupeKey: `finance:daily-accounting:${VOUCHER_CONFIRM_WORK_ITEM_TYPE}:${input.voucherId}`,
+    status: 'open',
+    subStatus: input.subStatus,
+    priority: 'normal',
+    assignedRole: 'accountant',
+    createdBy: input.actorId,
+    titleKey: 'finance.voucher.confirm',
+    metadata: SafeWorkItemMetadataSchema.parse({ sourceEntity: 'JournalVoucher', origin: 'capture' }),
+  });
+  if (result.created) {
+    await appendWorkItemOutboxEventTx(tx, result.item, 'work_item.created');
+  }
+  return result.item;
+}
+
 export async function postVoucherReviewTx(
   tx: TxClient,
   input: {
