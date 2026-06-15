@@ -23,6 +23,6 @@ export * from './components/sidebar-create';
 export * from './components/account-menu';
 export * from './components/breadcrumb';
 export * from './components/toast';
-export * from './components/overlay';
+export { Drawer as HostDrawer } from './components/overlay';
 export * from './components/copy-field';
 export * from './model/nav';

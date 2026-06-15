@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ShellNav } from '../model/nav';
 import { AccountMenu } from './account-menu';
-import { IconSearch, IconSidebar } from '@willyu1007/web-workbench';
+import { IconHome, IconSearch, IconSidebar } from '@willyu1007/web-workbench';
 import { SidebarCreate } from './sidebar-create';
 import { useToast } from './toast';
 
@@ -63,9 +63,24 @@ export function Sidebar({
         </div>
 
         <nav className="wb-nav">
-          {nav.create && nav.create.length > 0 && (
+          {(nav.home || (nav.create && nav.create.length > 0)) && (
             <div className="wb-nav__group">
-              <SidebarCreate items={nav.create} onNavigate={onClose} />
+              {nav.home && (
+                <Link
+                  href={nav.home.href}
+                  onClick={onClose}
+                  className={`wb-nav__item${matchPrefix(pathname, nav.home.href) ? ' wb-nav__item--active' : ''}`}
+                  aria-current={matchPrefix(pathname, nav.home.href) ? 'page' : undefined}
+                >
+                  <span className="wb-nav__icon">
+                    <IconHome />
+                  </span>
+                  <span className="wb-nav__label">{nav.home.label}</span>
+                </Link>
+              )}
+              {nav.create && nav.create.length > 0 && (
+                <SidebarCreate items={nav.create} onNavigate={onClose} />
+              )}
             </div>
           )}
           {nav.groups.map((group, gi) => (
