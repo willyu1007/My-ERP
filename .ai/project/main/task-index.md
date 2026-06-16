@@ -13,6 +13,6 @@ Project: `main`
 | T-001 m1-general-ledger-core | done | F-000 | dev-docs/active/m1-general-ledger-core |
 | T-002 web-workbench-foundation | planned | F-000 | dev-docs/active/web-workbench-foundation |
 | T-003 workflow-task-kernel-finance-pipeline | in-progress | F-000 | dev-docs/active/workflow-task-kernel-finance-pipeline |
-| T-004 finance-intake-fast-entry | in-progress | F-000 | dev-docs/active/finance-intake-fast-entry |
+| T-004 finance-intake-fast-entry | done | F-000 | dev-docs/active/finance-intake-fast-entry |
 | T-005 finance-contract-transaction-lifecycle | planned | F-000 | dev-docs/active/finance-contract-transaction-lifecycle |
 <!-- AUTO-GENERATED:END task-index -->
