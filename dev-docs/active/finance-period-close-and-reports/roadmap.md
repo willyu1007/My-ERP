@@ -12,36 +12,37 @@ export — reusing M1's "derive from posted vouchers, integer-cent, zero float" 
 - Requirements: DP11 (BS/IS/CF, direct-method CF) · 期末结账 (MUST) · DP14 辅助核算 · DP30 导出/打印.
 
 ## Core direction
-The report layer is a **read model over the authoritative ledger**, not a second source of truth:
-- **BS** = closing balances (by report-line ↔ account mapping, with netting/sign rules).
-- **IS** = period 发生额 (by mapping).
-- **CF** (direct) = sum of `cashFlowItem`-tagged amounts, grouped to statement lines; guarded by a
-  tie-out (tagged flows == net change in cash accounts).
+The report layer is a **range-parameterized read model over the authoritative ledger**, not a second
+source of truth. Reports take a date range (presets 月/季/年 + custom `[from,to]`):
+- **BS** = closing balances **as-of the range end** (report-line ↔ account mapping; signed sums +
+  netting, e.g. 应收账款 = 1122 − 1231).
+- **IS** = 发生额 **within the range** (by mapping).
+- **CF** (direct) = sum of `cashFlowItem`-tagged amounts (on the non-cash lines) **within the range**,
+  grouped to statement lines; guarded by a **tie-out** (tagged flows == net change in cash accounts
+  over the range).
 - **Period close** persists a 结转损益 voucher (损益类 → 本年利润) and locks the period; 反结账 reopens.
+  Before close, BS equity shows a computed "本年利润(未结转)"; after close, the persisted 结转.
 
-Same invariants as M1: integer-cent, zero float, derive from posted data, append-only archives.
+Range-aware derivation: filter posted vouchers by date (opening for a range = balances as-of
+`from − 1`). Same invariants as M1: integer-cent, zero float, derive from posted data, append-only.
 
-## Open decisions (align before implementation)
-- **D1 CF tag target**: cash line vs non-cash (contra) lines. (Lean: non-cash lines — industry
-  standard; handles multi-purpose vouchers; one cash line can't carry multiple CF natures.)
-- **D2 CF tagging friction**: mandatory-at-entry vs auto-suggest (account→CF-item map, set by the
-  posting template) + a pre-close "untagged cash flows" worklist + tie-out. (Lean: auto-suggest +
-  worklist — preserves T-004 entry convenience.)
-- **D3 Report mapping**: code-first statutory templates vs DB-configured vs hybrid. (Lean: hybrid —
-  ship 小企业准则 templates code-first; DB custom/override later, matching the D2 platform philosophy.)
-- **D4 Period-close coupling**: reports require a closed period vs compute "as-if-closed" at report
-  time (本年利润 from period IS before close; from the persisted 结转 after). (Lean: reports run
-  anytime; official statement reflects persisted close.)
-- **D5 Dimension scope**: statutory three tables only, or also management reports by 部门/项目
-  (needs a minimal aux-accounting layer; 往来 stays in T-005).
+## Confirmed decisions (2026-06-16) — see `00-overview` for detail
+- **D1** tag the **non-cash (contra) lines**.
+- **D2** **auto-suggest** (account→CF-item map via posting template) + **pre-close worklist** +
+  **hard tie-out**.
+- **D3** **hybrid**: code-first 小企业准则 templates (signed sums + netting); DB custom later.
+- **D4** reports run **anytime over 月/季/年/自定义区间**; 本年利润 by close status.
+- **D5** **statutory three tables + close + CF only**; 部门/项目 management reports deferred; 往来 → T-005.
 
 ## Milestones (proposed; refine after alignment)
 - **M3a — Period close**: AccountingPeriod state + close-readiness checks + 结转损益 voucher + locking +
   反结账. Reuses the voucher/ledger transaction discipline.
 - **M3b — Cash-flow tagging**: `CashFlowItem` master (seeded standard set) + tagging path (per D1/D2) +
   the CF tie-out check.
-- **M3c — Report read-model + statutory three tables**: report-mapping layer (per D3) + BS/IS/CF
-  derivation (pure functions over the derived ledger + CF tags) + report views.
+- **M3c — Report read-model + statutory three tables**: **range-parameterized** derivation
+  (月/季/年/custom `[from,to]`; BS as-of range-end, IS/CF within range) + the report-mapping layer
+  (per D3: signed sums + netting) + BS/IS/CF pure functions over the derived ledger + CF tags +
+  report views with a period/range picker.
 - **M3d — Export / print**: Excel/PDF + print layout for archival (DP30).
 
 ## Dependencies

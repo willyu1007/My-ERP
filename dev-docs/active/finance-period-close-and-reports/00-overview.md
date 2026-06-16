@@ -37,12 +37,22 @@ zero float, derive from posted vouchers):
 - Bank reconciliation (v1.1); multi-currency, tax filing, consolidation, indirect-method CF (OUT).
 - Voucher import (DP30 import) — candidate, likely a later phase.
 
-## Open decisions (to align)
-- **D1 CF tag target** — tag the cash line vs the non-cash (contra) lines.
-- **D2 CF tagging friction** — mandatory at entry vs auto-suggest + pre-close worklist vs deferred.
-- **D3 Report mapping representation** — code-first statutory templates vs DB-configured vs hybrid.
-- **D4 Period-close coupling** — reports require a closed period vs compute "as-if-closed" at report time.
-- **D5 Dimension scope** — statutory three tables only, or also management reports by 部门/项目.
+## Confirmed decisions (2026-06-16 alignment)
+- **D1 CF tag target** — tag the **non-cash (contra) lines** (`JournalEntryLine.cashFlowItem`); a single
+  cash line can't carry multiple CF natures, and contra-line tagging splits multi-purpose vouchers
+  correctly (industry standard).
+- **D2 CF tagging friction** — **auto-suggest + pre-close worklist + tie-out**: an account→CF-item map
+  (the posting template sets it) pre-fills, editable; a pre-close "untagged cash flows" worklist; and a
+  **hard tie-out** (tagged flows == net change in cash accounts) — the CF analogue of 借贷必平. Does not
+  slow entry (preserves T-004 #1).
+- **D3 Report mapping** — **hybrid**: ship 小企业准则 statutory templates **code-first** (signed sums +
+  netting), with DB custom/override later (matches the platform D2 philosophy).
+- **D4 Period-close coupling + reporting periods** — reports run **anytime over flexible periods:
+  monthly / quarterly / yearly / custom `[from,to]` range**. BS = closing balances **as-of the range
+  end**; IS / CF = 发生额 / tagged flows **within the range**. 本年利润 reflects the persisted 结转损益
+  after close; before close it shows a computed "本年利润(未结转)" line.
+- **D5 Dimension scope** — **statutory three tables + period close + CF only**. Management reports by
+  部门/项目 → deferred (after #4/M2); 往来 → T-005.
 
 ## Pointers
 - Requirements: `docs/project/overview/requirements.md` (DP11 三表 · DP14 辅助核算 · 期末结账 · DP30 导出)
