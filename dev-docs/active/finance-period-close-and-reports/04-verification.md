@@ -65,6 +65,36 @@ Posted capital (50000, FN-IN-1) + sale (1000, OP-IN-1) + expense (300, OP-OUT-4)
 
 The three statements derive correctly, BS balances, and CF ties out — over a date range (月/季/年/custom).
 
+## 2026-06-17 — QA sweep (adversarial)
+
+| Check | Result |
+|---|---|
+| `prisma migrate status` (fresh DB) | both T-006 migrations apply cleanly |
+| Typecheck | pass (9 projects) |
+| Lint | clean (fixed `let n` → `const n` in `report.test`) |
+| Tests | **31 files / 127 tests** (+1: IS-excludes-结转 regression) |
+
+**HIGH (found + fixed): income statement double-counted the 结转损益 voucher.**
+After closing a period, `periodActivity` included the closing voucher's zeroing lines,
+so the IS/CF for a closed period showed 营业收入=0 / 净利润=0 (proven live: 2026-03 after
+close → 0/0/0 instead of 1000/300/700). Fix: flow statements (IS/CF) take
+`excludeVoucherIds`; the reports service computes it from `period_close.closeVoucherId`
+**plus that voucher's `reversedBy`** (so the 反结账 reopen window doesn't over-count). BS
+(stock, `closingAsOf`) intentionally keeps the closing voucher. Live-verified stable across
+closed → reopened → re-closed (IS = 1000/700 in all three). Commit `9fbd2c9`.
+
+**Remaining findings (not blocking, logged):**
+- **MED** No service-level automated tests — close/reports/cash-flow orchestration is covered
+  only by manual live e2e, not CI. Only finance-domain pure fns + db RLS are in CI.
+- **MED/LOW** New report/period/CF DTOs have no zod contracts at the boundary (inconsistent
+  with the intake/work-item `*.parse()` pattern; only OpenAPI describes them).
+- **LOW** `isCashAccountCode` is a 1001/1002/1012 prefix heuristic — can false-match custom
+  codes; a precise cash-account flag would be more robust.
+- **LOW** `close`/`reopen` gated by the `post` Voucher permission, not a dedicated `close`
+  action.
+- **LOW (by design)** 结转 voucher is self-posted (maker==checker, SoD-exempt system close,
+  audited `CLOSE_PERIOD`).
+
 ## Not yet verified (explicit)
 - M3c-ui (report views) + M3b-ui (CF-item picker) + M3d export — next.
 - A `close` CASL action (currently gated by `post` Voucher).
