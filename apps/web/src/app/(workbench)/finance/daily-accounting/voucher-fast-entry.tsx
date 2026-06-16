@@ -17,7 +17,7 @@ import {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import { StatusBadge, useToast } from '@my-erp/ui';
-import type { CreateVoucher } from '@my-erp/api-client';
+import type { CashFlowItem, CreateVoucher } from '@my-erp/api-client';
 import { centsToString, sumCents, toCents } from '@/lib/finance/money';
 import { formatMoney, formatPeriod } from '@/lib/finance/format';
 import type { AccountVM } from '@/lib/finance/types';
@@ -40,6 +40,7 @@ export interface FastEntryInitial {
     readonly summary: string;
     readonly debit: string;
     readonly credit: string;
+    readonly cashFlowItem?: string;
   }[];
 }
 
@@ -50,11 +51,23 @@ interface DraftLine {
   summary: string;
   debit: string;
   credit: string;
+  cashFlowItem: string;
 }
 
 function blankLine(key: string): DraftLine {
-  return { key, accountCode: '', accountName: '', summary: '', debit: '', credit: '' };
+  return { key, accountCode: '', accountName: '', summary: '', debit: '', credit: '', cashFlowItem: '' };
 }
+
+/** 现金及现金等价物科目（库存现金 / 银行存款 / 其他货币资金）。与 finance-domain 同口径。 */
+function isCashAccountCode(code: string): boolean {
+  return code.startsWith('1001') || code.startsWith('1002') || code.startsWith('1012');
+}
+
+const CF_GROUPS: readonly { readonly activity: string; readonly label: string }[] = [
+  { activity: 'operating', label: '经营活动' },
+  { activity: 'investing', label: '投资活动' },
+  { activity: 'financing', label: '筹资活动' },
+];
 
 function AccountCombobox({
   accounts,
@@ -171,6 +184,7 @@ export function VoucherFastEntry({
   voucherId,
   initial,
   headerAction,
+  cashFlowItems = [],
 }: {
   readonly accounts: readonly AccountVM[];
   readonly initialDate: string;
@@ -180,6 +194,8 @@ export function VoucherFastEntry({
   readonly initial?: FastEntryInitial;
   /** Optional control rendered in the header (e.g. the capture/upload button). */
   readonly headerAction?: ReactNode;
+  /** 现金流量项目主数据 — 现金凭证的非现金分录可打标（D1/D2，空则不显示打标）。 */
+  readonly cashFlowItems?: readonly CashFlowItem[];
 }) {
   const toast = useToast();
   const router = useRouter();
@@ -196,6 +212,7 @@ export function VoucherFastEntry({
       summary: l.summary,
       debit: l.debit,
       credit: l.credit,
+      cashFlowItem: l.cashFlowItem ?? '',
     }));
     while (seeded.length < 2) seeded.push(blankLine(`line-${seeded.length}`));
     return seeded;
@@ -205,6 +222,13 @@ export function VoucherFastEntry({
 
   // Only leaf + active accounts can carry postings.
   const postable = useMemo(() => accounts.filter((a) => a.isLeaf && a.active), [accounts]);
+
+  // CF tagging (D1): only on the NON-cash (contra) lines of a 现金凭证, and only
+  // when the CF-item master is loaded. A single cash line can't carry the CF nature.
+  const cfEnabled = cashFlowItems.length > 0;
+  const isCashVoucher = lines.some((l) => l.accountCode && isCashAccountCode(l.accountCode));
+  const showCfFor = (l: DraftLine): boolean =>
+    cfEnabled && isCashVoucher && l.accountCode !== '' && !isCashAccountCode(l.accountCode);
 
   const debitCents = sumCents(lines.map((l) => l.debit));
   const creditCents = sumCents(lines.map((l) => l.credit));
@@ -246,8 +270,14 @@ export function VoucherFastEntry({
   function removeLine(key: string): void {
     setLines((ls) => (ls.length <= 2 ? ls : ls.filter((l) => l.key !== key)));
   }
+  function setCashFlowItem(key: string, v: string): void {
+    updateLine(key, { cashFlowItem: v });
+  }
   function selectAccount(key: string, account: AccountVM): void {
-    updateLine(key, { accountCode: account.code, accountName: account.name });
+    // Auto-suggest (D2): a non-cash account's chart default pre-fills the CF item,
+    // editable. Picking a cash account clears any tag (cash lines aren't tagged).
+    const cashFlowItem = isCashAccountCode(account.code) ? '' : account.defaultCashFlowItem ?? '';
+    updateLine(key, { accountCode: account.code, accountName: account.name, cashFlowItem });
     setPendingFocus(`${key}:debit`);
   }
 
@@ -303,6 +333,7 @@ export function VoucherFastEntry({
           summary: l.summary.trim() || summary.trim(),
           ...(l.debit.trim() ? { debit: centsToString(toCents(l.debit) ?? 0) } : {}),
           ...(l.credit.trim() ? { credit: centsToString(toCents(l.credit) ?? 0) } : {}),
+          ...(showCfFor(l) && l.cashFlowItem ? { cashFlowItem: l.cashFlowItem } : {}),
         })),
     };
   }
@@ -451,6 +482,31 @@ export function VoucherFastEntry({
                   删除
                 </button>
               </div>
+              {showCfFor(l) && (
+                <div className={styles.cfRow}>
+                  <span className={styles.cfLabel}>现金流量项目</span>
+                  <select
+                    className={styles.cfSelect}
+                    value={l.cashFlowItem}
+                    aria-label="现金流量项目"
+                    onChange={(e) => setCashFlowItem(l.key, e.target.value)}
+                  >
+                    <option value="">（未指定）</option>
+                    {CF_GROUPS.map((g) => {
+                      const items = cashFlowItems.filter((i) => i.activity === g.activity);
+                      return items.length === 0 ? null : (
+                        <optgroup key={g.activity} label={g.label}>
+                          {items.map((i) => (
+                            <option key={i.code} value={i.code}>
+                              {i.name}
+                            </option>
+                          ))}
+                        </optgroup>
+                      );
+                    })}
+                  </select>
+                </div>
+              )}
               {err && <p className="mt-help mt-help--error">{err}</p>}
             </div>
           );

@@ -1,10 +1,21 @@
-import { listAccounts, listVouchers } from '@/lib/finance/data-source';
+import { listAccounts, listCashFlowItems, listVouchers } from '@/lib/finance/data-source';
 import { DailyAccountingClient } from './daily-accounting-client';
 
 export const dynamic = 'force-dynamic';
 
 export default async function DailyAccountingPage() {
-  const [vouchers, accounts] = await Promise.all([listVouchers(), listAccounts()]);
+  const [vouchers, accounts, cashFlowItems] = await Promise.all([
+    listVouchers(),
+    listAccounts(),
+    listCashFlowItems(),
+  ]);
   const today = new Date().toISOString().slice(0, 10);
-  return <DailyAccountingClient vouchers={vouchers} accounts={accounts} initialDate={today} />;
+  return (
+    <DailyAccountingClient
+      vouchers={vouchers}
+      accounts={accounts}
+      cashFlowItems={cashFlowItems}
+      initialDate={today}
+    />
+  );
 }

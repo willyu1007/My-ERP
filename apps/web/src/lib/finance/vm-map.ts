@@ -19,6 +19,7 @@ export function accountToVM(a: Account): AccountVM {
     level: a.level,
     auxTypes: a.auxTypes,
     active: a.active,
+    defaultCashFlowItem: a.defaultCashFlowItem ?? null,
   };
 }
 
@@ -39,6 +40,7 @@ export function voucherToVM(v: Voucher): VoucherVM {
       summary: l.summary,
       debit: l.debit ?? null,
       credit: l.credit ?? null,
+      cashFlowItem: l.cashFlowItem ?? null,
     })),
     totalDebit: v.totalDebit,
     totalCredit: v.totalCredit,

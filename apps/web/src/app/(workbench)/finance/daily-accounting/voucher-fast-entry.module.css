@@ -79,6 +79,31 @@
   gap: var(--sp-3);
 }
 
+/* CF-item tagging row — sits under a non-cash line of a 现金凭证 (D1/D2). */
+.cfRow {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+  padding: 2px var(--sp-1) 0 var(--sp-1);
+}
+
+.cfLabel {
+  color: var(--fg-3);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.cfSelect {
+  height: 28px;
+  max-width: 320px;
+  padding: 0 var(--sp-2);
+  background: var(--bg-float);
+  border: 1px solid var(--border-1);
+  border-radius: 6px;
+  color: var(--fg-2);
+  font-size: 12px;
+}
+
 @media (max-width: 720px) {
   .head {
     display: none;

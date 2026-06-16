@@ -35,6 +35,8 @@ export interface AccountVM {
   readonly auxTypes: readonly AuxType[];
   /** 是否启用（停用科目不可挂新分录）。 */
   readonly active: boolean;
+  /** 现金流量项目默认值（现金凭证的非现金分录据此自动建议；无则 null）。 */
+  readonly defaultCashFlowItem: string | null;
 }
 
 export interface VoucherLineVM {
@@ -46,6 +48,8 @@ export interface VoucherLineVM {
   readonly debit: string | null;
   /** 贷方金额，规范 2 位小数字符串；该方为空时为 null。 */
   readonly credit: string | null;
+  /** 现金流量项目编码（非现金分录打标；无则 null）。 */
+  readonly cashFlowItem: string | null;
 }
 
 export interface VoucherVM {

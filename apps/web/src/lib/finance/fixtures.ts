@@ -192,6 +192,7 @@ export const ACCOUNTS: readonly AccountVM[] = ACCOUNT_SEEDS.map((s) => ({
   level: s.level,
   auxTypes: s.auxTypes ?? [],
   active: s.active ?? true,
+  defaultCashFlowItem: null,
 }));
 
 interface VoucherSeed {
@@ -204,7 +205,7 @@ interface VoucherSeed {
   readonly maker: string;
   readonly checker: string | null;
   readonly attachments: number;
-  readonly lines: readonly VoucherLineVM[];
+  readonly lines: readonly Omit<VoucherLineVM, 'cashFlowItem'>[];
 }
 
 /** Derive totals + balance from lines so fixtures can never drift out of balance. */
@@ -213,6 +214,7 @@ function buildVoucher(seed: VoucherSeed): VoucherVM {
   const creditCents = sumCents(seed.lines.map((l) => l.credit));
   return {
     ...seed,
+    lines: seed.lines.map((l) => ({ ...l, cashFlowItem: null })),
     totalDebit: centsToString(debitCents),
     totalCredit: centsToString(creditCents),
     balanced: debitCents === creditCents,
