@@ -15,5 +15,5 @@ Project: `main`
 | T-003 workflow-task-kernel-finance-pipeline | in-progress | F-000 | dev-docs/active/workflow-task-kernel-finance-pipeline |
 | T-004 finance-intake-fast-entry | done | F-000 | dev-docs/active/finance-intake-fast-entry |
 | T-005 finance-contract-transaction-lifecycle | planned | F-000 | dev-docs/active/finance-contract-transaction-lifecycle |
-| T-006 finance-period-close-and-reports | planned | F-000 | dev-docs/active/finance-period-close-and-reports |
+| T-006 finance-period-close-and-reports | in-progress | F-000 | dev-docs/active/finance-period-close-and-reports |
 <!-- AUTO-GENERATED:END task-index -->
