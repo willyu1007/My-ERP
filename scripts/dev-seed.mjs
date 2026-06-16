@@ -32,6 +32,9 @@ const ACCOUNTS = [
   { code: '1002', name: '银行存款', category: 'asset', direction: 'debit' },
   { code: '1122', name: '应收账款', category: 'asset', direction: 'debit' },
   { code: '2202', name: '应付账款', category: 'liability', direction: 'credit' },
+  { code: '4001', name: '实收资本', category: 'equity', direction: 'credit' },
+  { code: '4103', name: '本年利润', category: 'equity', direction: 'credit' },
+  { code: '4104', name: '利润分配', category: 'equity', direction: 'credit' },
   { code: '6001', name: '主营业务收入', category: 'profitLoss', direction: 'credit' },
   { code: '6601', name: '销售费用', category: 'profitLoss', direction: 'debit' },
 ];
@@ -52,8 +55,9 @@ try {
   await prisma.organization.upsert({ where: { id: ORG }, update: {}, create: { id: ORG, name: 'Dev Org' } });
   await prisma.ledgerBook.upsert({
     where: { id: LB },
-    update: {},
-    create: { id: LB, orgId: ORG, name: 'Dev Book', baseCurrency: 'CNY', fiscalYear: 2026 },
+    update: { singlePersonMode: true },
+    // single-person mode so the one dev user can post their own vouchers (demo).
+    create: { id: LB, orgId: ORG, name: 'Dev Book', baseCurrency: 'CNY', fiscalYear: 2026, singlePersonMode: true },
   });
   await prisma.membership.upsert({
     where: { orgId_userId: { orgId: ORG, userId: USER } },

@@ -1,9 +1,9 @@
 # API Index
 
-> Auto-generated at 2026-06-15T14:46:48.871Z — do NOT hand-edit.
-> Source: `docs/context/api/openapi.yaml` (SHA-256: `af6e2452e850...`)
+> Auto-generated at 2026-06-16T15:44:24.542Z — do NOT hand-edit.
+> Source: `docs/context/api/openapi.yaml` (SHA-256: `a33fb051d218...`)
 
-Total endpoints: **34**
+Total endpoints: **38**
 
 | Method | Path | Summary | Auth | Input (required) | Output (core) | Errors |
 |--------|------|---------|------|------------------|---------------|--------|
@@ -39,5 +39,9 @@ Total endpoints: **34**
 | POST | /v1/intakes/{id}/discard | Discard an intake (→ discarded); any draft voucher remains a draft | bearer | id | id, orgId, ledgerBookId, source, kind, status, needsReview, createdBy, version, createdAt, updatedAt, attachmentId, extraction, confidence, targetType, targetId | 400, 404 |
 | GET | /v1/ledger/trial-balance | Trial balance (试算平衡表) — derived from posted vouchers | bearer | — | rows, totals, balanced | 401, 403 |
 | GET | /v1/ledger/accounts/{code} | Subsidiary ledger (明细分类账) for one account — derived, running balance | bearer | code | accountCode, accountName, opening, closing, rows | 401, 403 |
+| GET | /v1/periods | List period-close records (会计期间结账状态) | bearer | — | — | — |
+| GET | /v1/periods/{period}/readiness | Close-readiness for a period (未过账 / 前期未结账) | bearer | period | period, status, unpostedCount, unclosedPriorPeriods, canClose | 400 |
+| POST | /v1/periods/{period}/close | 期末结账 — 结转损益 + lock the period | bearer | period | period, status, closeVoucherId, closedBy, closedAt, reopenedAt, netProfit | 400, 403 |
+| POST | /v1/periods/{period}/reopen | 反结账 — 红冲 the 结转 voucher + reopen | bearer | period | period, status, closeVoucherId, closedBy, closedAt, reopenedAt | 400 |
 | GET | /v1/opening-balances | Opening balances (期初余额) + the ledger's enabled period | bearer | — | openingPeriod, balances | 401, 403 |
 | PUT | /v1/opening-balances | Set the enabled period + replace opening balances (期初建账) | bearer | openingPeriod, balances | openingPeriod, balances | 400, 401, 403 |

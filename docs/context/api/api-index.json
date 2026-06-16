@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-15T14:46:48.871Z",
+  "generatedAt": "2026-06-16T15:44:24.542Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "af6e2452e8506176cbe6b3d0998d64268ab03eec6012f1b40a4bb75a1b8e4051",
+  "sourceChecksumSha256": "a33fb051d218536c973e8cc3919f2a800aa27dfc098f167b7f653ee0d7ac8298",
   "stats": {
-    "totalEndpoints": 34,
+    "totalEndpoints": 38,
     "byTag": {
       "system": 1,
       "organization": 1,
@@ -16,6 +16,7 @@
       "vouchers": 7,
       "intakes": 6,
       "ledger": 2,
+      "periods": 4,
       "opening-balances": 2
     }
   },
@@ -1205,6 +1206,124 @@
       ],
       "example": {
         "curl": "curl -X GET '/v1/ledger/accounts/{code}' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/periods",
+      "operationId": "listPeriodCloses",
+      "summary": "List period-close records (会计期间结账状态)",
+      "tag": "periods",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": []
+      },
+      "errors": [],
+      "example": {
+        "curl": "curl -X GET '/v1/periods' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/periods/{period}/readiness",
+      "operationId": "getPeriodCloseReadiness",
+      "summary": "Close-readiness for a period (未过账 / 前期未结账)",
+      "tag": "periods",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "period"
+        ],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "period",
+          "status",
+          "unpostedCount",
+          "unclosedPriorPeriods",
+          "canClose"
+        ]
+      },
+      "errors": [
+        400
+      ],
+      "example": {
+        "curl": "curl -X GET '/v1/periods/{period}/readiness' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/periods/{period}/close",
+      "operationId": "closePeriod",
+      "summary": "期末结账 — 结转损益 + lock the period",
+      "tag": "periods",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "period"
+        ],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "period",
+          "status",
+          "closeVoucherId",
+          "closedBy",
+          "closedAt",
+          "reopenedAt",
+          "netProfit"
+        ]
+      },
+      "errors": [
+        400,
+        403
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/periods/{period}/close' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/periods/{period}/reopen",
+      "operationId": "reopenPeriod",
+      "summary": "反结账 — 红冲 the 结转 voucher + reopen",
+      "tag": "periods",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "period"
+        ],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "period",
+          "status",
+          "closeVoucherId",
+          "closedBy",
+          "closedAt",
+          "reopenedAt"
+        ]
+      },
+      "errors": [
+        400
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/periods/{period}/reopen' -H 'Authorization: Bearer <token>'"
       }
     },
     {

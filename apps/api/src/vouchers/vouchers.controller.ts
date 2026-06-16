@@ -18,6 +18,7 @@ import {
   createReversalVoucherTx,
   createVoucherTx,
   getVoucherTx,
+  isPeriodClosedTx,
   listAccountsTx,
   listVouchersTx,
   setVoucherStatusTx,
@@ -191,6 +192,8 @@ export class VouchersController {
       if (!existing) throw new NotFoundException('voucher not found');
       if (existing.status !== 'draft')
         throw new BadRequestException('only draft vouchers can be edited');
+      if (await isPeriodClosedTx(tx, existing.period))
+        throw new BadRequestException('会计期间已结账，请先反结账');
       const enriched = await enrichLines(tx, lines);
       await updateDraftVoucherTx(tx, id, ledgerBookId, {
         date,
@@ -218,6 +221,8 @@ export class VouchersController {
       if (!voucher) throw new NotFoundException('voucher not found');
       if (voucher.status !== 'draft')
         throw new BadRequestException(`cannot submit a ${voucher.status} voucher`);
+      if (await isPeriodClosedTx(tx, voucher.period))
+        throw new BadRequestException('会计期间已结账，请先反结账');
       const error = voucherBalanceError(voucher.lines);
       if (error) throw new BadRequestException(error);
       await setVoucherStatusTx(tx, id, { status: 'pending' });
@@ -300,6 +305,8 @@ export class VouchersController {
           `only a posted voucher can be reversed (current: ${original.status})`,
         );
       if (original.reversedBy) throw new BadRequestException('voucher already reversed');
+      if (await isPeriodClosedTx(tx, original.period))
+        throw new BadRequestException('会计期间已结账，请先反结账');
 
       const seq = (await countVouchersInPeriodTx(tx, original.period)) + 1;
       const no = `记-${original.period}-${String(seq).padStart(3, '0')}`;

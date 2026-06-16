@@ -1699,5 +1699,109 @@ export async function updateIntakeTx(
   return getIntakeTx(tx, id);
 }
 
+// ---- T-006 period close (ledger-scoped: call within withScope) ----
+
+export interface PeriodCloseEntity {
+  id: string;
+  ledgerBookId: string;
+  period: string;
+  status: string;
+  closeVoucherId: string | null;
+  closedBy: string | null;
+  closedAt: Date | null;
+  reopenedBy: string | null;
+  reopenedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+type PeriodCloseRow = {
+  id: string;
+  ledgerBookId: string;
+  period: string;
+  status: string;
+  closeVoucherId: string | null;
+  closedBy: string | null;
+  closedAt: Date | null;
+  reopenedBy: string | null;
+  reopenedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+function toPeriodClose(row: PeriodCloseRow): PeriodCloseEntity {
+  return { ...row };
+}
+
+export async function getPeriodCloseTx(
+  tx: TxClient,
+  period: string,
+): Promise<PeriodCloseEntity | null> {
+  const row = await tx.periodClose.findFirst({ where: { period } });
+  return row ? toPeriodClose(row) : null;
+}
+
+export async function isPeriodClosedTx(tx: TxClient, period: string): Promise<boolean> {
+  const row = await tx.periodClose.findFirst({ where: { period, status: 'closed' } });
+  return row !== null;
+}
+
+export async function listPeriodClosesTx(tx: TxClient): Promise<PeriodCloseEntity[]> {
+  const rows = await tx.periodClose.findMany({ orderBy: { period: 'desc' } });
+  return rows.map(toPeriodClose);
+}
+
+/** Count vouchers in a period that are not yet posted (block close). */
+export async function countUnpostedVouchersInPeriodTx(
+  tx: TxClient,
+  period: string,
+): Promise<number> {
+  return tx.journalVoucher.count({ where: { period, status: { in: ['draft', 'pending'] } } });
+}
+
+export async function closePeriodTx(
+  tx: TxClient,
+  input: {
+    ledgerBookId: string;
+    period: string;
+    closeVoucherId: string | null;
+    closedBy: string;
+  },
+): Promise<PeriodCloseEntity> {
+  const row = await tx.periodClose.upsert({
+    where: { ledgerBookId_period: { ledgerBookId: input.ledgerBookId, period: input.period } },
+    update: {
+      status: 'closed',
+      closeVoucherId: input.closeVoucherId,
+      closedBy: input.closedBy,
+      closedAt: new Date(),
+      reopenedBy: null,
+      reopenedAt: null,
+    },
+    create: {
+      ledgerBookId: input.ledgerBookId,
+      period: input.period,
+      status: 'closed',
+      closeVoucherId: input.closeVoucherId,
+      closedBy: input.closedBy,
+      closedAt: new Date(),
+    },
+  });
+  return toPeriodClose(row);
+}
+
+/** Reopen (反结账) a closed period; returns null when it was not closed. */
+export async function reopenPeriodTx(
+  tx: TxClient,
+  input: { period: string; reopenedBy: string },
+): Promise<PeriodCloseEntity | null> {
+  const res = await tx.periodClose.updateMany({
+    where: { period: input.period, status: 'closed' },
+    data: { status: 'open', reopenedBy: input.reopenedBy, reopenedAt: new Date() },
+  });
+  if (res.count === 0) return null;
+  return getPeriodCloseTx(tx, input.period);
+}
+
 export { Prisma } from '@prisma/client';
 export type { PrismaClient } from '@prisma/client';

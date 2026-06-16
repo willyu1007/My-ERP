@@ -122,6 +122,7 @@ model LedgerBook {
   outboxEvents    OutboxEvent[]
   intakes         Intake[]
   attachments     Attachment[]
+  periodCloses    PeriodClose[]
 
   @@index([orgId])
   @@map("ledger_book")
@@ -378,4 +379,27 @@ model Intake {
   @@index([ledgerBookId, status])
   @@index([targetType, targetId])
   @@map("intake")
+}
+
+/// A period-close record (期末结账) — T-006. One row per (ledger, period) once it
+/// has been closed. 结转损益 posts a voucher (损益类 → 本年利润) and locks the period;
+/// 反结账 红冲 that voucher and reopens. Ledger-scoped (org + ledger via RLS).
+model PeriodClose {
+  id             String    @id @default(uuid()) @db.Uuid
+  ledgerBookId   String    @map("ledger_book_id") @db.Uuid
+  period         String
+  status         String    @default("closed")
+  closeVoucherId String?   @map("close_voucher_id") @db.Uuid
+  closedBy       String?   @map("closed_by")
+  closedAt       DateTime? @map("closed_at") @db.Timestamptz(6)
+  reopenedBy     String?   @map("reopened_by")
+  reopenedAt     DateTime? @map("reopened_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  ledgerBook LedgerBook @relation(fields: [ledgerBookId], references: [id], onDelete: Cascade)
+
+  @@unique([ledgerBookId, period])
+  @@index([ledgerBookId, status])
+  @@map("period_close")
 }

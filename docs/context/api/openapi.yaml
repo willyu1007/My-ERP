@@ -573,6 +573,47 @@ paths:
           content: { application/json: { schema: { $ref: '#/components/schemas/AccountLedger' } } }
         '401': { description: Missing or invalid bearer token }
         '403': { description: Ledger not in org / lacks read }
+  /v1/periods:
+    get:
+      operationId: listPeriodCloses
+      summary: List period-close records (会计期间结账状态)
+      tags: [periods]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Periods
+          content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/PeriodClose' } } } }
+  /v1/periods/{period}/readiness:
+    get:
+      operationId: getPeriodCloseReadiness
+      summary: Close-readiness for a period (未过账 / 前期未结账)
+      tags: [periods]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: period, in: path, required: true, schema: { type: string, example: '2026-06' } }]
+      responses:
+        '200': { description: Readiness, content: { application/json: { schema: { $ref: '#/components/schemas/PeriodCloseReadiness' } } } }
+        '400': { description: Invalid period }
+  /v1/periods/{period}/close:
+    post:
+      operationId: closePeriod
+      summary: 期末结账 — 结转损益 + lock the period
+      tags: [periods]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: period, in: path, required: true, schema: { type: string, example: '2026-06' } }]
+      responses:
+        '200': { description: Closed, content: { application/json: { schema: { $ref: '#/components/schemas/PeriodCloseResult' } } } }
+        '400': { description: Unposted vouchers / prior periods open / already closed }
+        '403': { description: Lacks close permission }
+  /v1/periods/{period}/reopen:
+    post:
+      operationId: reopenPeriod
+      summary: 反结账 — 红冲 the 结转 voucher + reopen
+      tags: [periods]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: period, in: path, required: true, schema: { type: string, example: '2026-06' } }]
+      responses:
+        '200': { description: Reopened, content: { application/json: { schema: { $ref: '#/components/schemas/PeriodClose' } } } }
+        '400': { description: Not closed / later periods still closed }
   /v1/opening-balances:
     get:
       operationId: getOpeningBalances
@@ -914,6 +955,31 @@ components:
         contentType: { type: string }
         contentBase64: { type: string, description: 'Base64-encoded attachment bytes (≤10MB).' }
         channelRef: { type: string, description: 'Opaque correlation to the source message; no content.' }
+    PeriodClose:
+      type: object
+      required: [period, status]
+      properties:
+        period: { type: string, example: '2026-06' }
+        status: { type: string, enum: [open, closed] }
+        closeVoucherId: { type: string, format: uuid, nullable: true }
+        closedBy: { type: string, nullable: true }
+        closedAt: { type: string, format: date-time, nullable: true }
+        reopenedAt: { type: string, format: date-time, nullable: true }
+    PeriodCloseReadiness:
+      type: object
+      required: [period, status, unpostedCount, unclosedPriorPeriods, canClose]
+      properties:
+        period: { type: string }
+        status: { type: string, enum: [open, closed] }
+        unpostedCount: { type: integer }
+        unclosedPriorPeriods: { type: array, items: { type: string } }
+        canClose: { type: boolean }
+    PeriodCloseResult:
+      allOf:
+        - $ref: '#/components/schemas/PeriodClose'
+        - type: object
+          properties:
+            netProfit: { type: string, description: '净利润 (signed; positive = profit)' }
     TrialBalanceRow:
       type: object
       required: [accountCode, accountName, openingDebit, openingCredit, periodDebit, periodCredit, closingDebit, closingCredit]

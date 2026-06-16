@@ -10,6 +10,7 @@ import {
   completeActiveWorkItemsForSourceTx,
   createWorkItemWithResultTx,
   getVoucherTx,
+  isPeriodClosedTx,
   setVoucherStatusTx,
   transitionWorkItemTx,
   type LedgerBookEntity,
@@ -161,6 +162,8 @@ export async function postVoucherReviewTx(
   if (!voucher) throw new NotFoundException('voucher not found');
   if (voucher.status !== 'pending')
     throw new BadRequestException(`cannot post a ${voucher.status} voucher`);
+  if (await isPeriodClosedTx(tx, voucher.period))
+    throw new BadRequestException('会计期间已结账，请先反结账');
   const error = voucherBalanceError(voucher.lines);
   if (error) throw new BadRequestException(error);
 

@@ -2,6 +2,7 @@ import Decimal from 'decimal.js';
 
 export * from './ledger';
 export * from './posting-template';
+export * from './period-close';
 
 /**
  * Money — amounts are always exact decimals, never IEEE floats (hard constraint).

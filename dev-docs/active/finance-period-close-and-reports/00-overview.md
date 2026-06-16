@@ -15,8 +15,13 @@ This task ("M3") consolidates #3 (reports) and the closely-related leftover acco
 reports depend on.
 
 ## Status
-- State: planned
-- This is the first-draft Decision-Gate bundle. Scope + the key design decisions (CF tagging, report
+- State: in-progress
+- **M3a (period close) done** (2026-06-16): `PeriodClose` schema + ledger RLS, 结转损益 builder,
+  close/reopen service + `/v1/periods` API, period-lock guard; 本年利润 (4103) added to the chart.
+  Verified by unit + RLS integration tests + a live e2e (close → 结转 → lock → reopen). See `03`/`04`.
+  Next: M3b cash-flow tagging → M3c reports → M3d export.
+- Decisions aligned 2026-06-16 (see Confirmed decisions); readiness review in `06`.
+- (history) first-draft Decision-Gate bundle. The key design decisions (CF tagging, report
   mapping, period-close coupling) are to be aligned with the user before implementation.
 
 ## Goal
