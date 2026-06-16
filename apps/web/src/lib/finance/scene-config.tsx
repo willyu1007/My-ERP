@@ -25,14 +25,16 @@ export const financeNav: ShellNav = {
         {
           href: '/finance/period-close',
           label: '期末结账',
-          soon: true,
         },
       ],
     },
     {
       label: '查询',
       showIcons: false,
-      items: [{ href: '/finance/ledger', label: '账簿查询' }],
+      items: [
+        { href: '/finance/ledger', label: '账簿查询' },
+        { href: '/finance/reports', label: '财务报表' },
+      ],
     },
     {
       label: '设置',

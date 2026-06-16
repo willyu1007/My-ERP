@@ -17,6 +17,19 @@ export type VoucherStatus = Voucher['status'];
 export type Intake = components['schemas']['Intake'];
 export type CaptureIntake = components['schemas']['CaptureIntake'];
 export type ExtractionResult = components['schemas']['ExtractionResult'];
+// Reports (T-006 M3c)
+export type ReportLine = components['schemas']['ReportLine'];
+export type BalanceSheet = components['schemas']['BalanceSheet'];
+export type IncomeStatement = components['schemas']['IncomeStatement'];
+export type CashFlowStatement = components['schemas']['CashFlowStatement'];
+// Period close (T-006 M3a)
+export type PeriodClose = components['schemas']['PeriodClose'];
+export type PeriodCloseReadiness = components['schemas']['PeriodCloseReadiness'];
+export type PeriodCloseResult = components['schemas']['PeriodCloseResult'];
+// Cash-flow tagging (T-006 M3b)
+export type CashFlowItem = components['schemas']['CashFlowItem'];
+export type CashFlowTieOut = components['schemas']['CashFlowTieOut'];
+export type UntaggedCashLine = components['schemas']['UntaggedCashLine'];
 
 /** Kept for back-compat with the previous package stub. */
 export const API_CLIENT_PACKAGE = '@my-erp/api-client' as const;
@@ -58,6 +71,20 @@ export interface ApiClient {
   extractIntake(id: string): Promise<Intake>;
   draftIntake(id: string): Promise<Intake>;
   discardIntake(id: string): Promise<Intake>;
+  // Statutory reports — BS as-of date; IS/CF over a [from,to] range (T-006 M3c).
+  balanceSheet(to: string): Promise<BalanceSheet>;
+  incomeStatement(from: string, to: string): Promise<IncomeStatement>;
+  cashFlowStatement(from: string, to: string): Promise<CashFlowStatement>;
+  // Period close (T-006 M3a).
+  listPeriods(): Promise<PeriodClose[]>;
+  periodReadiness(period: string): Promise<PeriodCloseReadiness>;
+  closePeriod(period: string): Promise<PeriodCloseResult>;
+  reopenPeriod(period: string): Promise<PeriodClose>;
+  // Cash-flow tagging (T-006 M3b).
+  listCashFlowItems(): Promise<CashFlowItem[]>;
+  seedCashFlowItems(): Promise<{ seeded: number }>;
+  untaggedCashFlows(period?: string): Promise<UntaggedCashLine[]>;
+  cashFlowTieOut(params?: { from?: string; to?: string }): Promise<CashFlowTieOut>;
 }
 
 export function createApiClient(config: ApiClientConfig): ApiClient {
@@ -105,5 +132,39 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
     draftIntake: (id) => request<Intake>('POST', `/v1/intakes/${encodeURIComponent(id)}/draft`),
     discardIntake: (id) =>
       request<Intake>('POST', `/v1/intakes/${encodeURIComponent(id)}/discard`),
+    balanceSheet: (to) =>
+      request<BalanceSheet>('GET', `/v1/reports/balance-sheet?to=${encodeURIComponent(to)}`),
+    incomeStatement: (from, to) =>
+      request<IncomeStatement>(
+        'GET',
+        `/v1/reports/income-statement?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+      ),
+    cashFlowStatement: (from, to) =>
+      request<CashFlowStatement>(
+        'GET',
+        `/v1/reports/cash-flow?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+      ),
+    listPeriods: () => request<PeriodClose[]>('GET', '/v1/periods'),
+    periodReadiness: (period) =>
+      request<PeriodCloseReadiness>('GET', `/v1/periods/${encodeURIComponent(period)}/readiness`),
+    closePeriod: (period) =>
+      request<PeriodCloseResult>('POST', `/v1/periods/${encodeURIComponent(period)}/close`),
+    reopenPeriod: (period) =>
+      request<PeriodClose>('POST', `/v1/periods/${encodeURIComponent(period)}/reopen`),
+    listCashFlowItems: () => request<CashFlowItem[]>('GET', '/v1/cash-flow-items'),
+    seedCashFlowItems: () =>
+      request<{ seeded: number }>('POST', '/v1/cash-flow-items/seed-standard'),
+    untaggedCashFlows: (period) =>
+      request<UntaggedCashLine[]>(
+        'GET',
+        `/v1/cash-flow/untagged${period ? `?period=${encodeURIComponent(period)}` : ''}`,
+      ),
+    cashFlowTieOut: (params) => {
+      const qs = new URLSearchParams();
+      if (params?.from) qs.set('from', params.from);
+      if (params?.to) qs.set('to', params.to);
+      const q = qs.toString();
+      return request<CashFlowTieOut>('GET', `/v1/cash-flow/tie-out${q ? `?${q}` : ''}`);
+    },
   };
 }

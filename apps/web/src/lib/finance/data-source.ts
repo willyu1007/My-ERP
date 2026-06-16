@@ -8,7 +8,20 @@
  * fixtures for S1 (the client surface is scoped to voucher + account); they
  * cut over with the report milestone.
  */
-import { ApiError, type CaptureIntake, type CreateVoucher, type Intake } from '@my-erp/api-client';
+import {
+  ApiError,
+  type BalanceSheet,
+  type CaptureIntake,
+  type CashFlowItem,
+  type CashFlowStatement,
+  type CreateVoucher,
+  type IncomeStatement,
+  type Intake,
+  type PeriodClose,
+  type PeriodCloseReadiness,
+  type PeriodCloseResult,
+  type UntaggedCashLine,
+} from '@my-erp/api-client';
 import { ACCOUNTS, OPENING_BALANCES, VOUCHERS } from './fixtures';
 import {
   computeAccountLedger,
@@ -76,4 +89,75 @@ export async function getTrialBalance(): Promise<TrialBalance> {
 
 export async function getAccountLedger(code: string): Promise<AccountLedger | null> {
   return computeAccountLedger(code, ACCOUNTS, VOUCHERS, OPENING_BALANCES);
+}
+
+// --- Statutory reports (T-006 M3c) ---
+// The three statutory tables are computed server-side (post → balances → mapping).
+// No fixture path: deriving 资产负债表 / 利润表 / 现金流量表 client-side would duplicate
+// the report engine, so these return `null` in demo mode and the page shows a notice.
+
+/** 资产负债表 as-of `to` (YYYY-MM-DD). `null` when the backend is not configured. */
+export async function getBalanceSheet(to: string): Promise<BalanceSheet | null> {
+  const api = getFinanceApi();
+  if (!api) return null;
+  return api.balanceSheet(to);
+}
+
+/** 利润表 over `[from, to]`. `null` when the backend is not configured. */
+export async function getIncomeStatement(from: string, to: string): Promise<IncomeStatement | null> {
+  const api = getFinanceApi();
+  if (!api) return null;
+  return api.incomeStatement(from, to);
+}
+
+/** 现金流量表 (direct method) over `[from, to]`. `null` when the backend is not configured. */
+export async function getCashFlowStatement(
+  from: string,
+  to: string,
+): Promise<CashFlowStatement | null> {
+  const api = getFinanceApi();
+  if (!api) return null;
+  return api.cashFlowStatement(from, to);
+}
+
+// --- Period close (T-006 M3a) ---
+
+/** All period-close records for the ledger (empty in demo mode). */
+export async function listPeriods(): Promise<readonly PeriodClose[]> {
+  const api = getFinanceApi();
+  if (!api) return [];
+  return api.listPeriods();
+}
+
+/** Close-readiness for a period. `null` when the backend is not configured. */
+export async function getPeriodReadiness(period: string): Promise<PeriodCloseReadiness | null> {
+  const api = getFinanceApi();
+  if (!api) return null;
+  return api.periodReadiness(period);
+}
+
+/** 期末结账: 结转损益 + lock the period. Requires the backend. */
+export async function closePeriod(period: string): Promise<PeriodCloseResult> {
+  return requireFinanceApi().closePeriod(period);
+}
+
+/** 反结账: 红冲 the 结转 voucher + reopen. Requires the backend. */
+export async function reopenPeriod(period: string): Promise<PeriodClose> {
+  return requireFinanceApi().reopenPeriod(period);
+}
+
+// --- Cash-flow tagging (T-006 M3b) ---
+
+/** 现金流量项目 master (empty in demo mode). */
+export async function listCashFlowItems(): Promise<readonly CashFlowItem[]> {
+  const api = getFinanceApi();
+  if (!api) return [];
+  return api.listCashFlowItems();
+}
+
+/** Pre-close worklist: untagged non-cash lines of cash vouchers (empty in demo mode). */
+export async function getUntaggedCashFlows(period?: string): Promise<readonly UntaggedCashLine[]> {
+  const api = getFinanceApi();
+  if (!api) return [];
+  return api.untaggedCashFlows(period);
 }
