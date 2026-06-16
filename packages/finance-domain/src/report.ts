@@ -101,14 +101,22 @@ export function closingAsOf(
   );
 }
 
-/** Period 发生额 within [from, to]. For the income statement. */
+/**
+ * Period 发生额 within [from, to], EXCLUDING `excludeVoucherIds` (the 结转损益 closing
+ * vouchers — their zeroing entries would net out the period's revenue/expense). For
+ * the income statement. The balance sheet (a stock statement) keeps closing entries.
+ */
 export function periodActivity(
   entries: readonly PostedLine[],
   categoryOf: (code: string) => string,
   from: string,
   to: string,
+  excludeVoucherIds: ReadonlySet<string> = new Set(),
 ): ReportAccountAmount[] {
-  const tb = computeTrialBalance(entries.filter((e) => e.date >= from && e.date <= to), []);
+  const tb = computeTrialBalance(
+    entries.filter((e) => e.date >= from && e.date <= to && !excludeVoucherIds.has(e.voucherId)),
+    [],
+  );
   return enrich(
     tb.rows.map((r) => ({ accountCode: r.accountCode, debit: r.periodDebit, credit: r.periodCredit })),
     categoryOf,
@@ -176,8 +184,12 @@ export function incomeStatement(
   categoryOf: (code: string) => string,
   from: string,
   to: string,
+  excludeVoucherIds: ReadonlySet<string> = new Set(),
 ): IncomeStatement {
-  const lines = evalReport(INCOME_STATEMENT_TEMPLATE, periodActivity(entries, categoryOf, from, to));
+  const lines = evalReport(
+    INCOME_STATEMENT_TEMPLATE,
+    periodActivity(entries, categoryOf, from, to, excludeVoucherIds),
+  );
   return { from, to, lines, netProfit: lines.find((l) => l.key === 'net_profit')?.amount ?? '0.00' };
 }
 
@@ -213,11 +225,12 @@ export function cashFlowStatement(
   items: readonly CashFlowItemRef[],
   from: string,
   to: string,
+  excludeVoucherIds: ReadonlySet<string> = new Set(),
 ): CashFlowStatement {
   const byItem = new Map<string, Decimal>();
   let cashChange = new Decimal(0);
   for (const e of entries) {
-    if (e.date < from || e.date > to) continue;
+    if (e.date < from || e.date > to || excludeVoucherIds.has(e.voucherId)) continue;
     const debit = new Decimal(e.debit || 0);
     const credit = new Decimal(e.credit || 0);
     if (isCashAccountCode(e.accountCode)) cashChange = cashChange.plus(debit).minus(credit);

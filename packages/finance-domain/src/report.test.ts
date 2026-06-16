@@ -14,7 +14,7 @@ const CATEGORY: Record<string, string> = {
 };
 const categoryOf = (code: string): string => CATEGORY[code] ?? 'asset';
 
-let n = 0;
+const n = 0;
 const v = (over: Partial<PostedLine>): PostedLine => ({
   accountCode: '',
   accountName: '',
@@ -63,6 +63,21 @@ describe('statutory reports (worked fixture)', () => {
     expect(amt(is.lines, 'revenue')).toBe('1000.00');
     expect(amt(is.lines, 'selling')).toBe('300.00');
     expect(is.netProfit).toBe('700.00');
+  });
+
+  it('income statement excludes the 结转损益 closing voucher (regression)', () => {
+    // The closing voucher zeroes 6001/6601 into 4103; if not excluded it nets revenue to 0.
+    const closing: PostedLine[] = [
+      v({ voucherId: 'close', accountCode: '6001', debit: '1000.00', date: '2026-12-31' }),
+      v({ voucherId: 'close', accountCode: '6601', credit: '300.00', date: '2026-12-31' }),
+      v({ voucherId: 'close', accountCode: '4103', credit: '700.00', date: '2026-12-31' }),
+    ];
+    const all = [...entries, ...closing];
+    const polluted = incomeStatement(all, categoryOf, '2026-01-01', '2026-12-31');
+    expect(amt(polluted.lines, 'revenue')).toBe('0.00'); // the bug, without exclusion
+    const correct = incomeStatement(all, categoryOf, '2026-01-01', '2026-12-31', new Set(['close']));
+    expect(amt(correct.lines, 'revenue')).toBe('1000.00');
+    expect(correct.netProfit).toBe('700.00');
   });
 
   it('cash flow statement ties out to the net cash change', () => {
