@@ -26,6 +26,26 @@ Posted a sale (1002/6001 1000) + expense (6601/1002 300), 净利润 700:
 
 Proves 结转损益 + period lock + 反结账 end-to-end against a live API.
 
+## 2026-06-16 — M3b (backend) cash-flow tagging
+
+| Check | Result |
+|---|---|
+| Typecheck | pass (9 projects) |
+| Tests | **30 files / 123 tests** (+3: `finance-domain/cash-flow.test` — isCashAccountCode, tie-out, worklist) |
+| API index / openapi quality / DB context | regenerated; passed |
+
+### Live e2e (real `/v1`, fresh `myerp_m3b` DB)
+| Step | Result |
+|---|---|
+| `POST /v1/cash-flow-items/seed-standard` | `seeded=15`; account 6001 `defaultCashFlowItem=OP-IN-1` |
+| Post tagged sale (6001→OP-IN-1) + untagged sale | both posted |
+| `GET /v1/cash-flow/untagged?period=2026-07` | count=1 → 记-2026-07-002 / 6001 / 500 |
+| `GET /v1/cash-flow/tie-out` (2026-07) | cashNetChange=1500, taggedFlows=1000, **tied=false** |
+| `GET /v1/periods/2026-07/readiness` | `untaggedCashFlowCount=1`, canClose=true (informational) |
+
+Proves the CF item master + seed + auto-suggest defaults + tag persistence + worklist + the tie-out
+(CF 借贷必平) end-to-end.
+
 ## Not yet verified (explicit)
-- M3b cash-flow tagging + M3c reports (BS/IS/CF) — next phases.
+- M3b-ui (editor CF-item picker + tag-posted-line endpoint) and M3c reports (BS/IS/CF) — next.
 - A `close` CASL action (currently gated by `post` Voucher).

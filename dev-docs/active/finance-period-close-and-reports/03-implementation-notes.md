@@ -41,8 +41,35 @@ Design notes:
 Verification: see `04-verification` — unit + RLS integration tests + a live e2e (close → 结转 → lock →
 reopen) all pass.
 
+## M3b (backend) — cash-flow tagging (done 2026-06-16)
+
+What changed:
+- `prisma`: `CashFlowItem` (ledger-scoped: code, name, activity operating|investing|financing,
+  direction inflow|outflow, sort, active) + `Account.defaultCashFlowItem`. Migration
+  `20260616140000_t006_cash_flow_item`. (`JournalEntryLine.cashFlowItem` was already the tag store, and
+  the voucher create/update write path already persists it — `parseLines`/`lineCreateData`.)
+- `packages/platform/cash-flow.ts`: `STANDARD_CASH_FLOW_ITEMS` (15 小企业准则 items) +
+  `DEFAULT_CASH_FLOW_BY_ACCOUNT` (auto-suggest defaults).
+- `packages/finance-domain/cash-flow.ts`: `isCashAccountCode` (prefix 1001/1002/1012), **`cashFlowTieOut`**
+  (Σ tagged non-cash (credit−debit) == Σ cash (debit−credit) — the CF 借贷必平), `listUntaggedCashFlows`
+  (the pre-close worklist). `PostedLine` gained `cashFlowItem`; `getPostedEntriesTx` now returns it.
+- `packages/db`: `CashFlowItem` repos (`listCashFlowItemsTx`/`seedCashFlowItemsTx`/
+  `setAccountDefaultCashFlowItemTx`); `AccountEntity` gained `defaultCashFlowItem`.
+- `apps/api/src/cash-flow/`: `GET /v1/cash-flow-items`, `POST /v1/cash-flow-items/seed-standard` (items +
+  chart defaults), `GET /v1/cash-flow/untagged?period`, `GET /v1/cash-flow/tie-out?from&to`. Period-close
+  readiness gained `untaggedCashFlowCount` (informational — does not block close, per D2).
+- OpenAPI + api-index + DB context regenerated; `Account` schema gained `defaultCashFlowItem`.
+
+Design notes:
+- Tag persistence works today via the normal voucher create/update (`cashFlowItem` per line). Tagging at
+  draft/confirm time is the primary path; the worklist + tie-out are the safety net.
+- `untaggedCashFlowCount` is a warning, not a close blocker (D2 keeps close decoupled from CF completeness).
+
 ## Open items / next
-- **M3b** — Cash-flow tagging (`CashFlowItem` master + seed, `Account.defaultCashFlowItem`, the
-  non-cash-line CF-item picker + auto-suggest, pre-close worklist, tie-out).
-- **M3c** — report read-model + statutory three tables. **M3d** export. **M3e** verify.
+- **M3b-ui** — the editor CF-item picker: in `<VoucherFastEntry>`, show a CF-item select on non-cash
+  lines when the voucher touches a cash account, auto-suggested from `Account.defaultCashFlowItem`
+  (thread `cashFlowItem` through `VoucherLineVM`/buildInput/initial). Plus a tag-posted-line endpoint
+  (metadata-only; needs a `journal_entry_line` UPDATE RLS policy for the non-owner app role) so the
+  worklist is actionable for already-posted vouchers.
+- **M3c** — report read-model + statutory three tables (BS/IS/CF). **M3d** export. **M3e** verify.
 - Consider a `close` CASL action (close is currently gated by `post` Voucher).

@@ -614,6 +614,46 @@ paths:
       responses:
         '200': { description: Reopened, content: { application/json: { schema: { $ref: '#/components/schemas/PeriodClose' } } } }
         '400': { description: Not closed / later periods still closed }
+  /v1/cash-flow-items:
+    get:
+      operationId: listCashFlowItems
+      summary: List 现金流量项目
+      tags: [cash-flow]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Items
+          content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/CashFlowItem' } } } }
+  /v1/cash-flow-items/seed-standard:
+    post:
+      operationId: seedStandardCashFlowItems
+      summary: Seed the 《小企业准则》 CF items + chart defaults (idempotent)
+      tags: [cash-flow]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Seeded, content: { application/json: { schema: { type: object, properties: { seeded: { type: integer } } } } } }
+  /v1/cash-flow/untagged:
+    get:
+      operationId: listUntaggedCashFlows
+      summary: Pre-close worklist — untagged non-cash lines of cash vouchers
+      tags: [cash-flow]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: period, in: query, required: false, schema: { type: string, example: '2026-06' } }]
+      responses:
+        '200':
+          description: Untagged lines
+          content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/UntaggedCashLine' } } } }
+  /v1/cash-flow/tie-out:
+    get:
+      operationId: getCashFlowTieOut
+      summary: CF tie-out — tagged flows == net cash change over a range
+      tags: [cash-flow]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: from, in: query, required: false, schema: { type: string, format: date } }
+        - { name: to, in: query, required: false, schema: { type: string, format: date } }
+      responses:
+        '200': { description: Tie-out, content: { application/json: { schema: { $ref: '#/components/schemas/CashFlowTieOut' } } } }
   /v1/opening-balances:
     get:
       operationId: getOpeningBalances
@@ -838,6 +878,7 @@ components:
         isLeaf: { type: boolean }
         auxTypes: { type: array, items: { type: string, enum: [customer, supplier, department, project] } }
         active: { type: boolean }
+        defaultCashFlowItem: { type: string, nullable: true }
         createdAt: { type: string, format: date-time }
     CreateAccount:
       type: object
@@ -967,13 +1008,44 @@ components:
         reopenedAt: { type: string, format: date-time, nullable: true }
     PeriodCloseReadiness:
       type: object
-      required: [period, status, unpostedCount, unclosedPriorPeriods, canClose]
+      required: [period, status, unpostedCount, unclosedPriorPeriods, untaggedCashFlowCount, canClose]
       properties:
         period: { type: string }
         status: { type: string, enum: [open, closed] }
         unpostedCount: { type: integer }
         unclosedPriorPeriods: { type: array, items: { type: string } }
+        untaggedCashFlowCount: { type: integer }
         canClose: { type: boolean }
+    CashFlowItem:
+      type: object
+      required: [code, name, activity, direction]
+      properties:
+        code: { type: string }
+        name: { type: string }
+        activity: { type: string, enum: [operating, investing, financing] }
+        direction: { type: string, enum: [inflow, outflow] }
+        sort: { type: integer }
+        active: { type: boolean }
+    UntaggedCashLine:
+      type: object
+      required: [voucherId, voucherNo, date, accountCode, accountName]
+      properties:
+        voucherId: { type: string, format: uuid }
+        voucherNo: { type: string }
+        date: { type: string, format: date }
+        accountCode: { type: string }
+        accountName: { type: string }
+        debit: { type: string, nullable: true }
+        credit: { type: string, nullable: true }
+        summary: { type: string }
+    CashFlowTieOut:
+      type: object
+      required: [cashNetChange, taggedFlows, difference, tied]
+      properties:
+        cashNetChange: { type: string }
+        taggedFlows: { type: string }
+        difference: { type: string }
+        tied: { type: boolean }
     PeriodCloseResult:
       allOf:
         - $ref: '#/components/schemas/PeriodClose'

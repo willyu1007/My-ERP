@@ -123,6 +123,7 @@ model LedgerBook {
   intakes         Intake[]
   attachments     Attachment[]
   periodCloses    PeriodClose[]
+  cashFlowItems   CashFlowItem[]
 
   @@index([orgId])
   @@map("ledger_book")
@@ -315,6 +316,8 @@ model Account {
   isLeaf       Boolean  @default(true) @map("is_leaf")
   auxTypes     String[] @default([]) @map("aux_types")
   active       Boolean  @default(true)
+  /// 默认现金流量项目 (T-006 M3b) — auto-suggest for the non-cash line of a cash voucher.
+  defaultCashFlowItem String? @map("default_cash_flow_item")
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   ledgerBook LedgerBook @relation(fields: [ledgerBookId], references: [id], onDelete: Cascade)
@@ -322,6 +325,27 @@ model Account {
   @@unique([ledgerBookId, code])
   @@index([ledgerBookId])
   @@map("account")
+}
+
+/// A cash flow item (现金流量项目) for the direct-method CF statement (T-006 M3b).
+/// Tagged onto the non-cash lines of cash-involved vouchers (JournalEntryLine.cashFlowItem).
+/// Ledger-scoped (like account/voucher).
+model CashFlowItem {
+  id           String   @id @default(uuid()) @db.Uuid
+  ledgerBookId String   @map("ledger_book_id") @db.Uuid
+  code         String
+  name         String
+  activity     String // operating | investing | financing
+  direction    String // inflow | outflow
+  sort         Int      @default(0)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  ledgerBook LedgerBook @relation(fields: [ledgerBookId], references: [id], onDelete: Cascade)
+
+  @@unique([ledgerBookId, code])
+  @@index([ledgerBookId])
+  @@map("cash_flow_item")
 }
 
 /// A stored capture attachment (票据/凭据原件) for T-004 intake. Bytes live in

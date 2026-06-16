@@ -19,7 +19,11 @@ reports depend on.
 - **M3a (period close) done** (2026-06-16): `PeriodClose` schema + ledger RLS, 结转损益 builder,
   close/reopen service + `/v1/periods` API, period-lock guard; 本年利润 (4103) added to the chart.
   Verified by unit + RLS integration tests + a live e2e (close → 结转 → lock → reopen). See `03`/`04`.
-  Next: M3b cash-flow tagging → M3c reports → M3d export.
+- **M3b (backend) done** (2026-06-16): `CashFlowItem` master + seed + `Account.defaultCashFlowItem`,
+  cash-flow tie-out + pre-close worklist + `/v1/cash-flow*` API; readiness gained `untaggedCashFlowCount`.
+  Verified by unit tests + a live e2e (seed → tag → worklist → tie-out). Remaining: **M3b-ui** (editor
+  CF-item picker + tag-posted-line endpoint).
+  Next: M3c reports (BS/IS/CF) → M3d export.
 - Decisions aligned 2026-06-16 (see Confirmed decisions); readiness review in `06`.
 - (history) first-draft Decision-Gate bundle. The key design decisions (CF tagging, report
   mapping, period-close coupling) are to be aligned with the user before implementation.

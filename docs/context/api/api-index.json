@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-16T15:44:24.542Z",
+  "generatedAt": "2026-06-16T22:52:33.708Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "a33fb051d218536c973e8cc3919f2a800aa27dfc098f167b7f653ee0d7ac8298",
+  "sourceChecksumSha256": "03232739b929a2b77f35aa20d877419420850a575a2fca8665709c0627976136",
   "stats": {
-    "totalEndpoints": 38,
+    "totalEndpoints": 42,
     "byTag": {
       "system": 1,
       "organization": 1,
@@ -17,6 +17,7 @@
       "intakes": 6,
       "ledger": 2,
       "periods": 4,
+      "cash-flow": 4,
       "opening-balances": 2
     }
   },
@@ -488,7 +489,8 @@
           "auxTypes",
           "active",
           "createdAt",
-          "parentCode"
+          "parentCode",
+          "defaultCashFlowItem"
         ]
       },
       "errors": [
@@ -560,7 +562,8 @@
           "auxTypes",
           "active",
           "createdAt",
-          "parentCode"
+          "parentCode",
+          "defaultCashFlowItem"
         ]
       },
       "errors": [
@@ -599,7 +602,8 @@
           "auxTypes",
           "active",
           "createdAt",
-          "parentCode"
+          "parentCode",
+          "defaultCashFlowItem"
         ]
       },
       "errors": [
@@ -1250,6 +1254,7 @@
           "status",
           "unpostedCount",
           "unclosedPriorPeriods",
+          "untaggedCashFlowCount",
           "canClose"
         ]
       },
@@ -1324,6 +1329,102 @@
       ],
       "example": {
         "curl": "curl -X POST '/v1/periods/{period}/reopen' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/cash-flow-items",
+      "operationId": "listCashFlowItems",
+      "summary": "List 现金流量项目",
+      "tag": "cash-flow",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": []
+      },
+      "errors": [],
+      "example": {
+        "curl": "curl -X GET '/v1/cash-flow-items' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/cash-flow-items/seed-standard",
+      "operationId": "seedStandardCashFlowItems",
+      "summary": "Seed the 《小企业准则》 CF items + chart defaults (idempotent)",
+      "tag": "cash-flow",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "seeded"
+        ]
+      },
+      "errors": [],
+      "example": {
+        "curl": "curl -X POST '/v1/cash-flow-items/seed-standard' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/cash-flow/untagged",
+      "operationId": "listUntaggedCashFlows",
+      "summary": "Pre-close worklist — untagged non-cash lines of cash vouchers",
+      "tag": "cash-flow",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [
+          "period"
+        ],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": []
+      },
+      "errors": [],
+      "example": {
+        "curl": "curl -X GET '/v1/cash-flow/untagged' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/cash-flow/tie-out",
+      "operationId": "getCashFlowTieOut",
+      "summary": "CF tie-out — tagged flows == net cash change over a range",
+      "tag": "cash-flow",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [
+          "from",
+          "to"
+        ],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "cashNetChange",
+          "taggedFlows",
+          "difference",
+          "tied"
+        ]
+      },
+      "errors": [],
+      "example": {
+        "curl": "curl -X GET '/v1/cash-flow/tie-out' -H 'Authorization: Bearer <token>'"
       }
     },
     {

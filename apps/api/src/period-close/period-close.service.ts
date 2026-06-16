@@ -19,7 +19,13 @@ import {
   type TxClient,
   type VoucherLineInput,
 } from '@my-erp/db';
-import { buildCloseLossesEntry, computeTrialBalance, Money, type CloseInputRow } from '@my-erp/finance-domain';
+import {
+  buildCloseLossesEntry,
+  computeTrialBalance,
+  listUntaggedCashFlows,
+  Money,
+  type CloseInputRow,
+} from '@my-erp/finance-domain';
 import type { Identity } from '@my-erp/platform';
 
 const PERIOD_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -50,6 +56,8 @@ export interface Readiness {
   status: string;
   unpostedCount: number;
   unclosedPriorPeriods: string[];
+  /** Untagged cash flows in the period (informational — does not block close). */
+  untaggedCashFlowCount: number;
   canClose: boolean;
 }
 
@@ -74,8 +82,11 @@ export class PeriodCloseService {
       (await listPeriodClosesTx(tx)).filter((x) => x.status === 'closed').map((x) => x.period),
     );
     const unclosedPriorPeriods = priorActive.filter((p) => !closedSet.has(p)).sort();
+    const untaggedCashFlowCount = listUntaggedCashFlows(
+      allPosted.filter((e) => periodOf(e.date) === period),
+    ).length;
     const canClose = status !== 'closed' && unpostedCount === 0 && unclosedPriorPeriods.length === 0;
-    return { period, status, unpostedCount, unclosedPriorPeriods, canClose };
+    return { period, status, unpostedCount, unclosedPriorPeriods, untaggedCashFlowCount, canClose };
   }
 
   async close(identity: Identity, ledgerBookId: string, period: string) {

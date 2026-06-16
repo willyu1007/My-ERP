@@ -5,6 +5,7 @@
 export * from './identity';
 export * from './ability';
 export * from './account';
+export * from './cash-flow';
 export * from './invitation';
 export * from './logging';
 export * from './workflow';

@@ -17,6 +17,8 @@ export interface PostedLine {
   readonly voucherNo: string;
   readonly date: string;
   readonly summary: string;
+  /** 现金流量项目 code (T-006 M3b) — tagged on the non-cash lines of cash vouchers. */
+  readonly cashFlowItem?: string | null;
 }
 
 export interface OpeningLine {

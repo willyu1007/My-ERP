@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-06-16T15:44:24.608Z",
+  "updatedAt": "2026-06-16T22:52:33.774Z",
   "artifacts": [
     {
       "id": "api-openapi",
@@ -11,8 +11,8 @@
       "tags": [
         "api"
       ],
-      "checksumSha256": "a33fb051d218536c973e8cc3919f2a800aa27dfc098f167b7f653ee0d7ac8298",
-      "lastUpdated": "2026-06-16T15:44:24.606Z",
+      "checksumSha256": "03232739b929a2b77f35aa20d877419420850a575a2fca8665709c0627976136",
+      "lastUpdated": "2026-06-16T22:52:33.772Z",
       "source": {
         "kind": "manual",
         "notes": "Edit the contract file; then run ctl-context touch."
@@ -29,8 +29,8 @@
         "index",
         "llm"
       ],
-      "checksumSha256": "5d53b067f4e71463ca21dcc91cfe8f3a18ce403875bb311ebbf9cb68b2241b23",
-      "lastUpdated": "2026-06-16T15:44:24.608Z",
+      "checksumSha256": "dd21d3acaab450f5d9abc4ce5778e28beb1630dd3640e44ec5525b7227aa67ba",
+      "lastUpdated": "2026-06-16T22:52:33.773Z",
       "source": {
         "kind": "command",
         "command": "node .ai/scripts/ctl-api-index.mjs generate --touch",
@@ -80,8 +80,8 @@
       "tags": [
         "db"
       ],
-      "checksumSha256": "179e34d8f7b5965dfd4e2d161abed47c3ddc0b1527aa43c314a54135f5f74cf3",
-      "lastUpdated": "2026-06-16T15:44:24.608Z",
+      "checksumSha256": "bcb214a15cb215761a3f24383ff381a983b1c42f984a6d2bdf16191bdc68191a",
+      "lastUpdated": "2026-06-16T22:52:33.774Z",
       "source": {
         "kind": "command",
         "command": "node .ai/scripts/ctl-db-ssot.mjs sync-to-context",

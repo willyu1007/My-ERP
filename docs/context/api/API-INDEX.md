@@ -1,9 +1,9 @@
 # API Index
 
-> Auto-generated at 2026-06-16T15:44:24.542Z — do NOT hand-edit.
-> Source: `docs/context/api/openapi.yaml` (SHA-256: `a33fb051d218...`)
+> Auto-generated at 2026-06-16T22:52:33.708Z — do NOT hand-edit.
+> Source: `docs/context/api/openapi.yaml` (SHA-256: `03232739b929...`)
 
-Total endpoints: **38**
+Total endpoints: **42**
 
 | Method | Path | Summary | Auth | Input (required) | Output (core) | Errors |
 |--------|------|---------|------|------------------|---------------|--------|
@@ -20,10 +20,10 @@ Total endpoints: **38**
 | GET | /v1/work-items/{id} | Work item detail with backend-computed actions | bearer | id | id, orgId, ledgerBookId, moduleKey, workflowKey, workflowVersion, workItemType, sourceType, sourceId, status, subStatus, priority, assignedRole, assigneeUserId, availableAt, createdBy, version, titleKey, metadata, createdAt, updatedAt, availableActions, claimedAt, dueAt, completedAt, canceledAt, completedBy | 401, 403, 404 |
 | POST | /v1/work-items/{id}/actions/{actionKey} | Execute a backend-authorized work item action | bearer | expectedVersion | workItem, source | 400, 401, 403, 404, 409 |
 | GET | /v1/accounts | List chart of accounts (ledger-scoped, code order = tree pre-order) | bearer | — | — | 400, 401, 403 |
-| POST | /v1/accounts | Create an account (accountant/admin) | bearer | code, name, category, direction | id, ledgerBookId, code, name, category, direction, level, isLeaf, auxTypes, active, createdAt, parentCode | 400, 401, 403 |
+| POST | /v1/accounts | Create an account (accountant/admin) | bearer | code, name, category, direction | id, ledgerBookId, code, name, category, direction, level, isLeaf, auxTypes, active, createdAt, parentCode, defaultCashFlowItem | 400, 401, 403 |
 | POST | /v1/accounts/seed-standard | Seed the 《小企业准则》 standard chart (idempotent) | bearer | — | seeded | 401, 403 |
-| PATCH | /v1/accounts/{code} | Update an account's name / aux types (accountant/admin) | bearer | code | id, ledgerBookId, code, name, category, direction, level, isLeaf, auxTypes, active, createdAt, parentCode | 400, 404 |
-| POST | /v1/accounts/{code}/deactivate | Deactivate an account (blocked if it has active children) | bearer | code | id, ledgerBookId, code, name, category, direction, level, isLeaf, auxTypes, active, createdAt, parentCode | 400, 404 |
+| PATCH | /v1/accounts/{code} | Update an account's name / aux types (accountant/admin) | bearer | code | id, ledgerBookId, code, name, category, direction, level, isLeaf, auxTypes, active, createdAt, parentCode, defaultCashFlowItem | 400, 404 |
+| POST | /v1/accounts/{code}/deactivate | Deactivate an account (blocked if it has active children) | bearer | code | id, ledgerBookId, code, name, category, direction, level, isLeaf, auxTypes, active, createdAt, parentCode, defaultCashFlowItem | 400, 404 |
 | GET | /v1/vouchers | List journal vouchers (ledger-scoped; optional status filter) | bearer | — | — | 401, 403 |
 | POST | /v1/vouchers | Create a draft voucher (accountant/cashier) | bearer | date, summary, lines | id, ledgerBookId, no, date, period, status, summary, totalDebit, totalCredit, maker, lines, checker, postedAt, reversalOf, reversedBy, attachments | 400, 401, 403 |
 | GET | /v1/vouchers/{id} | Voucher detail (with lines) | bearer | id | id, ledgerBookId, no, date, period, status, summary, totalDebit, totalCredit, maker, lines, checker, postedAt, reversalOf, reversedBy, attachments | 404 |
@@ -40,8 +40,12 @@ Total endpoints: **38**
 | GET | /v1/ledger/trial-balance | Trial balance (试算平衡表) — derived from posted vouchers | bearer | — | rows, totals, balanced | 401, 403 |
 | GET | /v1/ledger/accounts/{code} | Subsidiary ledger (明细分类账) for one account — derived, running balance | bearer | code | accountCode, accountName, opening, closing, rows | 401, 403 |
 | GET | /v1/periods | List period-close records (会计期间结账状态) | bearer | — | — | — |
-| GET | /v1/periods/{period}/readiness | Close-readiness for a period (未过账 / 前期未结账) | bearer | period | period, status, unpostedCount, unclosedPriorPeriods, canClose | 400 |
+| GET | /v1/periods/{period}/readiness | Close-readiness for a period (未过账 / 前期未结账) | bearer | period | period, status, unpostedCount, unclosedPriorPeriods, untaggedCashFlowCount, canClose | 400 |
 | POST | /v1/periods/{period}/close | 期末结账 — 结转损益 + lock the period | bearer | period | period, status, closeVoucherId, closedBy, closedAt, reopenedAt, netProfit | 400, 403 |
 | POST | /v1/periods/{period}/reopen | 反结账 — 红冲 the 结转 voucher + reopen | bearer | period | period, status, closeVoucherId, closedBy, closedAt, reopenedAt | 400 |
+| GET | /v1/cash-flow-items | List 现金流量项目 | bearer | — | — | — |
+| POST | /v1/cash-flow-items/seed-standard | Seed the 《小企业准则》 CF items + chart defaults (idempotent) | bearer | — | seeded | — |
+| GET | /v1/cash-flow/untagged | Pre-close worklist — untagged non-cash lines of cash vouchers | bearer | — | — | — |
+| GET | /v1/cash-flow/tie-out | CF tie-out — tagged flows == net cash change over a range | bearer | — | cashNetChange, taggedFlows, difference, tied | — |
 | GET | /v1/opening-balances | Opening balances (期初余额) + the ledger's enabled period | bearer | — | openingPeriod, balances | 401, 403 |
 | PUT | /v1/opening-balances | Set the enabled period + replace opening balances (期初建账) | bearer | openingPeriod, balances | openingPeriod, balances | 400, 401, 403 |

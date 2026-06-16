@@ -438,6 +438,7 @@ export interface AccountEntity {
   isLeaf: boolean;
   auxTypes: string[];
   active: boolean;
+  defaultCashFlowItem: string | null;
   createdAt: Date;
 }
 
@@ -476,6 +477,7 @@ function toAccount(a: {
   isLeaf: boolean;
   auxTypes: string[];
   active: boolean;
+  defaultCashFlowItem: string | null;
   createdAt: Date;
 }): AccountEntity {
   return {
@@ -490,6 +492,7 @@ function toAccount(a: {
     isLeaf: a.isLeaf,
     auxTypes: a.auxTypes,
     active: a.active,
+    defaultCashFlowItem: a.defaultCashFlowItem,
     createdAt: a.createdAt,
   };
 }
@@ -882,6 +885,7 @@ export interface PostedLineRow {
   voucherNo: string;
   date: string;
   summary: string;
+  cashFlowItem: string | null;
 }
 
 /**
@@ -908,6 +912,7 @@ export async function getPostedEntriesTx(tx: TxClient): Promise<PostedLineRow[]>
     voucherNo: l.voucher.no,
     date: l.voucher.date.toISOString().slice(0, 10),
     summary: l.summary,
+    cashFlowItem: l.cashFlowItem,
   }));
 }
 
@@ -1801,6 +1806,69 @@ export async function reopenPeriodTx(
   });
   if (res.count === 0) return null;
   return getPeriodCloseTx(tx, input.period);
+}
+
+// ---- T-006 M3b cash flow items (ledger-scoped) ----
+
+export interface CashFlowItemEntity {
+  id: string;
+  ledgerBookId: string;
+  code: string;
+  name: string;
+  activity: string;
+  direction: string;
+  sort: number;
+  active: boolean;
+}
+
+export interface CashFlowItemSeedInput {
+  code: string;
+  name: string;
+  activity: string;
+  direction: string;
+}
+
+export async function listCashFlowItemsTx(tx: TxClient): Promise<CashFlowItemEntity[]> {
+  const rows = await tx.cashFlowItem.findMany({ orderBy: [{ sort: 'asc' }, { code: 'asc' }] });
+  return rows.map((r) => ({
+    id: r.id,
+    ledgerBookId: r.ledgerBookId,
+    code: r.code,
+    name: r.name,
+    activity: r.activity,
+    direction: r.direction,
+    sort: r.sort,
+    active: r.active,
+  }));
+}
+
+/** Idempotent seed of the standard CF items for a ledger. */
+export async function seedCashFlowItemsTx(
+  tx: TxClient,
+  ledgerBookId: string,
+  seeds: readonly CashFlowItemSeedInput[],
+): Promise<number> {
+  const result = await tx.cashFlowItem.createMany({
+    data: seeds.map((s, i) => ({
+      ledgerBookId,
+      code: s.code,
+      name: s.name,
+      activity: s.activity,
+      direction: s.direction,
+      sort: i,
+    })),
+    skipDuplicates: true,
+  });
+  return result.count;
+}
+
+/** Set a chart account's default 现金流量项目 (auto-suggest source). */
+export async function setAccountDefaultCashFlowItemTx(
+  tx: TxClient,
+  code: string,
+  cashFlowItem: string | null,
+): Promise<void> {
+  await tx.account.updateMany({ where: { code }, data: { defaultCashFlowItem: cashFlowItem } });
 }
 
 export { Prisma } from '@prisma/client';
