@@ -98,10 +98,21 @@ RLS isolation itself is enforced + covered by the integration tests.
 | Context layer | `ctl-context.mjs verify --strict` | passed (after `ctl-context touch` refreshed api-openapi/api-index hashes → `docs/context/registry.json`) |
 | Governance lint | `ctl-project-governance.mjs lint --check` | passed (only the pre-existing T-001 warning) |
 
+## 2026-06-16 — S5b web confirm surface (live)
+
+| Check | Result |
+|---|---|
+| Typecheck / ui:governance / tests | pass (30 feature files token-only; 115 tests) |
+| Confirm surface (SSR) | `/finance/vouchers/<draft>` renders the prefilled editor — `确认凭证`, `1002`, `1234.56` |
+| Capture button (SSR) | `/finance/daily-accounting` shows `拍照/上传票据` |
+| Confirm = PATCH-contra + submit (live, fresh DB) | voucher → `pending`; `voucher.confirm → completed`; `voucher.review → open` |
+
+The confirm flow was verified on a **fresh DB** — the shared `myerp` dev DB had a prior standard
+chart, and with RLS bypassed for the DB owner, `enrichLines` collided on a non-leaf `1002` from another
+ledger (see `05-pitfalls`). Code is correct; this is a dev-data/RLS-bypass artifact.
+
 ## Not yet verified (explicit)
-- The web **confirm** surface (S5b: open a drafted voucher prefilled in `<VoucherFastEntry>`, add the
-  contra, submit) — not yet wired; the backend confirm=submit path is live-verified via `/v1`.
-- Interactive keyboard flow in a real browser session (vs SSR render + logic).
+- Interactive keyboard flow in a real browser session (vs SSR render + logic) — minor.
 - **Live `/v1` read/write round-trip** (data-source cutover against a running API): NOT verified in
   this session. It requires a running `apps/api` + Postgres + seeded org/ledger/membership/accounts
   and an `API_DEV_TOKEN`. The wiring typechecks and the fixture fallback keeps the app green without

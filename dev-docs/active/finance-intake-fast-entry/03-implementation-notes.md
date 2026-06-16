@@ -168,14 +168,34 @@ Verification: `draft.test.ts` (flatten/route/auto-draft helpers) + `intake-draft
   daily-accounting page rendering the real draft (S1b cutover). See `04-verification`. `.data/` (local
   object-store output) is gitignored.
 
-## S6 sign-off (done 2026-06-16)
-- Full sweep green (typecheck, 115 tests, ui:governance, api-index, openapi quality, strict context
-  verify, governance lint). Acceptance criteria ticked in `00-overview`.
-- T-004 core scope **delivered + live-verified**. Status stays `in-progress` for the one follow-up:
+## S5b — web confirm surface (done 2026-06-16)
 
-## Open items / next
-- **S5b (web confirm surface)** — reuse `<VoucherFastEntry>` (add `initialDraft`/edit mode so a drafted
-  voucher opens prefilled and 提交 updates+submits), a "待确认" queue entry, a capture/upload affordance,
-  and intake methods on `@my-erp/api-client`. The backend confirm=submit is already live-verified.
-- Deferred behind seams: real OCR (A), object-storage backend (B), chat inbound (ε); and **T-005**
-  (contract aggregate).
+What changed (all in `apps/web`):
+- `@my-erp/api-client`: added intake methods (`captureIntake`/`listIntakes`/`getIntake`/`extractIntake`/
+  `draftIntake`/`discardIntake`) + `Intake`/`CaptureIntake`/`ExtractionResult` types (`updateVoucher`
+  already existed).
+- `data-source.ts`: `updateVoucher`, `captureIntake`, `extractIntake`.
+- `<VoucherFastEntry>`: **edit/confirm mode** — optional `voucherId` + `initial` (prefilled draft) +
+  `headerAction` slot. With `voucherId`, 保存草稿 PATCHes and 提交 confirms (PATCH → submit); without it,
+  the original create/create+submit path. Seeds state from `initial`.
+- `actions.ts`: `updateDraftAction`, `confirmAction` (update→submit), `captureAction` (capture→extract;
+  returns the auto-drafted voucher id).
+- `vouchers/[id]/page.tsx`: a **draft** voucher renders `<VoucherFastEntry>` prefilled (the confirm
+  surface); posted/reversed stay read-only.
+- `capture-button.tsx`: a `拍照/上传票据` control (FileReader → base64 → `captureAction` → refresh),
+  mounted in the daily-accounting fast-entry header.
+
+Verified: typecheck, ui:governance (30 feature files), 115 tests; and **live** — the draft detail page
+renders the prefilled editor (确认凭证 + the bank line), the capture button is present, and
+PATCH-contra → submit → voucher `pending` + `voucher.confirm → completed` + `voucher.review → open`.
+
+## S6 sign-off + T-004 DONE (2026-06-16)
+- Full sweep green (typecheck, 115 tests, ui:governance, api-index, openapi quality, strict context
+  verify, governance lint). All acceptance criteria met (`00-overview`); whole pipeline live-verified.
+- Status → **done**.
+
+## Follow-ups (out of T-004)
+- Deferred behind seams: real OCR (A), object-storage backend (B), chat inbound (ε).
+- **T-005** — finance contract / transaction-lifecycle aggregate (needs M2 cashier entities).
+- Posting-template targets a configurable leaf account: the `bank-slip` template hardcodes `1002`,
+  which is a parent in the full 小企业 chart; configurable posting rules are M2 cashier work.

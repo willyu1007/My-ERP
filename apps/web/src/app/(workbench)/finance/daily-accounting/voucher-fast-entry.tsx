@@ -7,15 +7,41 @@
  * 保存草稿 / 提交 (post stays in the review queue, per SoD). Integer-cent math,
  * zero float (借贷必平). Reused as the intake-confirm surface in S5.
  */
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+} from 'react';
 import { useRouter } from 'next/navigation';
 import { StatusBadge, useToast } from '@my-erp/ui';
 import type { CreateVoucher } from '@my-erp/api-client';
 import { centsToString, sumCents, toCents } from '@/lib/finance/money';
 import { formatMoney, formatPeriod } from '@/lib/finance/format';
 import type { AccountVM } from '@/lib/finance/types';
-import { saveDraftAction, submitNewAction } from './actions';
+import {
+  confirmAction,
+  saveDraftAction,
+  submitNewAction,
+  updateDraftAction,
+  type SaveResult,
+} from './actions';
 import styles from './voucher-fast-entry.module.css';
+
+/** A prefilled draft (edit/confirm mode) — e.g. a capture-generated voucher draft. */
+export interface FastEntryInitial {
+  readonly date: string;
+  readonly summary: string;
+  readonly lines: readonly {
+    readonly accountCode: string;
+    readonly accountName: string;
+    readonly summary: string;
+    readonly debit: string;
+    readonly credit: string;
+  }[];
+}
 
 interface DraftLine {
   key: string;
@@ -142,17 +168,38 @@ function AccountCombobox({
 export function VoucherFastEntry({
   accounts,
   initialDate,
+  voucherId,
+  initial,
+  headerAction,
 }: {
   readonly accounts: readonly AccountVM[];
   readonly initialDate: string;
+  /** When set, the editor confirms an existing draft (PATCH then submit) instead of creating one. */
+  readonly voucherId?: string;
+  /** Prefilled draft for edit/confirm mode (e.g. a capture-generated voucher). */
+  readonly initial?: FastEntryInitial;
+  /** Optional control rendered in the header (e.g. the capture/upload button). */
+  readonly headerAction?: ReactNode;
 }) {
   const toast = useToast();
   const router = useRouter();
-  const idRef = useRef(2);
+  const idRef = useRef(initial ? Math.max(2, initial.lines.length) : 2);
   const fieldRefs = useRef(new Map<string, HTMLInputElement | null>());
-  const [date, setDate] = useState(initialDate);
-  const [summary, setSummary] = useState('');
-  const [lines, setLines] = useState<DraftLine[]>(() => [blankLine('line-0'), blankLine('line-1')]);
+  const [date, setDate] = useState(initial?.date ?? initialDate);
+  const [summary, setSummary] = useState(initial?.summary ?? '');
+  const [lines, setLines] = useState<DraftLine[]>(() => {
+    if (!initial) return [blankLine('line-0'), blankLine('line-1')];
+    const seeded: DraftLine[] = initial.lines.map((l, i) => ({
+      key: `line-${i}`,
+      accountCode: l.accountCode,
+      accountName: l.accountName,
+      summary: l.summary,
+      debit: l.debit,
+      credit: l.credit,
+    }));
+    while (seeded.length < 2) seeded.push(blankLine(`line-${seeded.length}`));
+    return seeded;
+  });
   const [pendingFocus, setPendingFocus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -270,11 +317,21 @@ export function VoucherFastEntry({
     setBusy(true);
     try {
       const input = buildInput();
-      const res = kind === 'submit' ? await submitNewAction(input) : await saveDraftAction(input);
+      let res: SaveResult;
+      if (voucherId) {
+        res = kind === 'submit' ? await confirmAction(voucherId, input) : await updateDraftAction(voucherId, input);
+      } else {
+        res = kind === 'submit' ? await submitNewAction(input) : await saveDraftAction(input);
+      }
       if (res.ok) {
-        toast.notify('success', res.submitted ? '已提交待审核' : '已保存草稿', res.no);
-        reset();
-        router.refresh();
+        toast.notify('success', res.submitted ? '已提交待审核' : voucherId ? '已保存' : '已保存草稿', res.no);
+        if (voucherId) {
+          if (res.submitted) router.push('/finance/daily-accounting');
+          else router.refresh();
+        } else {
+          reset();
+          router.refresh();
+        }
       } else if (res.reason === 'unconfigured') {
         toast.notify('info', '演示模式', '未连接后端（设置 API_BASE_URL / API_DEV_TOKEN 后可真实保存）');
       } else {
@@ -288,7 +345,7 @@ export function VoucherFastEntry({
   return (
     <div className="mt-card wb-stack wb-stack--md">
       <div className="wb-row wb-row--wrap">
-        <h2 className="wb-card__title">快速制单</h2>
+        <h2 className="wb-card__title">{voucherId ? '确认凭证' : '快速制单'}</h2>
         <div className="mt-field">
           <label className="mt-label" htmlFor="fe-date">
             日期
@@ -302,6 +359,7 @@ export function VoucherFastEntry({
           />
         </div>
         <span className="wb-muted">会计期间 {period}</span>
+        {headerAction}
       </div>
 
       <div className="mt-field">

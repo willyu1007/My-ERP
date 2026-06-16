@@ -8,7 +8,7 @@
  * fixtures for S1 (the client surface is scoped to voucher + account); they
  * cut over with the report milestone.
  */
-import { ApiError, type CreateVoucher } from '@my-erp/api-client';
+import { ApiError, type CaptureIntake, type CreateVoucher, type Intake } from '@my-erp/api-client';
 import { ACCOUNTS, OPENING_BALANCES, VOUCHERS } from './fixtures';
 import {
   computeAccountLedger,
@@ -51,6 +51,21 @@ export async function createVoucher(input: CreateVoucher): Promise<VoucherVM> {
 /** Submit a draft for review (draft → pending). Requires the backend. */
 export async function submitVoucher(id: string): Promise<VoucherVM> {
   return voucherToVM(await requireFinanceApi().submitVoucher(id));
+}
+
+/** Replace a draft voucher's header + lines (only while draft). Requires the backend. */
+export async function updateVoucher(id: string, input: CreateVoucher): Promise<VoucherVM> {
+  return voucherToVM(await requireFinanceApi().updateVoucher(id, input));
+}
+
+/** Capture an economic event (base64 attachment) → an Intake. Requires the backend. */
+export async function captureIntake(input: CaptureIntake): Promise<Intake> {
+  return requireFinanceApi().captureIntake(input);
+}
+
+/** Run extraction on an intake (auto-drafts when high-confidence). Requires the backend. */
+export async function extractIntake(id: string): Promise<Intake> {
+  return requireFinanceApi().extractIntake(id);
 }
 
 // Ledger reports are derived locally from fixtures today; the real backend

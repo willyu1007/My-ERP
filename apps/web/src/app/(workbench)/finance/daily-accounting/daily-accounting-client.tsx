@@ -6,6 +6,7 @@ import { ListView, Queue, StatusBadge, type RowModel } from '@my-erp/ui';
 import { formatDate, formatMoney } from '@/lib/finance/format';
 import { VOUCHER_STATUS_LABELS, voucherStatusTone } from '@/lib/finance/types';
 import type { AccountVM, VoucherStatus, VoucherVM } from '@/lib/finance/types';
+import { CaptureButton } from './capture-button';
 import { VoucherFastEntry } from './voucher-fast-entry';
 import styles from './daily-accounting-client.module.css';
 
@@ -152,7 +153,11 @@ export function DailyAccountingClient({
 
   return (
     <div className="wb-scene wb-stack wb-stack--lg">
-      <VoucherFastEntry accounts={accounts} initialDate={initialDate} />
+      <VoucherFastEntry
+        accounts={accounts}
+        initialDate={initialDate}
+        headerAction={<CaptureButton />}
+      />
       <ListView<VoucherVM>
         items={filtered}
         nav={nav}

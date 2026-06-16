@@ -14,7 +14,12 @@ mapped to a voucher draft, and confirmed in the **same** fast-entry editor. The 
 generated, confirmable artifact.
 
 ## Status
-- State: in-progress
+- State: done
+- **DONE (2026-06-16)**: all phases S1–S6 + S5b delivered and **live-verified** on real `/v1` + Postgres
+  (capture → extract → auto-draft → confirm → submit, plus the web fast-entry/confirm/capture surfaces).
+  All acceptance criteria met; full sweep green (typecheck, 115 tests, ui:governance, contracts/context/
+  governance). Deferred-behind-seams items (real OCR, object storage, chat inbound) and T-005 (contract
+  aggregate) are separate follow-ups.
 - Scope was narrowed at the 2026-06-14 top-level alignment (see below); readiness pass 2026-06-15
   (`06-readiness-review.md`).
 - **S1 complete** (2026-06-15): S1a `@my-erp/api-client` via OpenAPI codegen; S1b env-gated
@@ -40,11 +45,13 @@ generated, confirmable artifact.
 - **Live e2e verified** (2026-06-15): added `pnpm dev:seed` (`scripts/dev-seed.mjs`); brought up
   docker PG + API + web and proved capture → extract → **auto-draft** → confirm-workitem on real `/v1`,
   and the web daily-accounting page rendering the real draft (S1b cutover). See `04-verification`.
-- **S6 sign-off** (2026-06-16): full verification sweep green — `pnpm typecheck`, **115 tests**,
-  `pnpm ui:governance`, api-index + openapi quality, strict context verify, governance lint. All
-  acceptance criteria met (see below). T-004's core scope is **delivered + live-verified**; the one
-  remaining piece is the **S5b web confirm surface** (tracked as a follow-up). Status stays
-  `in-progress` until S5b lands or is spun into its own task.
+- **S5b done** (2026-06-16): web confirm surface — `<VoucherFastEntry>` edit/confirm mode (`voucherId`
+  + `initial`), the draft-voucher detail page opens prefilled, a `拍照/上传票据` capture button, and
+  intake methods on `@my-erp/api-client`. Live-verified: confirm opens the prefilled draft, and
+  PATCH-contra → submit → pending + `voucher.confirm` completed + `voucher.review` opened.
+- **S6 sign-off + T-004 DONE** (2026-06-16): full sweep green (typecheck, **115 tests**,
+  ui:governance, api-index + openapi quality, strict context verify, governance lint); all acceptance
+  criteria met; whole pipeline live-verified. Status → **done**.
 
 ## Top-level decisions (2026-06-14 alignment)
 - **α** Capture-first inversion is the central bet (voucher = generated/confirmed artifact; manual
@@ -92,9 +99,9 @@ On top of M1 and the T-003 kernel:
       stored ERP-side, and produces an `Intake` row; the notification path carries only safe metadata.
       **(S4; live-verified + outbox-safety test.)**
 - [x] A captured intake is mapped by a posting template into a `JournalVoucher` draft plus a
-      `voucher.confirm` work item, in one transaction with audit + metadata-only outbox.
-      **(S5; live-verified + persistence-chain test.)** Web "opens in the fast-entry editor for
-      confirm" → **S5b follow-up** (backend confirm=submit is live-verified).
+      `voucher.confirm` work item, in one transaction with audit + metadata-only outbox, and **opens
+      in the same fast-entry editor for confirm**. **(S5 + S5b; live-verified end-to-end — capture →
+      auto-draft → confirm opens prefilled → submit → pending + confirm task completed + review opened.)**
 - [x] Debit/credit balance (integer cents, zero float), leaf+active account rules, no-silent-delete,
       SoD, audit, org+ledger RLS, and the metadata-only My-Chat boundary are all preserved.
 - [x] Tests cover intake RLS, intake transitions, posting-template output, outbox-metadata safety,

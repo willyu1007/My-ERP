@@ -14,6 +14,9 @@ export type Voucher = components['schemas']['Voucher'];
 export type VoucherLine = components['schemas']['VoucherLine'];
 export type CreateVoucher = components['schemas']['CreateVoucher'];
 export type VoucherStatus = Voucher['status'];
+export type Intake = components['schemas']['Intake'];
+export type CaptureIntake = components['schemas']['CaptureIntake'];
+export type ExtractionResult = components['schemas']['ExtractionResult'];
 
 /** Kept for back-compat with the previous package stub. */
 export const API_CLIENT_PACKAGE = '@my-erp/api-client' as const;
@@ -49,6 +52,12 @@ export interface ApiClient {
   submitVoucher(id: string): Promise<Voucher>;
   postVoucher(id: string, body?: { confirmSinglePerson?: boolean }): Promise<Voucher>;
   listAccounts(): Promise<Account[]>;
+  listIntakes(params?: { status?: string }): Promise<Intake[]>;
+  getIntake(id: string): Promise<Intake>;
+  captureIntake(body: CaptureIntake): Promise<Intake>;
+  extractIntake(id: string): Promise<Intake>;
+  draftIntake(id: string): Promise<Intake>;
+  discardIntake(id: string): Promise<Intake>;
 }
 
 export function createApiClient(config: ApiClientConfig): ApiClient {
@@ -87,5 +96,14 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
     postVoucher: (id, body) =>
       request<Voucher>('POST', `/v1/vouchers/${encodeURIComponent(id)}/post`, body ?? {}),
     listAccounts: () => request<Account[]>('GET', '/v1/accounts'),
+    listIntakes: (params) =>
+      request<Intake[]>('GET', `/v1/intakes${params?.status ? `?status=${params.status}` : ''}`),
+    getIntake: (id) => request<Intake>('GET', `/v1/intakes/${encodeURIComponent(id)}`),
+    captureIntake: (body) => request<Intake>('POST', '/v1/intakes', body),
+    extractIntake: (id) =>
+      request<Intake>('POST', `/v1/intakes/${encodeURIComponent(id)}/extract`),
+    draftIntake: (id) => request<Intake>('POST', `/v1/intakes/${encodeURIComponent(id)}/draft`),
+    discardIntake: (id) =>
+      request<Intake>('POST', `/v1/intakes/${encodeURIComponent(id)}/discard`),
   };
 }
