@@ -65,11 +65,28 @@ Design notes:
   draft/confirm time is the primary path; the worklist + tie-out are the safety net.
 - `untaggedCashFlowCount` is a warning, not a close blocker (D2 keeps close decoupled from CF completeness).
 
+## M3c (backend) — statutory reports (done 2026-06-16)
+
+What changed (`packages/finance-domain/report.ts`):
+- **Range-aware derivation** over POSTED entries (reusing `computeTrialBalance`): `closingAsOf(to)` (BS,
+  balances as-of range end), `periodActivity(from,to)` (IS, 发生额 within range), and a date-filtered CF.
+- **Report-mapping** (D3, code-first): `evalReport(defs, rows)` with `ReportTerm { prefix, side, sign }`
+  (signed sums + netting — prefix match catches sub-accounts; `side` net=debit−credit / credit=credit−debit)
+  + `combine` (signed subtotals) + `includesPnl` (BS 未分配利润 absorbs the un-结转 P&L net). Templates:
+  `BALANCE_SHEET_TEMPLATE`, `INCOME_STATEMENT_TEMPLATE`.
+- **Statements**: `balanceSheet` (+ `balanced` check 资产 == 负债+权益; **D4 equity coupling** — 未分配利润
+  = 4103+4104 + Σ P&L net, so it balances whether or not the period is 结转'd), `incomeStatement`
+  (+ `netProfit`), `cashFlowStatement` (direct; groups tagged flows by `CashFlowItem` activity + `tied`).
+- API: `GET /v1/reports/{balance-sheet?to | income-statement?from&to | cash-flow?from&to}`. The web
+  resolves 月/季/年/custom presets to from/to.
+- OpenAPI + api-index + context regenerated.
+
+Verification: `report.test.ts` (worked fixture — BS balances, IS 净利润, CF ties out) + a live e2e
+(capital + sale + expense → BS balanced 50700, IS 净利润 700, CF net 50700 tied). The CF test caught a
+fixture bug (tag on a cash line is ignored — confirms D1).
+
 ## Open items / next
-- **M3b-ui** — the editor CF-item picker: in `<VoucherFastEntry>`, show a CF-item select on non-cash
-  lines when the voucher touches a cash account, auto-suggested from `Account.defaultCashFlowItem`
-  (thread `cashFlowItem` through `VoucherLineVM`/buildInput/initial). Plus a tag-posted-line endpoint
-  (metadata-only; needs a `journal_entry_line` UPDATE RLS policy for the non-owner app role) so the
-  worklist is actionable for already-posted vouchers.
-- **M3c** — report read-model + statutory three tables (BS/IS/CF). **M3d** export. **M3e** verify.
+- **M3c-ui** — report views: a `/finance/reports` page with a 月/季/年/自定义 range picker rendering the
+  three statements (tables). **M3b-ui** (CF-item picker + tag-posted endpoint) remains too.
+- **M3d** export (Excel/PDF + print). **M3e** verify.
 - Consider a `close` CASL action (close is currently gated by `post` Voucher).

@@ -654,6 +654,40 @@ paths:
         - { name: to, in: query, required: false, schema: { type: string, format: date } }
       responses:
         '200': { description: Tie-out, content: { application/json: { schema: { $ref: '#/components/schemas/CashFlowTieOut' } } } }
+  /v1/reports/balance-sheet:
+    get:
+      operationId: getBalanceSheet
+      summary: 资产负债表 (as-of date)
+      tags: [reports]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: to, in: query, required: true, schema: { type: string, format: date } }]
+      responses:
+        '200': { description: Balance sheet, content: { application/json: { schema: { $ref: '#/components/schemas/BalanceSheet' } } } }
+        '400': { description: Invalid date }
+  /v1/reports/income-statement:
+    get:
+      operationId: getIncomeStatement
+      summary: 利润表 (range — 月/季/年/自定义)
+      tags: [reports]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+      responses:
+        '200': { description: Income statement, content: { application/json: { schema: { $ref: '#/components/schemas/IncomeStatement' } } } }
+        '400': { description: Invalid date }
+  /v1/reports/cash-flow:
+    get:
+      operationId: getCashFlowStatement
+      summary: 现金流量表 (direct method, range)
+      tags: [reports]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+      responses:
+        '200': { description: Cash flow statement, content: { application/json: { schema: { $ref: '#/components/schemas/CashFlowStatement' } } } }
+        '400': { description: Invalid date }
   /v1/opening-balances:
     get:
       operationId: getOpeningBalances
@@ -1052,6 +1086,52 @@ components:
         - type: object
           properties:
             netProfit: { type: string, description: '净利润 (signed; positive = profit)' }
+    ReportLine:
+      type: object
+      required: [key, label, level, amount]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        level: { type: integer }
+        amount: { type: string }
+    BalanceSheet:
+      type: object
+      required: [asOf, lines, balanced]
+      properties:
+        asOf: { type: string, format: date }
+        lines: { type: array, items: { $ref: '#/components/schemas/ReportLine' } }
+        balanced: { type: boolean }
+    IncomeStatement:
+      type: object
+      required: [from, to, lines, netProfit]
+      properties:
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        lines: { type: array, items: { $ref: '#/components/schemas/ReportLine' } }
+        netProfit: { type: string }
+    CashFlowStatement:
+      type: object
+      required: [from, to, activities, netCashFlow, tied]
+      properties:
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        activities:
+          type: array
+          items:
+            type: object
+            properties:
+              activity: { type: string, enum: [operating, investing, financing] }
+              subtotal: { type: string }
+              lines:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    code: { type: string }
+                    name: { type: string }
+                    amount: { type: string }
+        netCashFlow: { type: string }
+        tied: { type: boolean }
     TrialBalanceRow:
       type: object
       required: [accountCode, accountName, openingDebit, openingCredit, periodDebit, periodCredit, closingDebit, closingCredit]

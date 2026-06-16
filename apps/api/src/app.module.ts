@@ -19,6 +19,8 @@ import { OpeningBalancesController } from './opening-balances/opening-balances.c
 import { OrganizationController } from './organization/organization.controller';
 import { PeriodCloseController } from './period-close/period-close.controller';
 import { PeriodCloseService } from './period-close/period-close.service';
+import { ReportsController } from './reports/reports.controller';
+import { ReportsService } from './reports/reports.service';
 import { VouchersController } from './vouchers/vouchers.controller';
 import { WorkItemsController } from './work-items/work-items.controller';
 import { WorkItemsService } from './work-items/work-items.service';
@@ -39,6 +41,7 @@ import { WorkItemsService } from './work-items/work-items.service';
     OpeningBalancesController,
     PeriodCloseController,
     CashFlowController,
+    ReportsController,
   ],
   providers: [
     HealthService,
@@ -47,6 +50,7 @@ import { WorkItemsService } from './work-items/work-items.service';
     IntakeService,
     PeriodCloseService,
     CashFlowService,
+    ReportsService,
     { provide: OBJECT_STORE, useClass: LocalObjectStore },
     { provide: EXTRACTOR, useClass: MockExtractor },
   ],

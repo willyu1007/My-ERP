@@ -46,6 +46,25 @@ Proves 结转损益 + period lock + 反结账 end-to-end against a live API.
 Proves the CF item master + seed + auto-suggest defaults + tag persistence + worklist + the tie-out
 (CF 借贷必平) end-to-end.
 
+## 2026-06-16 — M3c (backend) statutory reports
+
+| Check | Result |
+|---|---|
+| Typecheck | pass (9 projects) |
+| Tests | **31 files / 126 tests** (+3: `finance-domain/report.test` — BS balances, IS 净利润, CF tie-out) |
+| API index / openapi quality / context | regenerated; passed |
+
+### Live e2e (real `/v1`, fresh `myerp_m3c` DB)
+Posted capital (50000, FN-IN-1) + sale (1000, OP-IN-1) + expense (300, OP-OUT-4):
+
+| Statement | Result |
+|---|---|
+| `GET /v1/reports/balance-sheet?to=2026-12-31` | 货币资金 50700 · 实收资本 50000 · 未分配利润 700 · 负债权益总计 50700 · **balanced=true** |
+| `GET /v1/reports/income-statement?from&to` | 营业收入 1000 · 销售费用 300 · **净利润 700** |
+| `GET /v1/reports/cash-flow?from&to` | 经营 700 · 筹资 50000 · **净增加额 50700 · tied=true** |
+
+The three statements derive correctly, BS balances, and CF ties out — over a date range (月/季/年/custom).
+
 ## Not yet verified (explicit)
-- M3b-ui (editor CF-item picker + tag-posted-line endpoint) and M3c reports (BS/IS/CF) — next.
+- M3c-ui (report views) + M3b-ui (CF-item picker) + M3d export — next.
 - A `close` CASL action (currently gated by `post` Voucher).

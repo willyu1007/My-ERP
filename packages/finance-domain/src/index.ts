@@ -4,6 +4,7 @@ export * from './ledger';
 export * from './posting-template';
 export * from './period-close';
 export * from './cash-flow';
+export * from './report';
 
 /**
  * Money — amounts are always exact decimals, never IEEE floats (hard constraint).

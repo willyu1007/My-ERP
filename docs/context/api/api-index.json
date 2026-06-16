@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-16T22:52:33.708Z",
+  "generatedAt": "2026-06-16T23:05:03.569Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "03232739b929a2b77f35aa20d877419420850a575a2fca8665709c0627976136",
+  "sourceChecksumSha256": "b9543548dc729824177ff30b62c43afa0da2db6749bdd125bffbeb2362e3e10e",
   "stats": {
-    "totalEndpoints": 42,
+    "totalEndpoints": 45,
     "byTag": {
       "system": 1,
       "organization": 1,
@@ -18,6 +18,7 @@
       "ledger": 2,
       "periods": 4,
       "cash-flow": 4,
+      "reports": 3,
       "opening-balances": 2
     }
   },
@@ -1425,6 +1426,98 @@
       "errors": [],
       "example": {
         "curl": "curl -X GET '/v1/cash-flow/tie-out' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/reports/balance-sheet",
+      "operationId": "getBalanceSheet",
+      "summary": "资产负债表 (as-of date)",
+      "tag": "reports",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [
+          "to"
+        ],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "asOf",
+          "lines",
+          "balanced"
+        ]
+      },
+      "errors": [
+        400
+      ],
+      "example": {
+        "curl": "curl -X GET '/v1/reports/balance-sheet' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/reports/income-statement",
+      "operationId": "getIncomeStatement",
+      "summary": "利润表 (range — 月/季/年/自定义)",
+      "tag": "reports",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [
+          "from",
+          "to"
+        ],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "from",
+          "to",
+          "lines",
+          "netProfit"
+        ]
+      },
+      "errors": [
+        400
+      ],
+      "example": {
+        "curl": "curl -X GET '/v1/reports/income-statement' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/reports/cash-flow",
+      "operationId": "getCashFlowStatement",
+      "summary": "现金流量表 (direct method, range)",
+      "tag": "reports",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [
+          "from",
+          "to"
+        ],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "from",
+          "to",
+          "activities",
+          "netCashFlow",
+          "tied"
+        ]
+      },
+      "errors": [
+        400
+      ],
+      "example": {
+        "curl": "curl -X GET '/v1/reports/cash-flow' -H 'Authorization: Bearer <token>'"
       }
     },
     {

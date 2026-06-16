@@ -1,9 +1,9 @@
 # API Index
 
-> Auto-generated at 2026-06-16T22:52:33.708Z — do NOT hand-edit.
-> Source: `docs/context/api/openapi.yaml` (SHA-256: `03232739b929...`)
+> Auto-generated at 2026-06-16T23:05:03.569Z — do NOT hand-edit.
+> Source: `docs/context/api/openapi.yaml` (SHA-256: `b9543548dc72...`)
 
-Total endpoints: **42**
+Total endpoints: **45**
 
 | Method | Path | Summary | Auth | Input (required) | Output (core) | Errors |
 |--------|------|---------|------|------------------|---------------|--------|
@@ -47,5 +47,8 @@ Total endpoints: **42**
 | POST | /v1/cash-flow-items/seed-standard | Seed the 《小企业准则》 CF items + chart defaults (idempotent) | bearer | — | seeded | — |
 | GET | /v1/cash-flow/untagged | Pre-close worklist — untagged non-cash lines of cash vouchers | bearer | — | — | — |
 | GET | /v1/cash-flow/tie-out | CF tie-out — tagged flows == net cash change over a range | bearer | — | cashNetChange, taggedFlows, difference, tied | — |
+| GET | /v1/reports/balance-sheet | 资产负债表 (as-of date) | bearer | — | asOf, lines, balanced | 400 |
+| GET | /v1/reports/income-statement | 利润表 (range — 月/季/年/自定义) | bearer | — | from, to, lines, netProfit | 400 |
+| GET | /v1/reports/cash-flow | 现金流量表 (direct method, range) | bearer | — | from, to, activities, netCashFlow, tied | 400 |
 | GET | /v1/opening-balances | Opening balances (期初余额) + the ledger's enabled period | bearer | — | openingPeriod, balances | 401, 403 |
 | PUT | /v1/opening-balances | Set the enabled period + replace opening balances (期初建账) | bearer | openingPeriod, balances | openingPeriod, balances | 400, 401, 403 |
