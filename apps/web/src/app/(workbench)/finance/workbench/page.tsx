@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { ApiError, type WorkItem, type WorkItemView } from '@my-erp/api-client';
 import { EmptyState } from '@my-erp/ui';
-import { listVouchers, listWorkItems } from '@/lib/finance/data-source';
+import { listPayments, listVouchers, listWorkItems } from '@/lib/finance/data-source';
 import { WorkbenchTasks, type TaskRow } from './workbench-tasks';
 import styles from './workbench.module.css';
 
@@ -41,10 +41,21 @@ export default async function WorkbenchPage({
     else throw err;
   }
 
-  const vouchers = await listVouchers();
+  // Enrich + deep-link by sourceType (voucher tasks ↔ payment tasks share the kernel).
+  const [vouchers, payments] = await Promise.all([listVouchers(), listPayments()]);
   const voucherById = new Map(vouchers.map((v) => [v.id, v]));
+  const paymentById = new Map(payments.map((p) => [p.id, p]));
   const rows: TaskRow[] = items.map((it) => {
-    const v = voucherById.get(it.sourceId);
+    let href = `/finance/vouchers/${it.sourceId}`;
+    let ref: TaskRow['ref'] = null;
+    if (it.sourceType === 'PaymentDoc') {
+      href = `/finance/payments/${it.sourceId}`;
+      const p = paymentById.get(it.sourceId);
+      if (p) ref = { no: p.no, summary: p.summary, amount: p.amount, date: p.date };
+    } else {
+      const v = voucherById.get(it.sourceId);
+      if (v) ref = { no: v.no, summary: v.summary, amount: v.totalDebit, date: v.date };
+    }
     return {
       id: it.id,
       version: it.version,
@@ -56,9 +67,8 @@ export default async function WorkbenchPage({
       titleKey: it.titleKey,
       sourceId: it.sourceId,
       availableActions: it.availableActions,
-      voucher: v
-        ? { no: v.no, summary: v.summary, totalDebit: v.totalDebit, date: v.date, status: v.status }
-        : null,
+      href,
+      ref,
     };
   });
 

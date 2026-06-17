@@ -20,18 +20,22 @@ export interface TaskRow {
   readonly titleKey: string;
   readonly sourceId: string;
   readonly availableActions: readonly WorkItemAction[];
-  readonly voucher: {
+  /** Deep link to the source entity (sourceType-aware: voucher / payment / …). */
+  readonly href: string;
+  /** Enriched source summary (no / 摘要 / 金额 / 日期), or null when unresolved. */
+  readonly ref: {
     readonly no: string;
     readonly summary: string;
-    readonly totalDebit: string;
+    readonly amount: string;
     readonly date: string;
-    readonly status: string;
   } | null;
 }
 
 const TITLE: Record<string, string> = {
   'finance.voucher.review': '凭证复核',
   'finance.voucher.confirm': '凭证补全 / 确认',
+  'finance.payment.approve': '收付款审批',
+  'finance.payment.confirm': '收付款确认',
 };
 const STATUS: Record<string, string> = {
   open: '待处理',
@@ -85,7 +89,7 @@ export function WorkbenchTasks({ rows }: { readonly rows: readonly TaskRow[] }) 
         toast.notify(
           'success',
           ACTION_LABEL[action] === '通过并过账' ? '已过账' : `已${ACTION_LABEL[action]}`,
-          res.ok && 'postedNo' in res && res.postedNo ? res.postedNo : (row.voucher?.no ?? ''),
+          res.ok && 'postedNo' in res && res.postedNo ? res.postedNo : (row.ref?.no ?? ''),
         );
         router.refresh();
       } else if (res.reason === 'unconfigured') {
@@ -108,7 +112,7 @@ export function WorkbenchTasks({ rows }: { readonly rows: readonly TaskRow[] }) 
       <table className="wb-table">
         <thead>
           <tr>
-            <th className="wb-table__th">任务 / 凭证</th>
+            <th className="wb-table__th">任务 / 来源</th>
             <th className="wb-table__th">状态</th>
             <th className="wb-table__th wb-table__cell--end">金额</th>
             <th className="wb-table__th">日期</th>
@@ -122,13 +126,13 @@ export function WorkbenchTasks({ rows }: { readonly rows: readonly TaskRow[] }) 
               <tr key={row.id} className="wb-table__row">
                 <td>
                   <div className={styles.taskTitle}>{TITLE[row.titleKey] ?? row.titleKey}</div>
-                  <Link className={styles.voucherLink} href={`/finance/vouchers/${row.sourceId}`}>
-                    {row.voucher ? (
+                  <Link className={styles.voucherLink} href={row.href}>
+                    {row.ref ? (
                       <>
-                        <span className="wb-mono">{row.voucher.no}</span> · {row.voucher.summary}
+                        <span className="wb-mono">{row.ref.no}</span> · {row.ref.summary}
                       </>
                     ) : (
-                      <span className="wb-muted">查看来源凭证</span>
+                      <span className="wb-muted">查看来源</span>
                     )}
                   </Link>
                 </td>
@@ -139,13 +143,13 @@ export function WorkbenchTasks({ rows }: { readonly rows: readonly TaskRow[] }) 
                   </div>
                 </td>
                 <td className="wb-table__cell--end wb-mono">
-                  {row.voucher ? formatMoney(row.voucher.totalDebit) : ''}
+                  {row.ref ? formatMoney(row.ref.amount) : ''}
                 </td>
-                <td className="wb-muted">{row.voucher?.date ?? ''}</td>
+                <td className="wb-muted">{row.ref?.date ?? ''}</td>
                 <td className="wb-table__cell--end">
                   <div className={styles.actions}>
                     {row.availableActions.length === 0 && (
-                      <Link className="mt-btn mt-btn--ghost mt-btn--sm" href={`/finance/vouchers/${row.sourceId}`}>
+                      <Link className="mt-btn mt-btn--ghost mt-btn--sm" href={row.href}>
                         查看
                       </Link>
                     )}

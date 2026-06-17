@@ -27,6 +27,10 @@ export const financeNav: ShellNav = {
           badgeKey: NAV_BADGE_DAILY_ACCOUNTING_OPEN,
         },
         {
+          href: '/finance/payments',
+          label: '出纳收付',
+        },
+        {
           href: '/finance/period-close',
           label: '期末结账',
         },

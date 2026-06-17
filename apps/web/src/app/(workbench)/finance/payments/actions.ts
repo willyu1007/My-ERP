@@ -1,0 +1,81 @@
+'use server';
+
+/**
+ * Server actions for 出纳收付款 (T-007 C3). Each runs against the real `/v1`; the
+ * backend re-checks SoD + status + optimistic version, so a 403/409 surfaces as
+ * "已变化，请刷新". Create returns the new id so the client can route to the detail.
+ */
+import type { CreatePayment } from '@my-erp/api-client';
+import {
+  approvePayment,
+  confirmPayment,
+  createPayment,
+  submitPayment,
+  voidPayment,
+} from '@/lib/finance/data-source';
+
+export type PaymentActionResult =
+  | { readonly ok: true; readonly id?: string; readonly no?: string; readonly postedNo?: string }
+  | { readonly ok: false; readonly reason: 'unconfigured' | 'conflict' | 'error'; readonly message: string };
+
+function toFailure(err: unknown): PaymentActionResult {
+  const message = err instanceof Error ? err.message : String(err);
+  const reason = message.includes('not configured')
+    ? 'unconfigured'
+    : /API (403|409)|conflict|stale|已变化/i.test(message)
+      ? 'conflict'
+      : 'error';
+  return { ok: false, reason, message };
+}
+
+export async function createPaymentAction(input: CreatePayment): Promise<PaymentActionResult> {
+  try {
+    const p = await createPayment(input);
+    return { ok: true, id: p.id, no: p.no };
+  } catch (err) {
+    return toFailure(err);
+  }
+}
+
+export async function submitPaymentAction(id: string, expectedVersion: number): Promise<PaymentActionResult> {
+  try {
+    const p = await submitPayment(id, expectedVersion);
+    return { ok: true, no: p.no };
+  } catch (err) {
+    return toFailure(err);
+  }
+}
+
+export async function approvePaymentAction(id: string, expectedVersion: number): Promise<PaymentActionResult> {
+  try {
+    const p = await approvePayment(id, expectedVersion);
+    return { ok: true, no: p.no };
+  } catch (err) {
+    return toFailure(err);
+  }
+}
+
+export async function confirmPaymentAction(
+  id: string,
+  expectedVersion: number,
+): Promise<PaymentActionResult> {
+  try {
+    const r = await confirmPayment(id, expectedVersion, true);
+    return { ok: true, no: r.no, postedNo: r.settlementVoucher?.no };
+  } catch (err) {
+    return toFailure(err);
+  }
+}
+
+export async function voidPaymentAction(
+  id: string,
+  expectedVersion: number,
+  reason?: string,
+): Promise<PaymentActionResult> {
+  try {
+    const p = await voidPayment(id, expectedVersion, reason);
+    return { ok: true, no: p.no };
+  } catch (err) {
+    return toFailure(err);
+  }
+}

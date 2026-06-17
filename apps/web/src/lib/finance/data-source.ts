@@ -15,8 +15,13 @@ import {
   type CashFlowItem,
   type CashFlowStatement,
   type CreateVoucher,
+  type CreatePayment,
   type IncomeStatement,
   type Intake,
+  type PaymentConfirmResult,
+  type PaymentDirection,
+  type PaymentDoc,
+  type PaymentStatus,
   type PeriodClose,
   type PeriodCloseReadiness,
   type PeriodCloseResult,
@@ -201,4 +206,55 @@ export async function actOnWorkItem(
   body: WorkItemActionRequest,
 ): Promise<WorkItemActionResult> {
   return requireFinanceApi().actOnWorkItem(id, actionKey, body);
+}
+
+// --- Cashier payments (T-007 出纳收付款) ---
+
+/** 收付款单 for a view (empty in demo mode). */
+export async function listPayments(filters?: {
+  status?: PaymentStatus;
+  direction?: PaymentDirection;
+}): Promise<readonly PaymentDoc[]> {
+  const api = getFinanceApi();
+  if (!api) return [];
+  return api.listPayments(filters);
+}
+
+/** A single payment doc, or `null` (not found / demo mode). */
+export async function getPayment(id: string): Promise<PaymentDoc | null> {
+  const api = getFinanceApi();
+  if (!api) return null;
+  try {
+    return await api.getPayment(id);
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return null;
+    throw err;
+  }
+}
+
+/** Create a 收/付款单 draft. Requires the backend. */
+export async function createPayment(input: CreatePayment): Promise<PaymentDoc> {
+  return requireFinanceApi().createPayment(input);
+}
+
+/** Advance a payment doc. Requires the backend. */
+export async function submitPayment(id: string, expectedVersion: number): Promise<PaymentDoc> {
+  return requireFinanceApi().submitPayment(id, expectedVersion);
+}
+export async function approvePayment(id: string, expectedVersion: number): Promise<PaymentDoc> {
+  return requireFinanceApi().approvePayment(id, expectedVersion);
+}
+export async function confirmPayment(
+  id: string,
+  expectedVersion: number,
+  confirmSinglePerson?: boolean,
+): Promise<PaymentConfirmResult> {
+  return requireFinanceApi().confirmPayment(id, expectedVersion, confirmSinglePerson);
+}
+export async function voidPayment(
+  id: string,
+  expectedVersion: number,
+  reason?: string,
+): Promise<PaymentDoc> {
+  return requireFinanceApi().voidPayment(id, expectedVersion, reason);
 }
