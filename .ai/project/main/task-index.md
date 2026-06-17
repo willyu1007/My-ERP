@@ -16,6 +16,6 @@ Project: `main`
 | T-004 finance-intake-fast-entry | done | F-000 | dev-docs/active/finance-intake-fast-entry |
 | T-005 finance-contract-transaction-lifecycle | planned | F-000 | dev-docs/active/finance-contract-transaction-lifecycle |
 | T-006 finance-period-close-and-reports | done | F-000 | dev-docs/active/finance-period-close-and-reports |
-| T-007 finance-cashier-payments | in-progress | F-000 | dev-docs/active/finance-cashier-payments |
+| T-007 finance-cashier-payments | done | F-000 | dev-docs/active/finance-cashier-payments |
 | T-008 erp-multi-workflow-compat | planned | F-000 | dev-docs/active/erp-multi-workflow-compat |
 <!-- AUTO-GENERATED:END task-index -->

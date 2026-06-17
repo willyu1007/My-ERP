@@ -67,7 +67,7 @@ tasks:
     updated: 2026-06-17
   - id: T-007
     slug: finance-cashier-payments
-    status: in-progress
+    status: done
     milestone_id: M-000
     feature_id: F-000
     dev_docs_path: dev-docs/active/finance-cashier-payments

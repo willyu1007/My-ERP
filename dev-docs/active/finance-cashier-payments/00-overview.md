@@ -13,7 +13,12 @@ workflow coexists with the voucher workflow on the same kernel) and, where relev
 Contract aggregate.
 
 ## Status
-- State: in-progress
+- State: done
+- Closed 2026-06-17 at **MVP scope** (C1–C4): 收/付款单 request→approve→confirm→自动生成并过账结算凭证, on
+  the WorkItem kernel, with SoD + period-lock + optimistic version. Verified by unit + RLS + service
+  integration tests (146 total) + a fresh-DB `/v1` e2e + a browser walkthrough — see `04`. Post-MVP
+  enhancements (approval thresholds/multi-step, FundAccount, dedicated `Payment` CASL subject, outbox
+  dispatch worker, T-005 contract link) are deferred follow-ups, listed in `04`.
 - Created 2026-06-17 from T-003 R3; decisions aligned the same day (MVP-first · dedicated PaymentDoc entity ·
   reuse cash chart accounts — see `01-plan`).
 - **C1 done (2026-06-17)**: `buildSettlementEntry` pure builder + `PaymentDoc` schema/migration (ledger RLS)
