@@ -2,5 +2,5 @@ version: 1
 task_id: T-007
 project: main
 slug: finance-cashier-payments
-status: planned
+status: in-progress
 updated: "2026-06-17"

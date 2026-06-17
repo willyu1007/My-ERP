@@ -13,9 +13,11 @@ workflow coexists with the voucher workflow on the same kernel) and, where relev
 Contract aggregate.
 
 ## Status
-- State: planned
-- Created 2026-06-17 from T-003 R3. Decisions to be aligned with the user before implementation (this repo's
-  decision-gate pattern), because the cashier touches money movement and hits hard constraints.
+- State: in-progress
+- Created 2026-06-17 from T-003 R3; decisions aligned the same day (MVP-first · dedicated PaymentDoc entity ·
+  reuse cash chart accounts — see `01-plan`).
+- **C1 done (2026-06-17)**: `buildSettlementEntry` pure builder + `PaymentDoc` schema/migration (ledger RLS)
+  + repos + tests (cashier unit + payment-doc RLS integration). Next: **C2** service + `/v1/payments`.
 
 ## Goal
 A cashier funds workflow on the task kernel:
