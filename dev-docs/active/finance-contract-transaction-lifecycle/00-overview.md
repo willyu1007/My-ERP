@@ -20,9 +20,13 @@ scope).
   (+ index) + Contract repos + `listVouchers/PaymentDocsByContractTx` (timeline dimension) + RLS test.
   QA: found + fixed a bug — `createReversalVoucherTx` dropped `contractId` (红冲 fell off the timeline).
 - **C2 done (2026-06-18)**: contracts service + `/v1/contracts` (CRUD, auto code `HT-{fiscalYear}-{NNN}`,
-  version-guarded, audit) + `contractId` threaded through voucher create/edit + payment create; OpenAPI
-  (Voucher/CreateVoucher/CreatePayment + Contract schemas/paths) + api-client. Live-verified 7/7.
-  Next: **C3** timeline read-model + contract pages + the 合同 picker on the two create forms.
+  version-guarded, audit) + `contractId` threaded through voucher create/edit + payment create; OpenAPI +
+  api-client. Live-verified 7/7.
+- **C3 done (2026-06-18)**: `buildContractTimeline` (pure, contract anchored first) + `GET
+  /v1/contracts/{id}/timeline` + contract list/create + detail+timeline pages + draft→执行中→归档 status
+  actions + 合同 picker on the voucher fast-entry & payment form (entry-time linking) + nav. Browser-verified
+  (a contract anchors a voucher + payment in one timeline). Next: **C4** — contracts service integration
+  test + fresh-DB e2e, then close the T-005 MVP.
 - Design is captured here and in `roadmap.md` / `02-architecture.md`; reuses T-004's intake pipeline
   for contract scans (deferred).
 
