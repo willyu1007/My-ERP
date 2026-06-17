@@ -204,6 +204,35 @@ describe.skipIf(!PG_AVAILABLE)(
       expect(claimed?.subStatus).toBe('pending_external');
     });
 
+    it('my_tasks elevates supervision-capable callers to any role-mismatched unassigned task', async () => {
+      // A supervisor-assigned, unassigned review task.
+      const item = await withOptionalLedgerScope(ORG_A, LB_A1, (tx) =>
+        createWorkItemTx(
+          tx,
+          itemInput({
+            orgId: ORG_A,
+            ledgerBookId: LB_A1,
+            sourceId: '00000000-0000-0000-0000-000000000701',
+            dedupeKey: 'elevate-supervision',
+          }),
+        ),
+      );
+      const myTaskIds = (supervisionCapable: boolean, roles: string[]): Promise<string[]> =>
+        withOptionalLedgerScope(ORG_A, LB_A1, (tx) =>
+          listWorkItemsTx(tx, {
+            view: 'my_tasks',
+            actorId: 'not-the-maker',
+            roles,
+            supervisionCapable,
+          }),
+        ).then((rows) => rows.map((r) => r.id));
+
+      // Plain accountant: a 'supervisor' task is invisible in my_tasks.
+      expect(await myTaskIds(false, ['accountant'])).not.toContain(item.id);
+      // Supervision-capable (admin): the unassigned task is claimable, so it shows.
+      expect(await myTaskIds(true, ['admin'])).toContain(item.id);
+    });
+
     it('limits work item list size', async () => {
       await withOptionalLedgerScope(ORG_A, LB_A1, (tx) =>
         createWorkItemTx(

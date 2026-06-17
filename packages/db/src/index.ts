@@ -1052,6 +1052,13 @@ export interface WorkItemListFilters {
   view?: string;
   actorId: string;
   roles: readonly string[];
+  /**
+   * Supervision-capable callers (admin/supervisor) are role-eligible for any task — the same
+   * elevation `canViewWorkItem`/`availableWorkItemActions` already apply. Without it, `my_tasks` /
+   * `role_queue` would be empty for an admin (and the SME single-admin persona), because the literal
+   * `assignedRole IN roles` match never hits a 'supervisor'/'accountant' task.
+   */
+  supervisionCapable?: boolean;
   status?: string;
   sourceType?: string;
   sourceId?: string;
@@ -1215,8 +1222,12 @@ function viewWhere(filters: WorkItemListFilters): Prisma.WorkItemWhereInput {
   if (filters.sourceId) where.sourceId = filters.sourceId;
 
   const roles = [...filters.roles];
-  const roleMatch: Prisma.WorkItemWhereInput =
-    roles.length > 0 ? { assignedRole: { in: roles } } : { assignedRole: { in: [] } };
+  // Supervision-capable callers are role-eligible for every task (mirrors the view/action elevation).
+  const roleMatch: Prisma.WorkItemWhereInput = filters.supervisionCapable
+    ? {}
+    : roles.length > 0
+      ? { assignedRole: { in: roles } }
+      : { assignedRole: { in: [] } };
 
   switch (filters.view ?? 'my_tasks') {
     case 'role_queue':
@@ -1233,6 +1244,8 @@ function viewWhere(filters: WorkItemListFilters): Prisma.WorkItemWhereInput {
       break;
     case 'my_tasks':
     default:
+      // "Mine, plus anything I can pick up." For supervision-capable callers, `roleMatch` is empty,
+      // so the second branch becomes "any unassigned active task".
       where.OR = [
         { assigneeUserId: filters.actorId },
         { AND: [roleMatch, { assigneeUserId: null }] },

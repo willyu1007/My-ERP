@@ -154,6 +154,7 @@ export class WorkItemsService {
         view,
         actorId: identity.userId,
         roles: identity.roles,
+        supervisionCapable: canUseSupervisionView(identity),
         status,
         sourceType: query.sourceType,
         sourceId,
