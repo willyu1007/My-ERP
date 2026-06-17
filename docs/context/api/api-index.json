@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-17T00:02:04.218Z",
+  "generatedAt": "2026-06-17T12:36:11.664Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "e36bf9b88e2ea139c7e6b87cde10802115d31e94a0843c3e99287ba4f1d5a1dd",
+  "sourceChecksumSha256": "9056691a82571cd4d1fb37b4f16e6588e7fdc375f7c74e587a209ef3983db9e4",
   "stats": {
-    "totalEndpoints": 46,
+    "totalEndpoints": 53,
     "byTag": {
       "system": 1,
       "organization": 1,
@@ -19,6 +19,7 @@
       "periods": 4,
       "cash-flow": 5,
       "reports": 3,
+      "payments": 7,
       "opening-balances": 2
     }
   },
@@ -1552,6 +1553,340 @@
       ],
       "example": {
         "curl": "curl -X GET '/v1/reports/cash-flow' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/payments",
+      "operationId": "listPayments",
+      "summary": "List 出纳收付款单 (PaymentDoc)",
+      "tag": "payments",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [
+          "status",
+          "direction"
+        ],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": []
+      },
+      "errors": [],
+      "example": {
+        "curl": "curl -X GET '/v1/payments' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/payments",
+      "operationId": "createPayment",
+      "summary": "Create a 收/付款单 draft",
+      "tag": "payments",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": {
+          "required": [
+            "direction",
+            "date",
+            "counterparty",
+            "summary",
+            "amount",
+            "cashAccountCode",
+            "contraAccountCode"
+          ],
+          "optional": []
+        }
+      },
+      "output": {
+        "successStatus": 201,
+        "coreFields": [
+          "id",
+          "no",
+          "direction",
+          "date",
+          "period",
+          "counterparty",
+          "summary",
+          "amount",
+          "cashAccountCode",
+          "contraAccountCode",
+          "status",
+          "maker",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "settlementVoucherId",
+          "contractId",
+          "approver",
+          "confirmer"
+        ]
+      },
+      "errors": [
+        400
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/payments' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"direction\":\"<direction>\",\"date\":\"<date>\",\"counterparty\":\"<counterparty>\",\"summary\":\"<summary>\",\"amount\":\"<amount>\",\"cashAccountCode\":\"<cashAccountCode>\",\"contraAccountCode\":\"<contraAccountCode>\"}'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/payments/{id}",
+      "operationId": "getPayment",
+      "summary": "Get a payment doc",
+      "tag": "payments",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id"
+        ],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "no",
+          "direction",
+          "date",
+          "period",
+          "counterparty",
+          "summary",
+          "amount",
+          "cashAccountCode",
+          "contraAccountCode",
+          "status",
+          "maker",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "settlementVoucherId",
+          "contractId",
+          "approver",
+          "confirmer"
+        ]
+      },
+      "errors": [
+        404
+      ],
+      "example": {
+        "curl": "curl -X GET '/v1/payments/{id}' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/payments/{id}/submit",
+      "operationId": "submitPayment",
+      "summary": "draft → pending_approval (opens the approver task)",
+      "tag": "payments",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id"
+        ],
+        "query": [],
+        "body": {
+          "required": [
+            "expectedVersion"
+          ],
+          "optional": []
+        }
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "no",
+          "direction",
+          "date",
+          "period",
+          "counterparty",
+          "summary",
+          "amount",
+          "cashAccountCode",
+          "contraAccountCode",
+          "status",
+          "maker",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "settlementVoucherId",
+          "contractId",
+          "approver",
+          "confirmer"
+        ]
+      },
+      "errors": [
+        400,
+        409
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/payments/{id}/submit' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"expectedVersion\":\"<expectedVersion>\"}'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/payments/{id}/approve",
+      "operationId": "approvePayment",
+      "summary": "pending_approval → approved (SoD; opens the cashier task)",
+      "tag": "payments",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id"
+        ],
+        "query": [],
+        "body": {
+          "required": [
+            "expectedVersion"
+          ],
+          "optional": []
+        }
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "no",
+          "direction",
+          "date",
+          "period",
+          "counterparty",
+          "summary",
+          "amount",
+          "cashAccountCode",
+          "contraAccountCode",
+          "status",
+          "maker",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "settlementVoucherId",
+          "contractId",
+          "approver",
+          "confirmer"
+        ]
+      },
+      "errors": [
+        400,
+        403,
+        409
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/payments/{id}/approve' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"expectedVersion\":\"<expectedVersion>\"}'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/payments/{id}/confirm",
+      "operationId": "confirmPayment",
+      "summary": "approved → confirmed — generate + post the settlement voucher",
+      "tag": "payments",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id"
+        ],
+        "query": [],
+        "body": {
+          "required": [
+            "expectedVersion"
+          ],
+          "optional": [
+            "confirmSinglePerson"
+          ]
+        }
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "no",
+          "direction",
+          "date",
+          "period",
+          "counterparty",
+          "summary",
+          "amount",
+          "cashAccountCode",
+          "contraAccountCode",
+          "status",
+          "maker",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "settlementVoucherId",
+          "contractId",
+          "approver",
+          "confirmer",
+          "settlementVoucher"
+        ]
+      },
+      "errors": [
+        400,
+        403,
+        409
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/payments/{id}/confirm' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"expectedVersion\":\"<expectedVersion>\"}'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/payments/{id}/void",
+      "operationId": "voidPayment",
+      "summary": "作废 a pre-confirmed payment doc",
+      "tag": "payments",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id"
+        ],
+        "query": [],
+        "body": {
+          "required": [
+            "expectedVersion"
+          ],
+          "optional": [
+            "reason"
+          ]
+        }
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "no",
+          "direction",
+          "date",
+          "period",
+          "counterparty",
+          "summary",
+          "amount",
+          "cashAccountCode",
+          "contraAccountCode",
+          "status",
+          "maker",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "settlementVoucherId",
+          "contractId",
+          "approver",
+          "confirmer"
+        ]
+      },
+      "errors": [
+        400,
+        409
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/payments/{id}/void' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"expectedVersion\":\"<expectedVersion>\"}'"
       }
     },
     {

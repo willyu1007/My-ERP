@@ -703,6 +703,88 @@ paths:
       responses:
         '200': { description: Cash flow statement, content: { application/json: { schema: { $ref: '#/components/schemas/CashFlowStatement' } } } }
         '400': { description: Invalid date }
+  /v1/payments:
+    get:
+      operationId: listPayments
+      summary: List 出纳收付款单 (PaymentDoc)
+      tags: [payments]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: status, in: query, required: false, schema: { type: string, enum: [draft, pending_approval, approved, confirmed, void] } }
+        - { name: direction, in: query, required: false, schema: { type: string, enum: [receipt, payment] } }
+      responses:
+        '200': { description: Payment docs, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/PaymentDoc' } } } } }
+    post:
+      operationId: createPayment
+      summary: Create a 收/付款单 draft
+      tags: [payments]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreatePayment' } } }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/PaymentDoc' } } } }
+        '400': { description: Invalid input / closed period / bad account }
+  /v1/payments/{id}:
+    get:
+      operationId: getPayment
+      summary: Get a payment doc
+      tags: [payments]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: Payment doc, content: { application/json: { schema: { $ref: '#/components/schemas/PaymentDoc' } } } }
+        '404': { description: Not found }
+  /v1/payments/{id}/submit:
+    post:
+      operationId: submitPayment
+      summary: draft → pending_approval (opens the approver task)
+      tags: [payments]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PaymentActionRequest' } } } }
+      responses:
+        '200': { description: Submitted, content: { application/json: { schema: { $ref: '#/components/schemas/PaymentDoc' } } } }
+        '400': { description: Wrong status / closed period }
+        '409': { description: Stale version }
+  /v1/payments/{id}/approve:
+    post:
+      operationId: approvePayment
+      summary: pending_approval → approved (SoD; opens the cashier task)
+      tags: [payments]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PaymentActionRequest' } } } }
+      responses:
+        '200': { description: Approved, content: { application/json: { schema: { $ref: '#/components/schemas/PaymentDoc' } } } }
+        '400': { description: Wrong status }
+        '403': { description: Approver is the maker (SoD) }
+        '409': { description: Stale version }
+  /v1/payments/{id}/confirm:
+    post:
+      operationId: confirmPayment
+      summary: approved → confirmed — generate + post the settlement voucher
+      tags: [payments]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PaymentConfirmRequest' } } } }
+      responses:
+        '200': { description: Confirmed, content: { application/json: { schema: { $ref: '#/components/schemas/PaymentConfirmResult' } } } }
+        '400': { description: Wrong status / closed period }
+        '403': { description: Confirmer is the maker (SoD) }
+        '409': { description: Stale version }
+  /v1/payments/{id}/void:
+    post:
+      operationId: voidPayment
+      summary: 作废 a pre-confirmed payment doc
+      tags: [payments]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PaymentVoidRequest' } } } }
+      responses:
+        '200': { description: Voided, content: { application/json: { schema: { $ref: '#/components/schemas/PaymentDoc' } } } }
+        '400': { description: Already confirmed / void }
+        '409': { description: Stale version }
   /v1/opening-balances:
     get:
       operationId: getOpeningBalances
@@ -1102,6 +1184,63 @@ components:
         voucherId: { type: string, format: uuid }
         accountCode: { type: string, description: 'Non-cash (contra) account to tag' }
         cashFlowItem: { type: string, nullable: true, description: 'CF item code; null/empty clears the tag' }
+    PaymentDoc:
+      type: object
+      required: [id, no, direction, date, period, counterparty, summary, amount, cashAccountCode, contraAccountCode, status, maker, version, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        no: { type: string, example: 收-2026-06-001 }
+        direction: { type: string, enum: [receipt, payment] }
+        date: { type: string, format: date }
+        period: { type: string, example: 2026-06 }
+        counterparty: { type: string }
+        summary: { type: string }
+        amount: { type: string, description: '2dp' }
+        cashAccountCode: { type: string }
+        contraAccountCode: { type: string }
+        status: { type: string, enum: [draft, pending_approval, approved, confirmed, void] }
+        settlementVoucherId: { type: string, format: uuid, nullable: true }
+        contractId: { type: string, format: uuid, nullable: true, description: 'Reserved for T-005' }
+        maker: { type: string }
+        approver: { type: string, nullable: true }
+        confirmer: { type: string, nullable: true }
+        version: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    CreatePayment:
+      type: object
+      required: [direction, date, counterparty, summary, amount, cashAccountCode, contraAccountCode]
+      properties:
+        direction: { type: string, enum: [receipt, payment] }
+        date: { type: string, format: date }
+        counterparty: { type: string }
+        summary: { type: string }
+        amount: { type: string, description: 'positive, ≤2dp' }
+        cashAccountCode: { type: string, description: '货币资金类 (1001/1002/1012)' }
+        contraAccountCode: { type: string, description: '对方科目' }
+    PaymentActionRequest:
+      type: object
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: integer, description: 'Optimistic concurrency version' }
+    PaymentConfirmRequest:
+      type: object
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: integer }
+        confirmSinglePerson: { type: boolean, description: 'Required for a maker self-confirm in single-person mode' }
+    PaymentVoidRequest:
+      type: object
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: integer }
+        reason: { type: string }
+    PaymentConfirmResult:
+      allOf:
+        - $ref: '#/components/schemas/PaymentDoc'
+        - type: object
+          properties:
+            settlementVoucher: { $ref: '#/components/schemas/Voucher' }
     PeriodCloseResult:
       allOf:
         - $ref: '#/components/schemas/PeriodClose'

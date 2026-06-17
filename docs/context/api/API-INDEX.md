@@ -1,9 +1,9 @@
 # API Index
 
-> Auto-generated at 2026-06-17T00:02:04.218Z — do NOT hand-edit.
-> Source: `docs/context/api/openapi.yaml` (SHA-256: `e36bf9b88e2e...`)
+> Auto-generated at 2026-06-17T12:36:11.664Z — do NOT hand-edit.
+> Source: `docs/context/api/openapi.yaml` (SHA-256: `9056691a8257...`)
 
-Total endpoints: **46**
+Total endpoints: **53**
 
 | Method | Path | Summary | Auth | Input (required) | Output (core) | Errors |
 |--------|------|---------|------|------------------|---------------|--------|
@@ -51,5 +51,12 @@ Total endpoints: **46**
 | GET | /v1/reports/balance-sheet | 资产负债表 (as-of date) | bearer | — | asOf, lines, balanced | 400 |
 | GET | /v1/reports/income-statement | 利润表 (range — 月/季/年/自定义) | bearer | — | from, to, lines, netProfit | 400 |
 | GET | /v1/reports/cash-flow | 现金流量表 (direct method, range) | bearer | — | from, to, activities, netCashFlow, tied | 400 |
+| GET | /v1/payments | List 出纳收付款单 (PaymentDoc) | bearer | — | — | — |
+| POST | /v1/payments | Create a 收/付款单 draft | bearer | direction, date, counterparty, summary, amount, cashAccountCode, contraAccountCode | id, no, direction, date, period, counterparty, summary, amount, cashAccountCode, contraAccountCode, status, maker, version, createdAt, updatedAt, settlementVoucherId, contractId, approver, confirmer | 400 |
+| GET | /v1/payments/{id} | Get a payment doc | bearer | id | id, no, direction, date, period, counterparty, summary, amount, cashAccountCode, contraAccountCode, status, maker, version, createdAt, updatedAt, settlementVoucherId, contractId, approver, confirmer | 404 |
+| POST | /v1/payments/{id}/submit | draft → pending_approval (opens the approver task) | bearer | expectedVersion | id, no, direction, date, period, counterparty, summary, amount, cashAccountCode, contraAccountCode, status, maker, version, createdAt, updatedAt, settlementVoucherId, contractId, approver, confirmer | 400, 409 |
+| POST | /v1/payments/{id}/approve | pending_approval → approved (SoD; opens the cashier task) | bearer | expectedVersion | id, no, direction, date, period, counterparty, summary, amount, cashAccountCode, contraAccountCode, status, maker, version, createdAt, updatedAt, settlementVoucherId, contractId, approver, confirmer | 400, 403, 409 |
+| POST | /v1/payments/{id}/confirm | approved → confirmed — generate + post the settlement voucher | bearer | expectedVersion | id, no, direction, date, period, counterparty, summary, amount, cashAccountCode, contraAccountCode, status, maker, version, createdAt, updatedAt, settlementVoucherId, contractId, approver, confirmer, settlementVoucher | 400, 403, 409 |
+| POST | /v1/payments/{id}/void | 作废 a pre-confirmed payment doc | bearer | expectedVersion | id, no, direction, date, period, counterparty, summary, amount, cashAccountCode, contraAccountCode, status, maker, version, createdAt, updatedAt, settlementVoucherId, contractId, approver, confirmer | 400, 409 |
 | GET | /v1/opening-balances | Opening balances (期初余额) + the ledger's enabled period | bearer | — | openingPeriod, balances | 401, 403 |
 | PUT | /v1/opening-balances | Set the enabled period + replace opening balances (期初建账) | bearer | openingPeriod, balances | openingPeriod, balances | 400, 401, 403 |

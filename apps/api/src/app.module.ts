@@ -17,6 +17,8 @@ import { LedgerBooksController } from './ledger-books/ledger-books.controller';
 import { MembersController } from './members/members.controller';
 import { OpeningBalancesController } from './opening-balances/opening-balances.controller';
 import { OrganizationController } from './organization/organization.controller';
+import { PaymentsController } from './payments/payments.controller';
+import { PaymentsService } from './payments/payments.service';
 import { PeriodCloseController } from './period-close/period-close.controller';
 import { PeriodCloseService } from './period-close/period-close.service';
 import { ReportsController } from './reports/reports.controller';
@@ -42,6 +44,7 @@ import { WorkItemsService } from './work-items/work-items.service';
     PeriodCloseController,
     CashFlowController,
     ReportsController,
+    PaymentsController,
   ],
   providers: [
     HealthService,
@@ -51,6 +54,7 @@ import { WorkItemsService } from './work-items/work-items.service';
     PeriodCloseService,
     CashFlowService,
     ReportsService,
+    PaymentsService,
     { provide: OBJECT_STORE, useClass: LocalObjectStore },
     { provide: EXTRACTOR, useClass: MockExtractor },
   ],

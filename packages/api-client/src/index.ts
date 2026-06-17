@@ -29,6 +29,12 @@ export type WorkItemView =
   | 'handled_by_me'
   | 'supervision'
   | 'audit_readonly';
+// Cashier payments (T-007)
+export type PaymentDoc = components['schemas']['PaymentDoc'];
+export type CreatePayment = components['schemas']['CreatePayment'];
+export type PaymentConfirmResult = components['schemas']['PaymentConfirmResult'];
+export type PaymentDirection = PaymentDoc['direction'];
+export type PaymentStatus = PaymentDoc['status'];
 /** Result of a work-item action: the updated item, plus the source entity for `complete`. */
 export interface WorkItemActionResult {
   readonly workItem: WorkItem;
@@ -119,6 +125,18 @@ export interface ApiClient {
     actionKey: WorkItemAction,
     body: WorkItemActionRequest,
   ): Promise<WorkItemActionResult>;
+  // Cashier payments (T-007).
+  listPayments(params?: { status?: PaymentStatus; direction?: PaymentDirection }): Promise<PaymentDoc[]>;
+  getPayment(id: string): Promise<PaymentDoc>;
+  createPayment(body: CreatePayment): Promise<PaymentDoc>;
+  submitPayment(id: string, expectedVersion: number): Promise<PaymentDoc>;
+  approvePayment(id: string, expectedVersion: number): Promise<PaymentDoc>;
+  confirmPayment(
+    id: string,
+    expectedVersion: number,
+    confirmSinglePerson?: boolean,
+  ): Promise<PaymentConfirmResult>;
+  voidPayment(id: string, expectedVersion: number, reason?: string): Promise<PaymentDoc>;
 }
 
 export function createApiClient(config: ApiClientConfig): ApiClient {
@@ -219,5 +237,28 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
         `/v1/work-items/${encodeURIComponent(id)}/actions/${encodeURIComponent(actionKey)}`,
         body,
       ),
+    listPayments: (params) => {
+      const qs = new URLSearchParams();
+      if (params?.status) qs.set('status', params.status);
+      if (params?.direction) qs.set('direction', params.direction);
+      const q = qs.toString();
+      return request<PaymentDoc[]>('GET', `/v1/payments${q ? `?${q}` : ''}`);
+    },
+    getPayment: (id) => request<PaymentDoc>('GET', `/v1/payments/${encodeURIComponent(id)}`),
+    createPayment: (body) => request<PaymentDoc>('POST', '/v1/payments', body),
+    submitPayment: (id, expectedVersion) =>
+      request<PaymentDoc>('POST', `/v1/payments/${encodeURIComponent(id)}/submit`, { expectedVersion }),
+    approvePayment: (id, expectedVersion) =>
+      request<PaymentDoc>('POST', `/v1/payments/${encodeURIComponent(id)}/approve`, { expectedVersion }),
+    confirmPayment: (id, expectedVersion, confirmSinglePerson) =>
+      request<PaymentConfirmResult>('POST', `/v1/payments/${encodeURIComponent(id)}/confirm`, {
+        expectedVersion,
+        ...(confirmSinglePerson ? { confirmSinglePerson } : {}),
+      }),
+    voidPayment: (id, expectedVersion, reason) =>
+      request<PaymentDoc>('POST', `/v1/payments/${encodeURIComponent(id)}/void`, {
+        expectedVersion,
+        ...(reason ? { reason } : {}),
+      }),
   };
 }
