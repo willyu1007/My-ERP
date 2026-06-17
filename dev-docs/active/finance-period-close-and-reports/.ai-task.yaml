@@ -2,5 +2,5 @@ version: 1
 task_id: T-006
 project: main
 slug: finance-period-close-and-reports
-status: in-progress
-updated: "2026-06-16"
+status: done
+updated: "2026-06-17"

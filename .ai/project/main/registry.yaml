@@ -60,8 +60,8 @@ tasks:
     updated: 2026-06-14
   - id: T-006
     slug: finance-period-close-and-reports
-    status: in-progress
+    status: done
     milestone_id: M-000
     feature_id: F-000
     dev_docs_path: dev-docs/active/finance-period-close-and-reports
-    updated: 2026-06-16
+    updated: 2026-06-17

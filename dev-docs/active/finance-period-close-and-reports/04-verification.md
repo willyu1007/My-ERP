@@ -134,6 +134,29 @@ UTF-8 BOM so Excel renders Chinese; `lib/finance/report-export.ts`, pure + unit-
 the downloaded CSV carries the BOM + all three statements correct (BS 50,700 balanced · IS 净利润 700 ·
 CF 净增加额 50,700); the print view renders the stacked archival layout.
 
-## Not yet verified (explicit)
-- M3e — final cross-cutting sweep + bundle close.
-- A `close` CASL action (currently gated by `post` Voucher); tagging gated by `update` Voucher.
+## 2026-06-17 — M3e final sweep (bundle close)
+
+**Static gate.** `prisma validate` ✅ · typecheck (all projects) ✅ · lint clean ✅ · **33 files / 135 tests** ✅ ·
+api-index up-to-date ✅ · openapi quality ✅.
+
+**Fresh-DB live e2e — 19/19 assertions** (real `/v1` + Postgres, all 14 migrations applied clean):
+
+| Step | Asserted |
+|---|---|
+| reports before close (2026-03) | IS 营业收入 1000 / 净利润 700 · BS balanced · CF net 50700 / tied |
+| readiness + close | canClose · 净利润 700 |
+| **reports after close (regression)** | IS **still** 1000 / 700 · BS balanced · CF tied |
+| period lock | submit into closed 2026-03 → **400** |
+| reopen-window (regression) | IS still 1000 reopened **and** re-closed |
+| post-hoc tag (2026-04) | untagged 1→0 · tie-out **false→true** after `POST /v1/cash-flow/tag` |
+
+**Export/print SSR.** `/print/reports` renders all three statements (1,000.00 / 50,700.00 + 打印按钮);
+`/finance/reports` toolbar shows 导出 Excel + 打印 / 导出 PDF. No web errors.
+
+T-006 marked **done** in `.ai/project/main/registry.yaml` (sync → dashboard / task-index / feature-map).
+
+## Deferred follow-ups (non-blocking)
+- zod contracts on the new period/CF/report DTOs (consistency with intake/work-item).
+- Dedicated `close` / `tag` CASL actions (currently gated by `post` / `update` Voucher).
+- `isCashAccountCode` prefix heuristic → a precise cash-account flag.
+- Voucher import (DP30 import) + Excel/PDF via a library (today: CSV + browser print) — later phases.

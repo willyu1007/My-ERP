@@ -15,7 +15,11 @@ This task ("M3") consolidates #3 (reports) and the closely-related leftover acco
 reports depend on.
 
 ## Status
-- State: in-progress
+- State: done
+- Closed 2026-06-17 — M3a–M3d shipped + M3e final sweep green (135 tests; 19/19 fresh-DB e2e). Deferred
+  follow-ups (non-blocking, logged in `04`): zod contracts on the new DTOs; dedicated `close` / `tag` CASL
+  actions (currently `post` / `update`); the `isCashAccountCode` prefix heuristic; voucher import (DP30
+  import) and Excel/PDF via a library (today: CSV + browser print) — later phases.
 - **M3a (period close) done** (2026-06-16): `PeriodClose` schema + ledger RLS, 结转损益 builder,
   close/reopen service + `/v1/periods` API, period-lock guard; 本年利润 (4103) added to the chart.
   Verified by unit + RLS integration tests + a live e2e (close → 结转 → lock → reopen). See `03`/`04`.
