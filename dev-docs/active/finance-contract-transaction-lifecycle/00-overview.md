@@ -13,9 +13,14 @@ focused on voucher fast-entry + capture intake. The contract aggregate is define
 scope).
 
 ## Status
-- State: in-progress
+- State: done
+- Closed 2026-06-18 at **MVP scope** (C1–C4): `Contract` aggregate + `contractId` dimension on
+  vouchers/payments + a read-only timeline (以合同为主视角), entry-time linking, simple `draft|active|closed`
+  status. Verified by unit + RLS + service integration tests (155 total) + a fresh-DB `/v1` e2e + a browser
+  walkthrough — see `04`. Deferred (D2 lifecycle stages, receivable/payable forecast, `BusinessPartner`,
+  contract attachments, work-items-in-timeline) are listed in `04`.
 - Decisions aligned 2026-06-17 (MVP-first · free-text counterparty · entry-time linking — see `01-plan`).
-  M2 cashier (T-007) is done, so payments join the timeline and `PaymentDoc.contractId` is reserved.
+  M2 cashier (T-007) is done, so payments join the timeline.
 - **C1 done (2026-06-17)**: `Contract` model + migration (ledger RLS) + `JournalVoucher.contractId`
   (+ index) + Contract repos + `listVouchers/PaymentDocsByContractTx` (timeline dimension) + RLS test.
   QA: found + fixed a bug — `createReversalVoucherTx` dropped `contractId` (红冲 fell off the timeline).

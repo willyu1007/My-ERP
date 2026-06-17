@@ -2,5 +2,5 @@ version: 1
 task_id: T-005
 project: main
 slug: finance-contract-transaction-lifecycle
-status: in-progress
-updated: "2026-06-17"
+status: done
+updated: "2026-06-18"
