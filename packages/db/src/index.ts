@@ -858,6 +858,7 @@ export async function createReversalVoucherTx(
       totalDebit: original.totalCredit,
       totalCredit: original.totalDebit,
       reversalOf: original.id,
+      contractId: original.contractId, // a reversal stays on the same contract's timeline (T-005)
       lines: {
         create: original.lines.map((l, i) => ({
           ledgerBookId: original.ledgerBookId,

@@ -9,6 +9,7 @@ import {
   countContractsTx,
   createContractTx,
   createPaymentDocTx,
+  createReversalVoucherTx,
   createVoucherTx,
   disconnectDatabase,
   getContractTx,
@@ -145,5 +146,19 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS — contract (ledger-scoped) + cont
     expect(vouchers[0].contractId).toBe(c.id);
     const payments = await withLedgerScope(LB_A, (tx) => listPaymentDocsByContractTx(tx, c.id));
     expect(payments.map((p) => p.no)).toEqual(['收-2026-06-001']);
+
+    // A 红冲 of a contract voucher stays on the same contract's timeline.
+    const reversal = await withLedgerScope(LB_A, (tx) =>
+      createReversalVoucherTx(tx, vouchers[0], {
+        no: '记-2026-06-003',
+        reverser: 'u2',
+        date: '2026-06-13',
+        period: '2026-06',
+        postedAt: new Date(),
+      }),
+    );
+    expect(reversal.contractId).toBe(c.id);
+    const afterReversal = await withLedgerScope(LB_A, (tx) => listVouchersByContractTx(tx, c.id));
+    expect(afterReversal.map((v) => v.no)).toEqual(['记-2026-06-001', '记-2026-06-003']);
   });
 });
