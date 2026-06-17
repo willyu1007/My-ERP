@@ -1,4 +1,4 @@
-import { Controller, Get, HttpCode, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, Query, UseGuards } from '@nestjs/common';
 import type { Identity } from '@my-erp/platform';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentIdentity } from '../auth/current-identity.decorator';
@@ -45,5 +45,20 @@ export class CashFlowController {
     @Query('to') to?: string,
   ) {
     return this.service.tieOut(identity, ledgerBookId, from, to);
+  }
+
+  @Post('cash-flow/tag')
+  @HttpCode(200)
+  @RequirePermission('update', 'Voucher')
+  async tag(
+    @LedgerBookId() ledgerBookId: string,
+    @CurrentIdentity() identity: Identity,
+    @Body() body: { voucherId: string; accountCode: string; cashFlowItem?: string | null },
+  ) {
+    return this.service.tag(identity, ledgerBookId, {
+      voucherId: body.voucherId,
+      accountCode: body.accountCode,
+      cashFlowItem: body.cashFlowItem ?? null,
+    });
   }
 }

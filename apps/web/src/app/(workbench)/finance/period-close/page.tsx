@@ -1,4 +1,11 @@
-import { getPeriodReadiness, listPeriods } from '@/lib/finance/data-source';
+import {
+  getPeriodReadiness,
+  getUntaggedCashFlows,
+  listAccounts,
+  listCashFlowItems,
+  listPeriods,
+} from '@/lib/finance/data-source';
+import { CashFlowWorklist } from './cash-flow-worklist';
 import { PeriodCloseClient } from './period-close-client';
 
 export const dynamic = 'force-dynamic';
@@ -22,7 +29,15 @@ export default async function PeriodClosePage({
   const raw = first(sp.period);
   const period = raw && PERIOD_RE.test(raw) ? raw : new Date().toISOString().slice(0, 7);
 
-  const [readiness, periods] = await Promise.all([getPeriodReadiness(period), listPeriods()]);
+  const [readiness, periods, untagged, cashFlowItems, accounts] = await Promise.all([
+    getPeriodReadiness(period),
+    listPeriods(),
+    getUntaggedCashFlows(period),
+    listCashFlowItems(),
+    listAccounts(),
+  ]);
+  const defaults: Record<string, string> = {};
+  for (const a of accounts) if (a.defaultCashFlowItem) defaults[a.code] = a.defaultCashFlowItem;
 
   return (
     <div className="wb-scene wb-stack wb-stack--lg">
@@ -34,6 +49,10 @@ export default async function PeriodClosePage({
       </div>
 
       <PeriodCloseClient period={period} readiness={readiness} periods={periods} />
+
+      {untagged.length > 0 && (
+        <CashFlowWorklist lines={untagged} cashFlowItems={cashFlowItems} defaults={defaults} />
+      )}
     </div>
   );
 }

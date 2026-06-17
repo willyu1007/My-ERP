@@ -30,6 +30,7 @@ export type PeriodCloseResult = components['schemas']['PeriodCloseResult'];
 export type CashFlowItem = components['schemas']['CashFlowItem'];
 export type CashFlowTieOut = components['schemas']['CashFlowTieOut'];
 export type UntaggedCashLine = components['schemas']['UntaggedCashLine'];
+export type TagCashFlow = components['schemas']['TagCashFlow'];
 
 /** Kept for back-compat with the previous package stub. */
 export const API_CLIENT_PACKAGE = '@my-erp/api-client' as const;
@@ -85,6 +86,7 @@ export interface ApiClient {
   seedCashFlowItems(): Promise<{ seeded: number }>;
   untaggedCashFlows(period?: string): Promise<UntaggedCashLine[]>;
   cashFlowTieOut(params?: { from?: string; to?: string }): Promise<CashFlowTieOut>;
+  tagCashFlow(body: TagCashFlow): Promise<{ tagged: number }>;
 }
 
 export function createApiClient(config: ApiClientConfig): ApiClient {
@@ -166,5 +168,6 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
       const q = qs.toString();
       return request<CashFlowTieOut>('GET', `/v1/cash-flow/tie-out${q ? `?${q}` : ''}`);
     },
+    tagCashFlow: (body) => request<{ tagged: number }>('POST', '/v1/cash-flow/tag', body),
   };
 }

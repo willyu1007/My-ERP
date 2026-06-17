@@ -5,7 +5,7 @@
  * close/reopen against the real `/v1` API; when the backend is not configured
  * they return `unconfigured` so the client can show a demo notice.
  */
-import { closePeriod, reopenPeriod } from '@/lib/finance/data-source';
+import { closePeriod, reopenPeriod, tagCashFlow } from '@/lib/finance/data-source';
 
 export type CloseFailure = {
   readonly ok: false;
@@ -38,6 +38,28 @@ export async function reopenPeriodAction(period: string): Promise<CloseResult> {
   try {
     const pc = await reopenPeriod(period);
     return { ok: true, period: pc.period, status: pc.status };
+  } catch (err) {
+    return toFailure(err);
+  }
+}
+
+export type TagResult =
+  | { readonly ok: true; readonly tagged: number }
+  | CloseFailure;
+
+/** Post-hoc 打标: set the 现金流量项目 on a posted voucher's non-cash line(s). */
+export async function tagCashFlowAction(input: {
+  voucherId: string;
+  accountCode: string;
+  cashFlowItem: string;
+}): Promise<TagResult> {
+  try {
+    const res = await tagCashFlow({
+      voucherId: input.voucherId,
+      accountCode: input.accountCode,
+      cashFlowItem: input.cashFlowItem || null,
+    });
+    return { ok: true, tagged: res.tagged };
   } catch (err) {
     return toFailure(err);
   }

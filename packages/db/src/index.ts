@@ -1871,5 +1871,24 @@ export async function setAccountDefaultCashFlowItemTx(
   await tx.account.updateMany({ where: { code }, data: { defaultCashFlowItem: cashFlowItem } });
 }
 
+/**
+ * Tag a voucher's line(s) with a 现金流量项目, post-hoc (the pre-close worklist).
+ * Matches by (voucherId, accountCode) — the worklist's granularity; a `null` item
+ * clears the tag. Only `cash_flow_item` changes (debit/credit untouched), so
+ * 借贷必平 + balances hold. Returns the number of lines updated.
+ */
+export async function tagVoucherLineCashFlowTx(
+  tx: TxClient,
+  voucherId: string,
+  accountCode: string,
+  cashFlowItem: string | null,
+): Promise<number> {
+  const result = await tx.journalEntryLine.updateMany({
+    where: { voucherId, accountCode },
+    data: { cashFlowItem },
+  });
+  return result.count;
+}
+
 export { Prisma } from '@prisma/client';
 export type { PrismaClient } from '@prisma/client';

@@ -654,6 +654,21 @@ paths:
         - { name: to, in: query, required: false, schema: { type: string, format: date } }
       responses:
         '200': { description: Tie-out, content: { application/json: { schema: { $ref: '#/components/schemas/CashFlowTieOut' } } } }
+  /v1/cash-flow/tag:
+    post:
+      operationId: tagCashFlow
+      summary: Post-hoc 打标 — set 现金流量项目 on a voucher's non-cash line(s) (pre-close worklist)
+      tags: [cash-flow]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TagCashFlow' }
+      responses:
+        '200': { description: Tagged, content: { application/json: { schema: { type: object, properties: { tagged: { type: integer } } } } } }
+        '400': { description: Cash account / unknown item / closed period / no matching line }
+        '404': { description: Voucher not found }
   /v1/reports/balance-sheet:
     get:
       operationId: getBalanceSheet
@@ -1080,6 +1095,13 @@ components:
         taggedFlows: { type: string }
         difference: { type: string }
         tied: { type: boolean }
+    TagCashFlow:
+      type: object
+      required: [voucherId, accountCode]
+      properties:
+        voucherId: { type: string, format: uuid }
+        accountCode: { type: string, description: 'Non-cash (contra) account to tag' }
+        cashFlowItem: { type: string, nullable: true, description: 'CF item code; null/empty clears the tag' }
     PeriodCloseResult:
       allOf:
         - $ref: '#/components/schemas/PeriodClose'

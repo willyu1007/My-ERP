@@ -20,6 +20,7 @@ import {
   type PeriodClose,
   type PeriodCloseReadiness,
   type PeriodCloseResult,
+  type TagCashFlow,
   type UntaggedCashLine,
 } from '@my-erp/api-client';
 import { ACCOUNTS, OPENING_BALANCES, VOUCHERS } from './fixtures';
@@ -160,4 +161,9 @@ export async function getUntaggedCashFlows(period?: string): Promise<readonly Un
   const api = getFinanceApi();
   if (!api) return [];
   return api.untaggedCashFlows(period);
+}
+
+/** Post-hoc 打标: set the CF item on a voucher's non-cash line(s). Requires the backend. */
+export async function tagCashFlow(input: TagCashFlow): Promise<{ tagged: number }> {
+  return requireFinanceApi().tagCashFlow(input);
 }
