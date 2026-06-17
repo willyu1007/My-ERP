@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-17T12:36:11.664Z",
+  "generatedAt": "2026-06-17T16:04:08.130Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "9056691a82571cd4d1fb37b4f16e6588e7fdc375f7c74e587a209ef3983db9e4",
+  "sourceChecksumSha256": "3c9d98fcb24ce64f124a520b39f3c4930f1a6aedea8bfccb4ce66a32665c7389",
   "stats": {
-    "totalEndpoints": 53,
+    "totalEndpoints": 57,
     "byTag": {
       "system": 1,
       "organization": 1,
@@ -20,6 +20,7 @@
       "cash-flow": 5,
       "reports": 3,
       "payments": 7,
+      "contracts": 4,
       "opening-balances": 2
     }
   },
@@ -658,7 +659,9 @@
             "summary",
             "lines"
           ],
-          "optional": []
+          "optional": [
+            "contractId"
+          ]
         }
       },
       "output": {
@@ -679,7 +682,8 @@
           "postedAt",
           "reversalOf",
           "reversedBy",
-          "attachments"
+          "attachments",
+          "contractId"
         ]
       },
       "errors": [
@@ -723,7 +727,8 @@
           "postedAt",
           "reversalOf",
           "reversedBy",
-          "attachments"
+          "attachments",
+          "contractId"
         ]
       },
       "errors": [
@@ -751,7 +756,9 @@
             "summary",
             "lines"
           ],
-          "optional": []
+          "optional": [
+            "contractId"
+          ]
         }
       },
       "output": {
@@ -772,7 +779,8 @@
           "postedAt",
           "reversalOf",
           "reversedBy",
-          "attachments"
+          "attachments",
+          "contractId"
         ]
       },
       "errors": [
@@ -815,7 +823,8 @@
           "postedAt",
           "reversalOf",
           "reversedBy",
-          "attachments"
+          "attachments",
+          "contractId"
         ]
       },
       "errors": [
@@ -863,7 +872,8 @@
           "postedAt",
           "reversalOf",
           "reversedBy",
-          "attachments"
+          "attachments",
+          "contractId"
         ]
       },
       "errors": [
@@ -1599,7 +1609,9 @@
             "cashAccountCode",
             "contraAccountCode"
           ],
-          "optional": []
+          "optional": [
+            "contractId"
+          ]
         }
       },
       "output": {
@@ -1887,6 +1899,181 @@
       ],
       "example": {
         "curl": "curl -X POST '/v1/payments/{id}/void' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"expectedVersion\":\"<expectedVersion>\"}'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/contracts",
+      "operationId": "listContracts",
+      "summary": "List 合同 (Contract)",
+      "tag": "contracts",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [
+          "status",
+          "type"
+        ],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": []
+      },
+      "errors": [],
+      "example": {
+        "curl": "curl -X GET '/v1/contracts' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/contracts",
+      "operationId": "createContract",
+      "summary": "Create a 合同 (code auto-assigned HT-{fiscalYear}-{NNN})",
+      "tag": "contracts",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": {
+          "required": [
+            "title"
+          ],
+          "optional": [
+            "type",
+            "counterparty",
+            "amount",
+            "startDate",
+            "endDate",
+            "summary"
+          ]
+        }
+      },
+      "output": {
+        "successStatus": 201,
+        "coreFields": [
+          "id",
+          "ledgerBookId",
+          "code",
+          "title",
+          "type",
+          "counterparty",
+          "currency",
+          "status",
+          "summary",
+          "createdBy",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "amount",
+          "startDate",
+          "endDate"
+        ]
+      },
+      "errors": [
+        400
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/contracts' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"title\":\"<title>\"}'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/contracts/{id}",
+      "operationId": "getContract",
+      "summary": "Get a contract",
+      "tag": "contracts",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id"
+        ],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "ledgerBookId",
+          "code",
+          "title",
+          "type",
+          "counterparty",
+          "currency",
+          "status",
+          "summary",
+          "createdBy",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "amount",
+          "startDate",
+          "endDate"
+        ]
+      },
+      "errors": [
+        404
+      ],
+      "example": {
+        "curl": "curl -X GET '/v1/contracts/{id}' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/contracts/{id}",
+      "operationId": "updateContract",
+      "summary": "Update a contract (status / fields; version-guarded)",
+      "tag": "contracts",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id"
+        ],
+        "query": [],
+        "body": {
+          "required": [
+            "expectedVersion"
+          ],
+          "optional": [
+            "title",
+            "type",
+            "counterparty",
+            "amount",
+            "status",
+            "startDate",
+            "endDate",
+            "summary"
+          ]
+        }
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "ledgerBookId",
+          "code",
+          "title",
+          "type",
+          "counterparty",
+          "currency",
+          "status",
+          "summary",
+          "createdBy",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "amount",
+          "startDate",
+          "endDate"
+        ]
+      },
+      "errors": [
+        400,
+        409
+      ],
+      "example": {
+        "curl": "curl -X PATCH '/v1/contracts/{id}' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"expectedVersion\":\"<expectedVersion>\"}'"
       }
     },
     {

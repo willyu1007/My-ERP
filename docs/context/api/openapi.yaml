@@ -785,6 +785,47 @@ paths:
         '200': { description: Voided, content: { application/json: { schema: { $ref: '#/components/schemas/PaymentDoc' } } } }
         '400': { description: Already confirmed / void }
         '409': { description: Stale version }
+  /v1/contracts:
+    get:
+      operationId: listContracts
+      summary: List 合同 (Contract)
+      tags: [contracts]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: status, in: query, required: false, schema: { type: string, enum: [draft, active, closed] } }
+        - { name: type, in: query, required: false, schema: { type: string, enum: [sales, purchase, service, other] } }
+      responses:
+        '200': { description: Contracts, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Contract' } } } } }
+    post:
+      operationId: createContract
+      summary: Create a 合同 (code auto-assigned HT-{fiscalYear}-{NNN})
+      tags: [contracts]
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CreateContract' } } } }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Contract' } } } }
+        '400': { description: Invalid input }
+  /v1/contracts/{id}:
+    get:
+      operationId: getContract
+      summary: Get a contract
+      tags: [contracts]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: Contract, content: { application/json: { schema: { $ref: '#/components/schemas/Contract' } } } }
+        '404': { description: Not found }
+    patch:
+      operationId: updateContract
+      summary: Update a contract (status / fields; version-guarded)
+      tags: [contracts]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/UpdateContract' } } } }
+      responses:
+        '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/Contract' } } } }
+        '400': { description: Invalid / closed contract }
+        '409': { description: Stale version }
   /v1/opening-balances:
     get:
       operationId: getOpeningBalances
@@ -1050,6 +1091,7 @@ components:
         reversalOf: { type: string, format: uuid, nullable: true }
         reversedBy: { type: string, format: uuid, nullable: true }
         attachments: { type: integer }
+        contractId: { type: string, format: uuid, nullable: true, description: 'Contract link (T-005)' }
         lines:
           type: array
           items: { $ref: '#/components/schemas/VoucherLine' }
@@ -1059,6 +1101,7 @@ components:
       properties:
         date: { type: string, format: date }
         summary: { type: string }
+        contractId: { type: string, format: uuid, nullable: true, description: 'Optional Contract link (T-005)' }
         lines:
           type: array
           items:
@@ -1218,6 +1261,7 @@ components:
         amount: { type: string, description: 'positive, ≤2dp' }
         cashAccountCode: { type: string, description: '货币资金类 (1001/1002/1012)' }
         contraAccountCode: { type: string, description: '对方科目' }
+        contractId: { type: string, format: uuid, nullable: true, description: 'Optional Contract link (T-005)' }
     PaymentActionRequest:
       type: object
       required: [expectedVersion]
@@ -1241,6 +1285,50 @@ components:
         - type: object
           properties:
             settlementVoucher: { $ref: '#/components/schemas/Voucher' }
+    Contract:
+      type: object
+      required: [id, ledgerBookId, code, title, type, counterparty, currency, status, summary, createdBy, version, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        ledgerBookId: { type: string, format: uuid }
+        code: { type: string, example: HT-2026-001 }
+        title: { type: string }
+        type: { type: string, enum: [sales, purchase, service, other] }
+        counterparty: { type: string }
+        amount: { type: string, nullable: true }
+        currency: { type: string }
+        status: { type: string, enum: [draft, active, closed] }
+        startDate: { type: string, format: date, nullable: true }
+        endDate: { type: string, format: date, nullable: true }
+        summary: { type: string }
+        createdBy: { type: string }
+        version: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    CreateContract:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string }
+        type: { type: string, enum: [sales, purchase, service, other] }
+        counterparty: { type: string }
+        amount: { type: string, nullable: true }
+        startDate: { type: string, format: date, nullable: true }
+        endDate: { type: string, format: date, nullable: true }
+        summary: { type: string }
+    UpdateContract:
+      type: object
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: integer }
+        title: { type: string }
+        type: { type: string, enum: [sales, purchase, service, other] }
+        counterparty: { type: string }
+        amount: { type: string, nullable: true }
+        status: { type: string, enum: [draft, active, closed] }
+        startDate: { type: string, format: date, nullable: true }
+        endDate: { type: string, format: date, nullable: true }
+        summary: { type: string }
     PeriodCloseResult:
       allOf:
         - $ref: '#/components/schemas/PeriodClose'

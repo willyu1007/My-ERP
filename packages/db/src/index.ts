@@ -781,6 +781,8 @@ export interface UpdateDraftVoucherInput {
   totalDebit: string;
   totalCredit: string;
   lines: readonly VoucherLineInput[];
+  /** Optional Contract link (T-005 dimension). */
+  contractId?: string | null;
 }
 
 export async function updateDraftVoucherTx(
@@ -798,6 +800,7 @@ export async function updateDraftVoucherTx(
       summary: input.summary,
       totalDebit: input.totalDebit,
       totalCredit: input.totalCredit,
+      contractId: input.contractId ?? null,
       lines: { create: lineCreateData(ledgerBookId, input.lines) },
     },
   });

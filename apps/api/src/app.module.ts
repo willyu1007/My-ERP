@@ -3,6 +3,8 @@ import { AccountsController } from './accounts/accounts.controller';
 import { AuthModule } from './auth/auth.module';
 import { CashFlowController } from './cash-flow/cash-flow.controller';
 import { CashFlowService } from './cash-flow/cash-flow.service';
+import { ContractsController } from './contracts/contracts.controller';
+import { ContractsService } from './contracts/contracts.service';
 import { HealthController } from './health/health.controller';
 import { HealthService } from './health/health.service';
 import { IntakesController } from './intakes/intakes.controller';
@@ -45,6 +47,7 @@ import { WorkItemsService } from './work-items/work-items.service';
     CashFlowController,
     ReportsController,
     PaymentsController,
+    ContractsController,
   ],
   providers: [
     HealthService,
@@ -55,6 +58,7 @@ import { WorkItemsService } from './work-items/work-items.service';
     CashFlowService,
     ReportsService,
     PaymentsService,
+    ContractsService,
     { provide: OBJECT_STORE, useClass: LocalObjectStore },
     { provide: EXTRACTOR, useClass: MockExtractor },
   ],

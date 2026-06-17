@@ -55,13 +55,26 @@ interface ParsedLine {
   cashFlowItem?: string | null;
 }
 
-function parseHeader(body: unknown): { date: string; summary: string; rawLines: unknown } {
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function parseHeader(body: unknown): {
+  date: string;
+  summary: string;
+  rawLines: unknown;
+  contractId: string | null;
+} {
   const b = (body ?? {}) as Record<string, unknown>;
   if (typeof b.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(b.date))
     throw new BadRequestException('date must be YYYY-MM-DD');
   if (typeof b.summary !== 'string' || b.summary.trim() === '')
     throw new BadRequestException('summary is required');
-  return { date: b.date, summary: b.summary.trim(), rawLines: b.lines };
+  let contractId: string | null = null;
+  if (b.contractId != null && b.contractId !== '') {
+    if (typeof b.contractId !== 'string' || !UUID_RE.test(b.contractId))
+      throw new BadRequestException('contractId must be a uuid');
+    contractId = b.contractId;
+  }
+  return { date: b.date, summary: b.summary.trim(), rawLines: b.lines, contractId };
 }
 
 /** Parse + per-line validate (each line one-sided); compute totals via Money (no float). */
@@ -149,7 +162,7 @@ export class VouchersController {
     @CurrentIdentity() identity: Identity,
     @Body() body: unknown,
   ) {
-    const { date, summary, rawLines } = parseHeader(body);
+    const { date, summary, rawLines, contractId } = parseHeader(body);
     const { lines, totalDebit, totalCredit } = parseLines(rawLines);
     const period = date.slice(0, 7);
     return withLedgerScope(ledgerBookId, async (tx) => {
@@ -165,6 +178,7 @@ export class VouchersController {
         maker: identity.userId,
         totalDebit,
         totalCredit,
+        contractId,
         lines: enriched,
       });
       await appendAuditRecordTx(tx, {
@@ -185,7 +199,7 @@ export class VouchersController {
     @Param('id') id: string,
     @Body() body: unknown,
   ) {
-    const { date, summary, rawLines } = parseHeader(body);
+    const { date, summary, rawLines, contractId } = parseHeader(body);
     const { lines, totalDebit, totalCredit } = parseLines(rawLines);
     return withLedgerScope(ledgerBookId, async (tx) => {
       const existing = await getVoucherTx(tx, id);
@@ -201,6 +215,7 @@ export class VouchersController {
         summary,
         totalDebit,
         totalCredit,
+        contractId,
         lines: enriched,
       });
       return getVoucherTx(tx, id);

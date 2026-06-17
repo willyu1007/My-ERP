@@ -47,7 +47,10 @@ export interface CreatePaymentInput {
   amount: string;
   cashAccountCode: string;
   contraAccountCode: string;
+  contractId?: string | null;
 }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function iso(d: Date): string {
   return d.toISOString();
@@ -137,6 +140,8 @@ export class PaymentsService {
       throw new BadRequestException('现金科目与对方科目不能相同');
     if (!isCashAccountCode(input.cashAccountCode))
       throw new BadRequestException('现金科目必须是货币资金类（1001/1002/1012）');
+    if (input.contractId != null && input.contractId !== '' && !UUID_RE.test(input.contractId))
+      throw new BadRequestException('contractId must be a uuid');
     const period = input.date.slice(0, 7);
 
     return withScope(identity.orgId, ledgerBookId, async (tx) => {
@@ -160,6 +165,7 @@ export class PaymentsService {
         cashAccountCode: input.cashAccountCode,
         contraAccountCode: input.contraAccountCode,
         maker: identity.userId,
+        contractId: input.contractId || null,
       });
       await this.audit(tx, identity, 'CREATE_PAYMENT', doc.id, ledgerBookId, {
         no,

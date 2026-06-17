@@ -35,6 +35,12 @@ export type CreatePayment = components['schemas']['CreatePayment'];
 export type PaymentConfirmResult = components['schemas']['PaymentConfirmResult'];
 export type PaymentDirection = PaymentDoc['direction'];
 export type PaymentStatus = PaymentDoc['status'];
+// Contracts (T-005)
+export type Contract = components['schemas']['Contract'];
+export type CreateContract = components['schemas']['CreateContract'];
+export type UpdateContract = components['schemas']['UpdateContract'];
+export type ContractStatus = Contract['status'];
+export type ContractType = Contract['type'];
 /** Result of a work-item action: the updated item, plus the source entity for `complete`. */
 export interface WorkItemActionResult {
   readonly workItem: WorkItem;
@@ -137,6 +143,11 @@ export interface ApiClient {
     confirmSinglePerson?: boolean,
   ): Promise<PaymentConfirmResult>;
   voidPayment(id: string, expectedVersion: number, reason?: string): Promise<PaymentDoc>;
+  // Contracts (T-005).
+  listContracts(params?: { status?: ContractStatus; type?: ContractType }): Promise<Contract[]>;
+  getContract(id: string): Promise<Contract>;
+  createContract(body: CreateContract): Promise<Contract>;
+  updateContract(id: string, body: UpdateContract): Promise<Contract>;
 }
 
 export function createApiClient(config: ApiClientConfig): ApiClient {
@@ -260,5 +271,16 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
         expectedVersion,
         ...(reason ? { reason } : {}),
       }),
+    listContracts: (params) => {
+      const qs = new URLSearchParams();
+      if (params?.status) qs.set('status', params.status);
+      if (params?.type) qs.set('type', params.type);
+      const q = qs.toString();
+      return request<Contract[]>('GET', `/v1/contracts${q ? `?${q}` : ''}`);
+    },
+    getContract: (id) => request<Contract>('GET', `/v1/contracts/${encodeURIComponent(id)}`),
+    createContract: (body) => request<Contract>('POST', '/v1/contracts', body),
+    updateContract: (id, body) =>
+      request<Contract>('PATCH', `/v1/contracts/${encodeURIComponent(id)}`, body),
   };
 }
