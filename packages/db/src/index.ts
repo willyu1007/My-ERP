@@ -1903,5 +1903,188 @@ export async function tagVoucherLineCashFlowTx(
   return result.count;
 }
 
+/* ---- Payment document (出纳收付款单, T-007) — ledger-scoped ---- */
+
+export interface PaymentDocEntity {
+  id: string;
+  ledgerBookId: string;
+  no: string;
+  direction: string;
+  /** YYYY-MM-DD */
+  date: string;
+  period: string;
+  counterparty: string;
+  summary: string;
+  /** 2dp string */
+  amount: string;
+  cashAccountCode: string;
+  contraAccountCode: string;
+  status: string;
+  settlementVoucherId: string | null;
+  contractId: string | null;
+  maker: string;
+  approver: string | null;
+  confirmer: string | null;
+  version: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+function toPaymentDoc(p: {
+  id: string;
+  ledgerBookId: string;
+  no: string;
+  direction: string;
+  date: Date;
+  period: string;
+  counterparty: string;
+  summary: string;
+  amount: Prisma.Decimal;
+  cashAccountCode: string;
+  contraAccountCode: string;
+  status: string;
+  settlementVoucherId: string | null;
+  contractId: string | null;
+  maker: string;
+  approver: string | null;
+  confirmer: string | null;
+  version: number;
+  createdAt: Date;
+  updatedAt: Date;
+}): PaymentDocEntity {
+  return {
+    id: p.id,
+    ledgerBookId: p.ledgerBookId,
+    no: p.no,
+    direction: p.direction,
+    date: p.date.toISOString().slice(0, 10),
+    period: p.period,
+    counterparty: p.counterparty,
+    summary: p.summary,
+    amount: p.amount.toFixed(2),
+    cashAccountCode: p.cashAccountCode,
+    contraAccountCode: p.contraAccountCode,
+    status: p.status,
+    settlementVoucherId: p.settlementVoucherId,
+    contractId: p.contractId,
+    maker: p.maker,
+    approver: p.approver,
+    confirmer: p.confirmer,
+    version: p.version,
+    createdAt: p.createdAt,
+    updatedAt: p.updatedAt,
+  };
+}
+
+export interface CreatePaymentDocInput {
+  ledgerBookId: string;
+  no: string;
+  direction: string;
+  date: string;
+  period: string;
+  counterparty: string;
+  summary: string;
+  amount: string;
+  cashAccountCode: string;
+  contraAccountCode: string;
+  maker: string;
+  contractId?: string | null;
+}
+
+export async function createPaymentDocTx(
+  tx: TxClient,
+  input: CreatePaymentDocInput,
+): Promise<PaymentDocEntity> {
+  const row = await tx.paymentDoc.create({
+    data: {
+      ledgerBookId: input.ledgerBookId,
+      no: input.no,
+      direction: input.direction,
+      date: new Date(input.date),
+      period: input.period,
+      counterparty: input.counterparty,
+      summary: input.summary,
+      amount: input.amount,
+      cashAccountCode: input.cashAccountCode,
+      contraAccountCode: input.contraAccountCode,
+      status: 'draft',
+      contractId: input.contractId ?? null,
+      maker: input.maker,
+    },
+  });
+  return toPaymentDoc(row);
+}
+
+export async function getPaymentDocTx(tx: TxClient, id: string): Promise<PaymentDocEntity | null> {
+  const row = await tx.paymentDoc.findUnique({ where: { id } });
+  return row ? toPaymentDoc(row) : null;
+}
+
+export async function listPaymentDocsTx(
+  tx: TxClient,
+  filters?: { status?: string; direction?: string },
+): Promise<PaymentDocEntity[]> {
+  const rows = await tx.paymentDoc.findMany({
+    where: {
+      ...(filters?.status ? { status: filters.status } : {}),
+      ...(filters?.direction ? { direction: filters.direction } : {}),
+    },
+    orderBy: [{ date: 'desc' }, { no: 'desc' }],
+  });
+  return rows.map(toPaymentDoc);
+}
+
+/** Count documents of a direction in a period — for `收-/付-YYYY-MM-NNN` numbering. */
+export async function countPaymentDocsInPeriodTx(
+  tx: TxClient,
+  period: string,
+  direction: string,
+): Promise<number> {
+  return tx.paymentDoc.count({ where: { period, direction } });
+}
+
+export interface UpdatePaymentDocInput {
+  expectedVersion: number;
+  status?: string;
+  approver?: string | null;
+  confirmer?: string | null;
+  settlementVoucherId?: string | null;
+  /** Draft-only edits. */
+  counterparty?: string;
+  summary?: string;
+  amount?: string;
+  cashAccountCode?: string;
+  contraAccountCode?: string;
+  date?: string;
+  period?: string;
+}
+
+/** Optimistic update (version-guarded). Returns null on a version mismatch (conflict). */
+export async function updatePaymentDocTx(
+  tx: TxClient,
+  id: string,
+  input: UpdatePaymentDocInput,
+): Promise<PaymentDocEntity | null> {
+  const data: Prisma.PaymentDocUpdateManyMutationInput = { version: { increment: 1 } };
+  if (input.status !== undefined) data.status = input.status;
+  if (input.approver !== undefined) data.approver = input.approver;
+  if (input.confirmer !== undefined) data.confirmer = input.confirmer;
+  if (input.settlementVoucherId !== undefined) data.settlementVoucherId = input.settlementVoucherId;
+  if (input.counterparty !== undefined) data.counterparty = input.counterparty;
+  if (input.summary !== undefined) data.summary = input.summary;
+  if (input.amount !== undefined) data.amount = input.amount;
+  if (input.cashAccountCode !== undefined) data.cashAccountCode = input.cashAccountCode;
+  if (input.contraAccountCode !== undefined) data.contraAccountCode = input.contraAccountCode;
+  if (input.date !== undefined) data.date = new Date(input.date);
+  if (input.period !== undefined) data.period = input.period;
+
+  const res = await tx.paymentDoc.updateMany({
+    where: { id, version: input.expectedVersion },
+    data,
+  });
+  if (res.count === 0) return null;
+  return getPaymentDocTx(tx, id);
+}
+
 export { Prisma } from '@prisma/client';
 export type { PrismaClient } from '@prisma/client';

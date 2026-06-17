@@ -124,6 +124,7 @@ model LedgerBook {
   attachments     Attachment[]
   periodCloses    PeriodClose[]
   cashFlowItems   CashFlowItem[]
+  paymentDocs     PaymentDoc[]
 
   @@index([orgId])
   @@map("ledger_book")
@@ -426,4 +427,42 @@ model PeriodClose {
   @@unique([ledgerBookId, period])
   @@index([ledgerBookId, status])
   @@map("period_close")
+}
+
+/// 出纳收付款单 (T-007 cashier MVP). A 收款/付款 document with a request → approve →
+/// confirm → settlement-voucher lifecycle. The system records + posts the entry; it
+/// never moves money (no auto-disbursement). Ledger-scoped (RLS), no physical delete.
+model PaymentDoc {
+  id                  String    @id @default(uuid()) @db.Uuid
+  ledgerBookId        String    @map("ledger_book_id") @db.Uuid
+  no                  String
+  /// receipt (收款) | payment (付款)
+  direction           String
+  date                DateTime  @db.Date
+  period              String
+  counterparty        String
+  summary             String
+  amount              Decimal   @db.Decimal(18, 2)
+  /// 现金/银行存款科目 (1001/1002…); reused chart account, no FundAccount master in MVP.
+  cashAccountCode     String    @map("cash_account_code")
+  /// 对方科目 (往来/费用/收入…).
+  contraAccountCode   String    @map("contra_account_code")
+  /// draft | pending_approval | approved | confirmed | void
+  status              String    @default("draft")
+  /// The posted settlement voucher (set on confirm).
+  settlementVoucherId String?   @map("settlement_voucher_id") @db.Uuid
+  /// Reserved for the T-005 Contract link (unused in MVP).
+  contractId          String?   @map("contract_id") @db.Uuid
+  maker               String
+  approver            String?
+  confirmer           String?
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  version             Int       @default(0)
+
+  ledgerBook LedgerBook @relation(fields: [ledgerBookId], references: [id], onDelete: Cascade)
+
+  @@unique([ledgerBookId, no])
+  @@index([ledgerBookId, status])
+  @@map("payment_doc")
 }
