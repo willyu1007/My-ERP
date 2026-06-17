@@ -21,9 +21,12 @@ Contract aggregate.
 - **C2 done (2026-06-17)**: payment service (state machine + SoD + period-lock + account validation +
   settlement-voucher gen/post + optimistic version + audit) + `payment.approve`/`payment.confirm` WorkItems
   on the kernel + `/v1/payments` + OpenAPI/api-client. Live-verified 9/9 on a fresh DB. Next: **C3 web**.
-  - **C3 must-fix**: the shipped 我的工作台 hardcodes voucher deeplinks/enrichment — make it sourceType-aware
-    (payment tasks → `/finance/payments/{id}`, payment title labels) since payment tasks now exist.
-  - **C4**: add a payments service integration test in CI (don't rely only on the manual e2e — T-006 lesson).
+- **C3 done (2026-06-17)**: `/finance/payments` (create form + status-filtered list) + `/finance/payments/[id]`
+  (detail + 提交审批/审批通过/确认收付并过账/作废) + data-source/actions + 出纳收付 nav; 我的工作台 made
+  sourceType-aware (payment tasks → `/finance/payments`, 收付款审批/确认 titles, payment enrichment).
+  Browser-verified end-to-end (draft→已确认, settlement voucher posted; payment tasks render in 我处理过).
+  Next: **C4** — add a payments service integration test in CI (don't rely only on the manual e2e — T-006
+  lesson) + a final fresh-DB sweep, then close the cashier MVP.
 
 ## Goal
 A cashier funds workflow on the task kernel:
