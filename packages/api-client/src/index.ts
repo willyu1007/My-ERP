@@ -17,6 +17,23 @@ export type VoucherStatus = Voucher['status'];
 export type Intake = components['schemas']['Intake'];
 export type CaptureIntake = components['schemas']['CaptureIntake'];
 export type ExtractionResult = components['schemas']['ExtractionResult'];
+// Task kernel (T-003 R2)
+export type WorkItem = components['schemas']['WorkItem'];
+export type WorkItemAction = components['schemas']['WorkItemAction'];
+export type WorkItemStatus = components['schemas']['WorkItemStatus'];
+export type WorkItemActionRequest = components['schemas']['WorkItemActionRequest'];
+export type WorkItemView =
+  | 'my_tasks'
+  | 'role_queue'
+  | 'created_by_me'
+  | 'handled_by_me'
+  | 'supervision'
+  | 'audit_readonly';
+/** Result of a work-item action: the updated item, plus the source entity for `complete`. */
+export interface WorkItemActionResult {
+  readonly workItem: WorkItem;
+  readonly source?: Voucher;
+}
 // Reports (T-006 M3c)
 export type ReportLine = components['schemas']['ReportLine'];
 export type BalanceSheet = components['schemas']['BalanceSheet'];
@@ -87,6 +104,21 @@ export interface ApiClient {
   untaggedCashFlows(period?: string): Promise<UntaggedCashLine[]>;
   cashFlowTieOut(params?: { from?: string; to?: string }): Promise<CashFlowTieOut>;
   tagCashFlow(body: TagCashFlow): Promise<{ tagged: number }>;
+  // Task kernel (T-003 R2) — visibility + backend-authorized actions.
+  listWorkItems(params?: {
+    view?: WorkItemView;
+    status?: WorkItemStatus;
+    sourceType?: string;
+    sourceId?: string;
+    limit?: number;
+    cursor?: string;
+  }): Promise<WorkItem[]>;
+  getWorkItem(id: string): Promise<WorkItem>;
+  actOnWorkItem(
+    id: string,
+    actionKey: WorkItemAction,
+    body: WorkItemActionRequest,
+  ): Promise<WorkItemActionResult>;
 }
 
 export function createApiClient(config: ApiClientConfig): ApiClient {
@@ -169,5 +201,23 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
       return request<CashFlowTieOut>('GET', `/v1/cash-flow/tie-out${q ? `?${q}` : ''}`);
     },
     tagCashFlow: (body) => request<{ tagged: number }>('POST', '/v1/cash-flow/tag', body),
+    listWorkItems: (params) => {
+      const qs = new URLSearchParams();
+      if (params?.view) qs.set('view', params.view);
+      if (params?.status) qs.set('status', params.status);
+      if (params?.sourceType) qs.set('sourceType', params.sourceType);
+      if (params?.sourceId) qs.set('sourceId', params.sourceId);
+      if (params?.limit) qs.set('limit', String(params.limit));
+      if (params?.cursor) qs.set('cursor', params.cursor);
+      const q = qs.toString();
+      return request<WorkItem[]>('GET', `/v1/work-items${q ? `?${q}` : ''}`);
+    },
+    getWorkItem: (id) => request<WorkItem>('GET', `/v1/work-items/${encodeURIComponent(id)}`),
+    actOnWorkItem: (id, actionKey, body) =>
+      request<WorkItemActionResult>(
+        'POST',
+        `/v1/work-items/${encodeURIComponent(id)}/actions/${encodeURIComponent(actionKey)}`,
+        body,
+      ),
   };
 }

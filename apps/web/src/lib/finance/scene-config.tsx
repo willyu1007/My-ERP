@@ -17,6 +17,10 @@ export const financeNav: ShellNav = {
       showIcons: false,
       items: [
         {
+          href: '/finance/workbench',
+          label: '我的工作台',
+        },
+        {
           href: '/finance/daily-accounting',
           label: '凭证处理',
           match: ['/finance/daily-accounting', '/finance/vouchers'],

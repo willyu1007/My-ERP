@@ -22,6 +22,11 @@ import {
   type PeriodCloseResult,
   type TagCashFlow,
   type UntaggedCashLine,
+  type WorkItem,
+  type WorkItemAction,
+  type WorkItemActionRequest,
+  type WorkItemActionResult,
+  type WorkItemView,
 } from '@my-erp/api-client';
 import { ACCOUNTS, OPENING_BALANCES, VOUCHERS } from './fixtures';
 import {
@@ -166,4 +171,34 @@ export async function getUntaggedCashFlows(period?: string): Promise<readonly Un
 /** Post-hoc 打标: set the CF item on a voucher's non-cash line(s). Requires the backend. */
 export async function tagCashFlow(input: TagCashFlow): Promise<{ tagged: number }> {
   return requireFinanceApi().tagCashFlow(input);
+}
+
+// --- Task kernel / 我的工作台 (T-003 R2) ---
+
+/** Work items for a view (`availableActions` is backend-computed). Empty in demo mode. */
+export async function listWorkItems(view: WorkItemView): Promise<readonly WorkItem[]> {
+  const api = getFinanceApi();
+  if (!api) return [];
+  return api.listWorkItems({ view });
+}
+
+/** A single work item, or `null` (not found / not visible / demo mode). */
+export async function getWorkItem(id: string): Promise<WorkItem | null> {
+  const api = getFinanceApi();
+  if (!api) return null;
+  try {
+    return await api.getWorkItem(id);
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return null;
+    throw err;
+  }
+}
+
+/** Run a backend-authorized work-item action (claim / complete / cancel). Requires the backend. */
+export async function actOnWorkItem(
+  id: string,
+  actionKey: WorkItemAction,
+  body: WorkItemActionRequest,
+): Promise<WorkItemActionResult> {
+  return requireFinanceApi().actOnWorkItem(id, actionKey, body);
 }
