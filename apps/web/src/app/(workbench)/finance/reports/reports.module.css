@@ -52,6 +52,14 @@
   font-size: 13px;
 }
 
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  justify-content: flex-end;
+  margin-bottom: var(--sp-2);
+}
+
 /* Statutory statement table — paper-register feel, mono amounts. */
 .lvl0 td {
   font-weight: 600;

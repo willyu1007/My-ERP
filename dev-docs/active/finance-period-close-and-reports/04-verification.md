@@ -120,6 +120,20 @@ RLS, closed-period guard, `TAG_CASH_FLOW` audit) as the pre-close worklist. Live
 picker pre-fills "销售商品…"; 打标 from the worklist drops 未打标 1 → 0; API guards reject cash account /
 unknown item / closed period; tie-out flips false→true after tagging.
 
+## 2026-06-17 — M3d export / 打印归档
+
+| Check | Result |
+|---|---|
+| Typecheck / Lint | pass / clean |
+| Tests | **33 files / 135 tests** (+3: `report-export.test` — CSV builders) |
+
+**`feat` (M3d).** `/finance/reports` gained a toolbar: **导出 Excel** (combined CSV of the three statements,
+UTF-8 BOM so Excel renders Chinese; `lib/finance/report-export.ts`, pure + unit-tested) and **打印 / 导出 PDF**
+(opens the bare `/print/reports?from&to&label` archival view — three tables stacked, no workbench chrome,
+`window.print()` → printer or 另存为 PDF). Dependency-free (no xlsx/jspdf). Live-verified in a browser:
+the downloaded CSV carries the BOM + all three statements correct (BS 50,700 balanced · IS 净利润 700 ·
+CF 净增加额 50,700); the print view renders the stacked archival layout.
+
 ## Not yet verified (explicit)
-- M3d export (Excel/PDF + print) — next.
+- M3e — final cross-cutting sweep + bundle close.
 - A `close` CASL action (currently gated by `post` Voucher); tagging gated by `update` Voucher.

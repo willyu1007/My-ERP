@@ -31,7 +31,11 @@ reports depend on.
   on the non-cash lines of 现金凭证) + post-hoc `POST /v1/cash-flow/tag` (journal_entry_line UPDATE RLS,
   closed-period guard, `TAG_CASH_FLOW` audit) surfaced as the pre-close worklist. Live-verified in a browser
   (picker pre-fills; 打标 drops 未打标 1 → 0; tie-out flips to true).
-  Next: **M3d** (export Excel/PDF + print) → **M3e** (final verify).
+- **M3d done** (2026-06-17): 导出 Excel (combined CSV, UTF-8 BOM) on `/finance/reports` + a bare
+  `/print/reports` archival view (three tables stacked, no workbench chrome) → browser 打印 / 另存为 PDF.
+  Dependency-free (no xlsx/pdf lib). Live-verified (browser): CSV downloads with all three statements
+  correct; print page renders balanced/ tied. Unit test for the CSV builders.
+  Next: **M3e** (final verification sweep) → close the bundle.
 - Decisions aligned 2026-06-16 (see Confirmed decisions); readiness review in `06`.
 - (history) first-draft Decision-Gate bundle. The key design decisions (CF tagging, report
   mapping, period-close coupling) are to be aligned with the user before implementation.

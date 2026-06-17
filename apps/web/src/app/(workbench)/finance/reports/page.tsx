@@ -6,6 +6,7 @@ import {
 } from '@/lib/finance/data-source';
 import { resolveRange } from '@/lib/finance/report-range';
 import { ReportRangePicker } from './report-range-picker';
+import { ReportToolbar } from './report-toolbar';
 import { BalanceSheetView, CashFlowView, IncomeStatementView } from './statement-views';
 
 export const dynamic = 'force-dynamic';
@@ -57,6 +58,7 @@ export default async function ReportsPage({
 
       {configured ? (
         <Section title={range.label}>
+          <ReportToolbar range={range} bs={bs} income={income} cashflow={cashflow} />
           <Tabs
             items={[
               { key: 'bs', label: '资产负债表', content: <BalanceSheetView bs={bs} /> },
