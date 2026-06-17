@@ -17,9 +17,12 @@ scope).
 - Decisions aligned 2026-06-17 (MVP-first · free-text counterparty · entry-time linking — see `01-plan`).
   M2 cashier (T-007) is done, so payments join the timeline and `PaymentDoc.contractId` is reserved.
 - **C1 done (2026-06-17)**: `Contract` model + migration (ledger RLS) + `JournalVoucher.contractId`
-  (+ index) + Contract repos (CRUD, version-guarded update, count) + `listVouchers/PaymentDocsByContractTx`
-  (the timeline dimension) + a Contract RLS integration test (isolation, optimistic update, contractId
-  linkage). Next: **C2** contract API + thread `contractId` through voucher/payment create.
+  (+ index) + Contract repos + `listVouchers/PaymentDocsByContractTx` (timeline dimension) + RLS test.
+  QA: found + fixed a bug — `createReversalVoucherTx` dropped `contractId` (红冲 fell off the timeline).
+- **C2 done (2026-06-18)**: contracts service + `/v1/contracts` (CRUD, auto code `HT-{fiscalYear}-{NNN}`,
+  version-guarded, audit) + `contractId` threaded through voucher create/edit + payment create; OpenAPI
+  (Voucher/CreateVoucher/CreatePayment + Contract schemas/paths) + api-client. Live-verified 7/7.
+  Next: **C3** timeline read-model + contract pages + the 合同 picker on the two create forms.
 - Design is captured here and in `roadmap.md` / `02-architecture.md`; reuses T-004's intake pipeline
   for contract scans (deferred).
 
