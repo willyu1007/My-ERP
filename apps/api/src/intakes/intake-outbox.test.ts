@@ -29,7 +29,8 @@ describe('intake outbox envelope (metadata-only)', () => {
     expect(env.sourceType).toBe('Intake');
     expect(env.sourceId).toBe(intake.id);
     expect(env.titleKey).toBe('finance.intake.received');
-    expect(env.deepLink).toContain(intake.id);
+    // intakes have no per-id detail route; the deep link points at 凭证处理 (where drafts are confirmed).
+    expect(env.deepLink).toBe('/finance/daily-accounting');
     // the extracted amount/counterparty must not appear anywhere in the payload
     const serialized = JSON.stringify(env);
     expect(serialized).not.toContain('1234.56');

@@ -16,9 +16,10 @@ My-ERP has a working M1 general ledger core and a web workbench that frames dail
   backend `availableActions` with optimistic `expectedVersion`. Backend readiness fix: `viewWhere`
   elevates supervision-capable callers (admin/SME-single-admin now see their tasks; see `07`). Live +
   browser verified (submit → review task → 通过并过账 → posted → 我处理过). 136 tests green.
-- Deferred scope (keeps T-003 in-progress): **R3** cashier + payment approval (needs M2 cashier),
-  **R4** multi-module compatibility, the **outbox dispatch worker** (My-Chat delivery — `apps/workers`
-  is still a placeholder), `return`/`assign` actions, and configurable workflow policy tables.
+- Spun out (not part of this closed task): **R3** cashier + payment approval — **shipped in T-007**;
+  **R4** multi-module compatibility — **T-008** (planned). Genuinely still deferred: the **outbox dispatch
+  worker** (My-Chat delivery — `apps/workers` is a placeholder), `return`/`assign` work-item actions, and
+  configurable workflow policy tables.
 
 ## Goal
 Define and align a platform-compatible workflow/task roadmap so SME accounting daily work can become pipeline-like for users while remaining a reusable multi-workflow ERP capability.

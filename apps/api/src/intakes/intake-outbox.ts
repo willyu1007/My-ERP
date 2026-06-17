@@ -3,8 +3,9 @@ import { appendOutboxEventTx, type IntakeEntity, type TxClient } from '@my-erp/d
 
 export const INTAKE_SOURCE_TYPE = 'Intake';
 
-function intakeDeepLink(intakeId: string): string {
-  return `/finance/daily-accounting/intakes/${intakeId}`;
+function intakeDeepLink(_intakeId: string): string {
+  // Intakes have no per-id detail route; a captured draft is confirmed in 凭证处理.
+  return `/finance/daily-accounting`;
 }
 
 /**

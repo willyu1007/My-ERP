@@ -60,7 +60,7 @@ export const financeNav: ShellNav = {
       ],
     },
   ],
-  create: [{ href: '/finance/vouchers/new', label: '录入凭证' }],
+  create: [{ href: '/finance/daily-accounting', label: '录入凭证' }],
   sections: [
     { prefix: '/finance', label: '财务', href: '/finance/daily-accounting' },
     { prefix: '/system', label: '系统', href: '/system/health' },

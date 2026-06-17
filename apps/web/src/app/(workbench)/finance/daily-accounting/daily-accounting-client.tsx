@@ -150,11 +150,7 @@ export function DailyAccountingClient({
     </div>
   );
 
-  const actions = (
-    <Link href="/finance/vouchers/new" className="mt-btn mt-btn--primary mt-btn--sm">
-      录入凭证
-    </Link>
-  );
+  // 录入凭证 is the inline VoucherFastEntry above; no separate create button needed.
 
   return (
     <div className="wb-scene wb-stack wb-stack--lg">
@@ -168,7 +164,6 @@ export function DailyAccountingClient({
       <ListView<VoucherVM>
         items={filtered}
         nav={nav}
-        actions={actions}
         empty={{ title: '暂无待处理事项', desc: '当前队列没有需要处理的凭证。' }}
         present={(items) => (
           <div className={styles.queueScope}>

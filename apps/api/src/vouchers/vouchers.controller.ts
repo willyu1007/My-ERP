@@ -32,6 +32,7 @@ import {
 import { Money, voucherBalanceError } from '@my-erp/finance-domain';
 import { withSpan, type Identity } from '@my-erp/platform';
 import { parseAmount } from '../common/parse-amount';
+import { assertDate } from '../common/parse-date';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentIdentity } from '../auth/current-identity.decorator';
 import { CurrentLedgerBook } from '../auth/current-ledger-book.decorator';
@@ -64,8 +65,7 @@ function parseHeader(body: unknown): {
   contractId: string | null;
 } {
   const b = (body ?? {}) as Record<string, unknown>;
-  if (typeof b.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(b.date))
-    throw new BadRequestException('date must be YYYY-MM-DD');
+  const date = assertDate(b.date);
   if (typeof b.summary !== 'string' || b.summary.trim() === '')
     throw new BadRequestException('summary is required');
   let contractId: string | null = null;
@@ -74,7 +74,7 @@ function parseHeader(body: unknown): {
       throw new BadRequestException('contractId must be a uuid');
     contractId = b.contractId;
   }
-  return { date: b.date, summary: b.summary.trim(), rawLines: b.lines, contractId };
+  return { date, summary: b.summary.trim(), rawLines: b.lines, contractId };
 }
 
 /** Parse + per-line validate (each line one-sided); compute totals via Money (no float). */

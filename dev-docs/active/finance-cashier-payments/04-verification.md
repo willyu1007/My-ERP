@@ -26,10 +26,11 @@
 
 ## Deferred (post-MVP enhancements; non-goals of this slice)
 - Approval **thresholds + multi-step** approval policy (DB-configured per T-003 D2).
-- **FundAccount** master + bank-account balances (MVP reuses 1001/1002 chart accounts).
+- **FundAccount** master + bank-account balances (MVP reuses 1001/1002/1012 chart accounts).
 - Dedicated **`Payment` CASL subject** (MVP reuses `read/create/approve/post` Voucher actions).
-- Draft **edit** endpoint (`PATCH /payments/:id`); bank **reconciliation**.
+- Draft **edit** endpoint (no `PATCH /payments/:id` in the MVP — void + recreate); bank **reconciliation**.
 - **Outbox dispatch worker** (My-Chat delivery) — events are written metadata-only but not yet delivered
   (shared infra; tracked under the kernel/notifications follow-up).
 - Generic kernel `complete` dispatch for `payment.*` types (actions live on the payment pages in the MVP).
-- **T-005 Contract link** — `PaymentDoc.contractId` is reserved but unused.
+- **T-005 Contract link** — wired since T-005 C2: `PaymentDoc.contractId` is set on create and surfaced in
+  the contract timeline.

@@ -1,7 +1,13 @@
-# 02 — Architecture (draft — refine when picked up)
+# 02 — Architecture (2026-06-14 sketch — partly superseded by the MVP)
 
 This captures the contract design produced during the 2026-06-14 discussion and split out of T-004.
-It is a design sketch; phase-level detail (`01-plan.md`, `03+`) is authored when the task starts.
+
+> **⚠️ Superseded where it conflicts with `01-plan.md` (MVP, 2026-06-17 decisions).** The MVP shipped
+> (C1–C3) deliberately diverges from this sketch: **Contract is ledger-scoped only** (no `orgId` on the
+> row), **no `BusinessPartner` entity** — the contract stores a **free-text `counterparty`** — and the
+> timeline renders **contract event ∪ vouchers ∪ payments** (work items deferred). The D2 lifecycle stages
+> below are also deferred (MVP uses a simple `draft|active|closed` status). Read `01-plan.md` for the
+> as-built design; the sections below are the original, broader vision.
 
 ## Position in the layering
 - `Contract` and `BusinessPartner` are finance-side aggregates owned by the finance module.

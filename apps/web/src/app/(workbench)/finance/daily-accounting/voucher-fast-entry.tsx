@@ -18,6 +18,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { StatusBadge, useToast } from '@my-erp/ui';
 import type { CashFlowItem, Contract, CreateVoucher } from '@my-erp/api-client';
+import { isCashAccountCode } from '@/lib/finance/account';
 import { centsToString, sumCents, toCents } from '@/lib/finance/money';
 import { formatMoney, formatPeriod } from '@/lib/finance/format';
 import type { AccountVM } from '@/lib/finance/types';
@@ -57,11 +58,6 @@ interface DraftLine {
 
 function blankLine(key: string): DraftLine {
   return { key, accountCode: '', accountName: '', summary: '', debit: '', credit: '', cashFlowItem: '' };
-}
-
-/** 现金及现金等价物科目（库存现金 / 银行存款 / 其他货币资金）。与 finance-domain 同口径。 */
-function isCashAccountCode(code: string): boolean {
-  return code.startsWith('1001') || code.startsWith('1002') || code.startsWith('1012');
 }
 
 const CF_GROUPS: readonly { readonly activity: string; readonly label: string }[] = [

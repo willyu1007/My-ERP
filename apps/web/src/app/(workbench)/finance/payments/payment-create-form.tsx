@@ -5,12 +5,11 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@my-erp/ui';
 import type { Contract } from '@my-erp/api-client';
 import type { AccountVM } from '@/lib/finance/types';
+import { isCashAccountCode } from '@/lib/finance/account';
 import { PAYMENT_DIRECTION } from '@/lib/finance/payment-display';
 import { createPaymentAction } from './actions';
 import styles from './payments.module.css';
 
-const isCash = (code: string): boolean =>
-  code.startsWith('1001') || code.startsWith('1002') || code.startsWith('1012');
 const AMOUNT_RE = /^\d+(\.\d{1,2})?$/;
 
 /** 新建收/付款单 — drafts a PaymentDoc, then routes to its detail for submit/approve/confirm. */
@@ -37,8 +36,8 @@ export function PaymentCreateForm({
   const openContracts = contracts.filter((c) => c.status !== 'closed');
 
   const postable = accounts.filter((a) => a.isLeaf && a.active);
-  const cashAccounts = postable.filter((a) => isCash(a.code));
-  const contraAccounts = postable.filter((a) => !isCash(a.code));
+  const cashAccounts = postable.filter((a) => isCashAccountCode(a.code));
+  const contraAccounts = postable.filter((a) => !isCashAccountCode(a.code));
 
   const amountOk = AMOUNT_RE.test(amount) && Number(amount) > 0;
   const canSubmit =

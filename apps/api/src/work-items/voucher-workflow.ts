@@ -31,8 +31,11 @@ export const VOUCHER_REVIEW_WORKFLOW = {
   assignedRole: 'supervisor',
 } as const;
 
-function voucherDeepLink(voucherId: string): string {
-  return `/finance/daily-accounting/vouchers/${voucherId}`;
+/** ERP deep link by source type (the web routes used by the workbench). */
+function sourceDeepLink(sourceType: string, sourceId: string): string | undefined {
+  if (sourceType === 'JournalVoucher') return `/finance/vouchers/${sourceId}`;
+  if (sourceType === 'PaymentDoc') return `/finance/payments/${sourceId}`;
+  return undefined;
 }
 
 export async function appendWorkItemOutboxEventTx(
@@ -59,7 +62,7 @@ export async function appendWorkItemOutboxEventTx(
     status: item.status,
     subStatus: item.subStatus,
     ...(actionKey ? { actionKey } : {}),
-    deepLink: item.sourceType === 'JournalVoucher' ? voucherDeepLink(item.sourceId) : undefined,
+    deepLink: sourceDeepLink(item.sourceType, item.sourceId),
     occurredAt: new Date().toISOString(),
   });
 

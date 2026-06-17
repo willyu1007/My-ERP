@@ -12,10 +12,10 @@ import {
 } from '@my-erp/db';
 import { balanceSheet, cashFlowStatement, incomeStatement } from '@my-erp/finance-domain';
 import type { Identity } from '@my-erp/platform';
+import { DATE_RE } from '../common/parse-date';
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 function assertDate(value: string | undefined, name: string): string {
-  if (!value || !DATE_RE.test(value)) throw new BadRequestException(`${name} must be YYYY-MM-DD`);
+  if (!value || !DATE_RE.test(value)) throw new BadRequestException(`${name} must be a valid YYYY-MM-DD date`);
   return value;
 }
 function categoryOf(accounts: readonly AccountEntity[]): (code: string) => string {

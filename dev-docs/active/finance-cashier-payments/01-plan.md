@@ -37,8 +37,8 @@ contractId?(uuid, reserved), maker, approver?, confirmer?, createdAt, updatedAt,
 
 ## API (apps/api) — `/v1/payments`
 `GET /payments?status&direction`, `POST /payments` (draft), `GET /payments/:id`,
-`PATCH /payments/:id` (edit draft), `POST /payments/:id/submit|approve|confirm|void`. Approve/confirm
-enforce SoD + period lock; confirm returns the posted settlement voucher.
+`POST /payments/:id/submit|approve|confirm|void` (draft-edit `PATCH` dropped from the MVP — void +
+recreate). Approve/confirm enforce SoD + period lock; confirm returns the posted settlement voucher.
 
 ## Web — `/finance/payments`
 List (收/付 + status filters) · create form (direction, counterparty, amount, cash + contra account,

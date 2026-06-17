@@ -95,7 +95,7 @@ function financeModule(vouchers: readonly VoucherVM[]): WorkflowModule {
       },
     ],
     quickActions: [
-      { href: '/finance/vouchers/new', label: '录入凭证', icon: <IconClipboard size={15} /> },
+      { href: '/finance/daily-accounting', label: '录入凭证', icon: <IconClipboard size={15} /> },
       { href: '/finance/ledger', label: '账簿查询', icon: <IconBook size={15} /> },
     ],
   };
