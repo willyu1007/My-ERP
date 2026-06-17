@@ -4,7 +4,11 @@
 My-ERP has a working M1 general ledger core and a web workbench that frames daily accounting as a workflow entry. The missing layer is a durable, reusable way to express role-based work items, approvals, task queues, and cross-role transitions. Without that layer, accounting daily work will either remain static UI over voucher lists or become a hard-coded linear finance pipeline that cannot scale to future ERP modules.
 
 ## Status
-- State: in-progress
+- State: done
+- Closed 2026-06-17, scoped to the **platform task kernel + finance voucher slice (R0/R1/R2, incl. R2-UI)**.
+  The deferred extensions were spun out to their own tasks: **R3 → T-007** (finance-cashier-payments),
+  **R4 → T-008** (erp-multi-workflow-compat); the **outbox dispatch worker** (My-Chat delivery) is folded
+  into T-007's notification scope. `return`/`assign` actions + workflow policy tables ride along with T-007.
 - Backend-first implementation slice completed on 2026-06-13.
 - Implemented scope: WorkItem / WorkItemEvent / OutboxEvent schema and RLS, shared task contracts, platform authorization, task API, voucher-backed review/post adapter, metadata-only outbox envelope, and focused tests.
 - **R2-UI done (2026-06-17):** `/finance/workbench` (我的工作台) — the first real web consumer of the

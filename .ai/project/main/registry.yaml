@@ -39,11 +39,11 @@ tasks:
     updated: 2026-06-09
   - id: T-003
     slug: workflow-task-kernel-finance-pipeline
-    status: in-progress
+    status: done
     milestone_id: M-000
     feature_id: F-000
     dev_docs_path: dev-docs/active/workflow-task-kernel-finance-pipeline
-    updated: 2026-06-13
+    updated: 2026-06-17
   - id: T-004
     slug: finance-intake-fast-entry
     status: done
@@ -64,4 +64,18 @@ tasks:
     milestone_id: M-000
     feature_id: F-000
     dev_docs_path: dev-docs/active/finance-period-close-and-reports
+    updated: 2026-06-17
+  - id: T-007
+    slug: finance-cashier-payments
+    status: planned
+    milestone_id: M-000
+    feature_id: F-000
+    dev_docs_path: dev-docs/active/finance-cashier-payments
+    updated: 2026-06-17
+  - id: T-008
+    slug: erp-multi-workflow-compat
+    status: planned
+    milestone_id: M-000
+    feature_id: F-000
+    dev_docs_path: dev-docs/active/erp-multi-workflow-compat
     updated: 2026-06-17

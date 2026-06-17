@@ -2,5 +2,5 @@ version: 1
 task_id: T-003
 project: main
 slug: workflow-task-kernel-finance-pipeline
-status: in-progress
-updated: "2026-06-13"
+status: done
+updated: "2026-06-17"
