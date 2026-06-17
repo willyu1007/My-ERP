@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Section, StatusBadge } from '@my-erp/ui';
 import type { PaymentStatus } from '@my-erp/api-client';
-import { listAccounts, listPayments } from '@/lib/finance/data-source';
+import { listAccounts, listContracts, listPayments } from '@/lib/finance/data-source';
 import { formatMoney } from '@/lib/finance/format';
 import { PAYMENT_DIRECTION, PAYMENT_STATUS, paymentStatusTone } from '@/lib/finance/payment-display';
 import { PaymentCreateForm } from './payment-create-form';
@@ -35,9 +35,10 @@ export default async function PaymentsPage({
   const raw = first(sp.status);
   const status = raw && STATUS_SET.has(raw) ? (raw as PaymentStatus) : undefined;
 
-  const [payments, accounts] = await Promise.all([
+  const [payments, accounts, contracts] = await Promise.all([
     listPayments(status ? { status } : undefined),
     listAccounts(),
+    listContracts(),
   ]);
   const today = new Date().toISOString().slice(0, 10);
 
@@ -50,7 +51,7 @@ export default async function PaymentsPage({
         </p>
       </div>
 
-      <PaymentCreateForm accounts={accounts} initialDate={today} />
+      <PaymentCreateForm accounts={accounts} contracts={contracts} initialDate={today} />
 
       <Section title="收付款单">
         <div className={styles.tabs}>

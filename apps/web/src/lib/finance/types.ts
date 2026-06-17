@@ -73,6 +73,8 @@ export interface VoucherVM {
   /** 审核人；未审核为 null（制单人 ≠ 审核人，SoD 在服务层强制）。 */
   readonly checker: string | null;
   readonly attachments: number;
+  /** 关联合同 id（T-005 维度）；未关联为 null。 */
+  readonly contractId: string | null;
 }
 
 /** 期初余额（启用期建账）。借/贷二选一，全部期初合计须借贷平衡。 */

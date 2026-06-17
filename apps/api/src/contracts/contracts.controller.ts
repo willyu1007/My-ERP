@@ -49,6 +49,16 @@ export class ContractsController {
     return this.service.get(identity, ledgerBookId, id);
   }
 
+  @Get(':id/timeline')
+  @RequirePermission('read', 'Voucher')
+  async timeline(
+    @LedgerBookId() ledgerBookId: string,
+    @CurrentIdentity() identity: Identity,
+    @Param('id') id: string,
+  ) {
+    return this.service.timeline(identity, ledgerBookId, id);
+  }
+
   @Patch(':id')
   @RequirePermission('update', 'Voucher')
   async update(

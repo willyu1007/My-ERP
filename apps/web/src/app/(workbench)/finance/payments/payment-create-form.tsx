@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@my-erp/ui';
+import type { Contract } from '@my-erp/api-client';
 import type { AccountVM } from '@/lib/finance/types';
 import { PAYMENT_DIRECTION } from '@/lib/finance/payment-display';
 import { createPaymentAction } from './actions';
@@ -15,9 +16,11 @@ const AMOUNT_RE = /^\d+(\.\d{1,2})?$/;
 /** 新建收/付款单 — drafts a PaymentDoc, then routes to its detail for submit/approve/confirm. */
 export function PaymentCreateForm({
   accounts,
+  contracts,
   initialDate,
 }: {
   readonly accounts: readonly AccountVM[];
+  readonly contracts: readonly Contract[];
   readonly initialDate: string;
 }) {
   const router = useRouter();
@@ -30,6 +33,8 @@ export function PaymentCreateForm({
   const [amount, setAmount] = useState('');
   const [cashAccountCode, setCashAccountCode] = useState('');
   const [contraAccountCode, setContraAccountCode] = useState('');
+  const [contractId, setContractId] = useState('');
+  const openContracts = contracts.filter((c) => c.status !== 'closed');
 
   const postable = accounts.filter((a) => a.isLeaf && a.active);
   const cashAccounts = postable.filter((a) => isCash(a.code));
@@ -55,6 +60,7 @@ export function PaymentCreateForm({
         amount,
         cashAccountCode,
         contraAccountCode,
+        ...(contractId ? { contractId } : {}),
       });
       if (res.ok && res.id) {
         toast.notify('success', '已创建', res.no ?? '');
@@ -143,6 +149,17 @@ export function PaymentCreateForm({
             placeholder={direction === 'receipt' ? '如：收回货款' : '如：支付货款'}
             onChange={(e) => setSummary(e.target.value)}
           />
+        </label>
+        <label className="mt-field">
+          <span className="mt-label">关联合同（可选）</span>
+          <select className="mt-select" value={contractId} onChange={(e) => setContractId(e.target.value)}>
+            <option value="">不关联</option>
+            {openContracts.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.code} {c.title}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
 

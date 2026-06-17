@@ -17,7 +17,7 @@ import {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import { StatusBadge, useToast } from '@my-erp/ui';
-import type { CashFlowItem, CreateVoucher } from '@my-erp/api-client';
+import type { CashFlowItem, Contract, CreateVoucher } from '@my-erp/api-client';
 import { centsToString, sumCents, toCents } from '@/lib/finance/money';
 import { formatMoney, formatPeriod } from '@/lib/finance/format';
 import type { AccountVM } from '@/lib/finance/types';
@@ -34,6 +34,7 @@ import styles from './voucher-fast-entry.module.css';
 export interface FastEntryInitial {
   readonly date: string;
   readonly summary: string;
+  readonly contractId?: string | null;
   readonly lines: readonly {
     readonly accountCode: string;
     readonly accountName: string;
@@ -185,6 +186,7 @@ export function VoucherFastEntry({
   initial,
   headerAction,
   cashFlowItems = [],
+  contracts = [],
 }: {
   readonly accounts: readonly AccountVM[];
   readonly initialDate: string;
@@ -196,6 +198,8 @@ export function VoucherFastEntry({
   readonly headerAction?: ReactNode;
   /** 现金流量项目主数据 — 现金凭证的非现金分录可打标（D1/D2，空则不显示打标）。 */
   readonly cashFlowItems?: readonly CashFlowItem[];
+  /** 合同主数据 — 录入时可关联（T-005 entry-time linking；空则不显示）。 */
+  readonly contracts?: readonly Contract[];
 }) {
   const toast = useToast();
   const router = useRouter();
@@ -203,6 +207,8 @@ export function VoucherFastEntry({
   const fieldRefs = useRef(new Map<string, HTMLInputElement | null>());
   const [date, setDate] = useState(initial?.date ?? initialDate);
   const [summary, setSummary] = useState(initial?.summary ?? '');
+  const [contractId, setContractId] = useState(initial?.contractId ?? '');
+  const openContracts = contracts.filter((c) => c.status !== 'closed');
   const [lines, setLines] = useState<DraftLine[]>(() => {
     if (!initial) return [blankLine('line-0'), blankLine('line-1')];
     const seeded: DraftLine[] = initial.lines.map((l, i) => ({
@@ -326,6 +332,7 @@ export function VoucherFastEntry({
     return {
       date,
       summary: summary.trim(),
+      ...(contractId ? { contractId } : {}),
       lines: lines
         .filter((l) => l.accountCode !== '')
         .map((l) => ({
@@ -390,6 +397,26 @@ export function VoucherFastEntry({
           />
         </div>
         <span className="wb-muted">会计期间 {period}</span>
+        {openContracts.length > 0 && (
+          <div className="mt-field">
+            <label className="mt-label" htmlFor="fe-contract">
+              关联合同
+            </label>
+            <select
+              id="fe-contract"
+              className="mt-select"
+              value={contractId}
+              onChange={(e) => setContractId(e.target.value)}
+            >
+              <option value="">不关联</option>
+              {openContracts.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.code} {c.title}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         {headerAction}
       </div>
 

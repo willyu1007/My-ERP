@@ -11,13 +11,15 @@ import {
   getContractTx,
   getLedgerBookByIdTx,
   listContractsTx,
+  listPaymentDocsByContractTx,
+  listVouchersByContractTx,
   Prisma,
   updateContractTx,
   withScope,
   type ContractEntity,
   type TxClient,
 } from '@my-erp/db';
-import { Money } from '@my-erp/finance-domain';
+import { buildContractTimeline, Money } from '@my-erp/finance-domain';
 import type { Identity } from '@my-erp/platform';
 
 const TYPES = new Set(['sales', 'purchase', 'service', 'other']);
@@ -94,6 +96,37 @@ export class ContractsService {
       const c = await getContractTx(tx, id);
       if (!c) throw new NotFoundException('contract not found');
       return toDto(c);
+    });
+  }
+
+  /** The contract timeline = contract event ∪ linked vouchers ∪ linked payments (time-ordered). */
+  async timeline(identity: Identity, ledgerBookId: string, id: string) {
+    return withScope(identity.orgId, ledgerBookId, async (tx) => {
+      const c = await getContractTx(tx, id);
+      if (!c) throw new NotFoundException('contract not found');
+      const vouchers = await listVouchersByContractTx(tx, id);
+      const payments = await listPaymentDocsByContractTx(tx, id);
+      const items = buildContractTimeline({
+        contract: { code: c.code, createdAt: c.createdAt.toISOString(), title: c.title },
+        vouchers: vouchers.map((v) => ({
+          id: v.id,
+          no: v.no,
+          date: v.date,
+          summary: v.summary,
+          status: v.status,
+          amount: v.totalDebit,
+        })),
+        payments: payments.map((p) => ({
+          id: p.id,
+          no: p.no,
+          date: p.date,
+          summary: p.summary,
+          status: p.status,
+          amount: p.amount,
+          direction: p.direction,
+        })),
+      });
+      return { contract: toDto(c), items };
     });
   }
 

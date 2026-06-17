@@ -41,6 +41,8 @@ export type CreateContract = components['schemas']['CreateContract'];
 export type UpdateContract = components['schemas']['UpdateContract'];
 export type ContractStatus = Contract['status'];
 export type ContractType = Contract['type'];
+export type ContractTimeline = components['schemas']['ContractTimeline'];
+export type TimelineItem = components['schemas']['TimelineItem'];
 /** Result of a work-item action: the updated item, plus the source entity for `complete`. */
 export interface WorkItemActionResult {
   readonly workItem: WorkItem;
@@ -148,6 +150,7 @@ export interface ApiClient {
   getContract(id: string): Promise<Contract>;
   createContract(body: CreateContract): Promise<Contract>;
   updateContract(id: string, body: UpdateContract): Promise<Contract>;
+  getContractTimeline(id: string): Promise<ContractTimeline>;
 }
 
 export function createApiClient(config: ApiClientConfig): ApiClient {
@@ -282,5 +285,7 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
     createContract: (body) => request<Contract>('POST', '/v1/contracts', body),
     updateContract: (id, body) =>
       request<Contract>('PATCH', `/v1/contracts/${encodeURIComponent(id)}`, body),
+    getContractTimeline: (id) =>
+      request<ContractTimeline>('GET', `/v1/contracts/${encodeURIComponent(id)}/timeline`),
   };
 }

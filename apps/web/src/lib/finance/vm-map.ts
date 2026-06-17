@@ -48,5 +48,6 @@ export function voucherToVM(v: Voucher): VoucherVM {
     maker: v.maker,
     checker: v.checker ?? null,
     attachments: v.attachments ?? 0,
+    contractId: v.contractId ?? null,
   };
 }

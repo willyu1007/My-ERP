@@ -15,6 +15,11 @@ import {
   type CashFlowItem,
   type CashFlowStatement,
   type CreateVoucher,
+  type Contract,
+  type ContractStatus,
+  type ContractTimeline,
+  type ContractType,
+  type CreateContract,
   type CreatePayment,
   type IncomeStatement,
   type Intake,
@@ -257,4 +262,53 @@ export async function voidPayment(
   reason?: string,
 ): Promise<PaymentDoc> {
   return requireFinanceApi().voidPayment(id, expectedVersion, reason);
+}
+
+// --- Contracts / 交易生命周期 (T-005) ---
+
+/** Contracts for a view (empty in demo mode). */
+export async function listContracts(filters?: {
+  status?: ContractStatus;
+  type?: ContractType;
+}): Promise<readonly Contract[]> {
+  const api = getFinanceApi();
+  if (!api) return [];
+  return api.listContracts(filters);
+}
+
+/** A single contract, or `null` (not found / demo mode). */
+export async function getContract(id: string): Promise<Contract | null> {
+  const api = getFinanceApi();
+  if (!api) return null;
+  try {
+    return await api.getContract(id);
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return null;
+    throw err;
+  }
+}
+
+/** The contract timeline (event ∪ vouchers ∪ payments), or `null`. */
+export async function getContractTimeline(id: string): Promise<ContractTimeline | null> {
+  const api = getFinanceApi();
+  if (!api) return null;
+  try {
+    return await api.getContractTimeline(id);
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return null;
+    throw err;
+  }
+}
+
+/** Create a contract draft. Requires the backend. */
+export async function createContract(input: CreateContract): Promise<Contract> {
+  return requireFinanceApi().createContract(input);
+}
+
+/** Update a contract (status/fields; version-guarded). Requires the backend. */
+export async function updateContract(
+  id: string,
+  input: { expectedVersion: number; status?: ContractStatus },
+): Promise<Contract> {
+  return requireFinanceApi().updateContract(id, input);
 }

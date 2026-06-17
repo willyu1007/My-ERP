@@ -826,6 +826,16 @@ paths:
         '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/Contract' } } } }
         '400': { description: Invalid / closed contract }
         '409': { description: Stale version }
+  /v1/contracts/{id}/timeline:
+    get:
+      operationId: getContractTimeline
+      summary: 合同时间线 — contract event ∪ linked vouchers ∪ payments (time-ordered)
+      tags: [contracts]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: Timeline, content: { application/json: { schema: { $ref: '#/components/schemas/ContractTimeline' } } } }
+        '404': { description: Not found }
   /v1/opening-balances:
     get:
       operationId: getOpeningBalances
@@ -1329,6 +1339,26 @@ components:
         startDate: { type: string, format: date, nullable: true }
         endDate: { type: string, format: date, nullable: true }
         summary: { type: string }
+    TimelineItem:
+      type: object
+      required: [kind, date, title, summary, refType, refId]
+      properties:
+        kind: { type: string, enum: [contract, voucher, payment] }
+        date: { type: string, format: date }
+        title: { type: string }
+        summary: { type: string }
+        amount: { type: string, nullable: true }
+        status: { type: string, nullable: true }
+        refType: { type: string, enum: [Contract, JournalVoucher, PaymentDoc] }
+        refId: { type: string }
+    ContractTimeline:
+      type: object
+      required: [contract, items]
+      properties:
+        contract: { $ref: '#/components/schemas/Contract' }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/TimelineItem' }
     PeriodCloseResult:
       allOf:
         - $ref: '#/components/schemas/PeriodClose'

@@ -31,6 +31,10 @@ export const financeNav: ShellNav = {
           label: '出纳收付',
         },
         {
+          href: '/finance/contracts',
+          label: '合同',
+        },
+        {
           href: '/finance/period-close',
           label: '期末结账',
         },

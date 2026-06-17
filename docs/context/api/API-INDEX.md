@@ -1,9 +1,9 @@
 # API Index
 
-> Auto-generated at 2026-06-17T16:04:08.130Z — do NOT hand-edit.
-> Source: `docs/context/api/openapi.yaml` (SHA-256: `3c9d98fcb24c...`)
+> Auto-generated at 2026-06-17T22:50:40.658Z — do NOT hand-edit.
+> Source: `docs/context/api/openapi.yaml` (SHA-256: `d160da9e4be1...`)
 
-Total endpoints: **57**
+Total endpoints: **58**
 
 | Method | Path | Summary | Auth | Input (required) | Output (core) | Errors |
 |--------|------|---------|------|------------------|---------------|--------|
@@ -62,5 +62,6 @@ Total endpoints: **57**
 | POST | /v1/contracts | Create a 合同 (code auto-assigned HT-{fiscalYear}-{NNN}) | bearer | title | id, ledgerBookId, code, title, type, counterparty, currency, status, summary, createdBy, version, createdAt, updatedAt, amount, startDate, endDate | 400 |
 | GET | /v1/contracts/{id} | Get a contract | bearer | id | id, ledgerBookId, code, title, type, counterparty, currency, status, summary, createdBy, version, createdAt, updatedAt, amount, startDate, endDate | 404 |
 | PATCH | /v1/contracts/{id} | Update a contract (status / fields; version-guarded) | bearer | expectedVersion | id, ledgerBookId, code, title, type, counterparty, currency, status, summary, createdBy, version, createdAt, updatedAt, amount, startDate, endDate | 400, 409 |
+| GET | /v1/contracts/{id}/timeline | 合同时间线 — contract event ∪ linked vouchers ∪ payments (time-ordered) | bearer | id | contract, items | 404 |
 | GET | /v1/opening-balances | Opening balances (期初余额) + the ledger's enabled period | bearer | — | openingPeriod, balances | 401, 403 |
 | PUT | /v1/opening-balances | Set the enabled period + replace opening balances (期初建账) | bearer | openingPeriod, balances | openingPeriod, balances | 400, 401, 403 |

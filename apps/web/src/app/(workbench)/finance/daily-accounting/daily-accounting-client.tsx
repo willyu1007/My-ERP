@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { ListView, Queue, StatusBadge, type RowModel } from '@my-erp/ui';
-import type { CashFlowItem } from '@my-erp/api-client';
+import type { CashFlowItem, Contract } from '@my-erp/api-client';
 import { formatDate, formatMoney } from '@/lib/finance/format';
 import { VOUCHER_STATUS_LABELS, voucherStatusTone } from '@/lib/finance/types';
 import type { AccountVM, VoucherStatus, VoucherVM } from '@/lib/finance/types';
@@ -120,11 +120,13 @@ export function DailyAccountingClient({
   vouchers,
   accounts,
   cashFlowItems,
+  contracts,
   initialDate,
 }: {
   readonly vouchers: readonly VoucherVM[];
   readonly accounts: readonly AccountVM[];
   readonly cashFlowItems: readonly CashFlowItem[];
+  readonly contracts: readonly Contract[];
   readonly initialDate: string;
 }) {
   const [queue, setQueue] = useState<QueueKey>('open');
@@ -159,6 +161,7 @@ export function DailyAccountingClient({
       <VoucherFastEntry
         accounts={accounts}
         cashFlowItems={cashFlowItems}
+        contracts={contracts}
         initialDate={initialDate}
         headerAction={<CaptureButton />}
       />

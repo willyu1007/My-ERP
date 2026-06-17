@@ -1,5 +1,10 @@
 import { notFound } from 'next/navigation';
-import { getVoucher, listAccounts, listCashFlowItems } from '@/lib/finance/data-source';
+import {
+  getVoucher,
+  listAccounts,
+  listCashFlowItems,
+  listContracts,
+} from '@/lib/finance/data-source';
 import { VoucherFastEntry } from '../../daily-accounting/voucher-fast-entry';
 import { VoucherDetail } from './voucher-detail';
 
@@ -17,10 +22,15 @@ export default async function VoucherDetailPage({
   // A draft (e.g. a capture-generated one) opens in the fast-entry editor to
   // complete + confirm; posted/reversed vouchers stay read-only.
   if (voucher.status === 'draft') {
-    const [accounts, cashFlowItems] = await Promise.all([listAccounts(), listCashFlowItems()]);
+    const [accounts, cashFlowItems, contracts] = await Promise.all([
+      listAccounts(),
+      listCashFlowItems(),
+      listContracts(),
+    ]);
     const initial = {
       date: voucher.date,
       summary: voucher.summary,
+      contractId: voucher.contractId,
       lines: voucher.lines.map((l) => ({
         accountCode: l.accountCode,
         accountName: l.accountName,
@@ -34,6 +44,7 @@ export default async function VoucherDetailPage({
       <VoucherFastEntry
         accounts={accounts}
         cashFlowItems={cashFlowItems}
+        contracts={contracts}
         initialDate={voucher.date}
         voucherId={voucher.id}
         initial={initial}

@@ -1,0 +1,89 @@
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-3);
+}
+
+@media (max-width: 720px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-2) var(--sp-5);
+  max-width: 640px;
+}
+
+.detailRow {
+  display: contents;
+}
+
+.detailKey {
+  color: var(--fg-3);
+  font-size: 13px;
+}
+
+.detailVal {
+  color: var(--fg-1);
+  font-size: 13px;
+}
+
+/* Timeline */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-left: 2px solid var(--border-1);
+  margin-left: var(--sp-2);
+  padding-left: var(--sp-4);
+}
+
+.tlItem {
+  position: relative;
+  padding: var(--sp-2) 0;
+}
+
+.tlItem::before {
+  content: '';
+  position: absolute;
+  left: calc(-1 * var(--sp-4) - 5px);
+  top: calc(var(--sp-2) + 4px);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fg-3);
+  box-shadow: 0 0 0 3px var(--bg-1, #fff);
+}
+
+.tlHead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: baseline;
+}
+
+.tlDate {
+  color: var(--fg-3);
+  font-size: 12px;
+  min-width: 84px;
+}
+
+.tlTitle {
+  font-weight: 600;
+  color: var(--fg-1);
+  font-size: 13px;
+}
+
+.tlAmount {
+  margin-left: auto;
+  font-size: 13px;
+}
+
+.tlSummary {
+  color: var(--fg-3);
+  font-size: 12px;
+  padding-left: 84px;
+}

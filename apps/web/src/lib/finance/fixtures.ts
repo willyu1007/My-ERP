@@ -218,6 +218,7 @@ function buildVoucher(seed: VoucherSeed): VoucherVM {
     totalDebit: centsToString(debitCents),
     totalCredit: centsToString(creditCents),
     balanced: debitCents === creditCents,
+    contractId: null,
   };
 }
 
