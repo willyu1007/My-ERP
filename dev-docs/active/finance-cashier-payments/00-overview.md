@@ -17,7 +17,13 @@ Contract aggregate.
 - Created 2026-06-17 from T-003 R3; decisions aligned the same day (MVP-first · dedicated PaymentDoc entity ·
   reuse cash chart accounts — see `01-plan`).
 - **C1 done (2026-06-17)**: `buildSettlementEntry` pure builder + `PaymentDoc` schema/migration (ledger RLS)
-  + repos + tests (cashier unit + payment-doc RLS integration). Next: **C2** service + `/v1/payments`.
+  + repos + tests (cashier unit + payment-doc RLS integration).
+- **C2 done (2026-06-17)**: payment service (state machine + SoD + period-lock + account validation +
+  settlement-voucher gen/post + optimistic version + audit) + `payment.approve`/`payment.confirm` WorkItems
+  on the kernel + `/v1/payments` + OpenAPI/api-client. Live-verified 9/9 on a fresh DB. Next: **C3 web**.
+  - **C3 must-fix**: the shipped 我的工作台 hardcodes voucher deeplinks/enrichment — make it sourceType-aware
+    (payment tasks → `/finance/payments/{id}`, payment title labels) since payment tasks now exist.
+  - **C4**: add a payments service integration test in CI (don't rely only on the manual e2e — T-006 lesson).
 
 ## Goal
 A cashier funds workflow on the task kernel:
