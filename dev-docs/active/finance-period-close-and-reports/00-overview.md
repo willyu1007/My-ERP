@@ -21,12 +21,17 @@ reports depend on.
   Verified by unit + RLS integration tests + a live e2e (close → 结转 → lock → reopen). See `03`/`04`.
 - **M3b (backend) done** (2026-06-16): `CashFlowItem` master + seed + `Account.defaultCashFlowItem`,
   cash-flow tie-out + pre-close worklist + `/v1/cash-flow*` API; readiness gained `untaggedCashFlowCount`.
-  Verified by unit tests + a live e2e (seed → tag → worklist → tie-out). Remaining: **M3b-ui** (editor
-  CF-item picker + tag-posted-line endpoint).
+  Verified by unit tests + a live e2e (seed → tag → worklist → tie-out).
 - **M3c (backend) done** (2026-06-16): range-parameterized report read-model (BS/IS/CF) in
-  `finance-domain` + `/v1/reports/*` API. BS balances, IS 净利润, CF ties out — live-verified. Remaining:
-  **M3c-ui** (report views with the 月/季/年/自定义 range picker).
-  Next: M3c-ui / M3b-ui (web) → M3d export → M3e verify.
+  `finance-domain` + `/v1/reports/*` API. BS balances, IS 净利润, CF ties out — live-verified.
+- **M3a/M3c-ui done** (2026-06-17): `/finance/reports` (资产负债表/利润表/现金流量表 in tabs with a
+  月/季/年/自定义 range picker) and `/finance/period-close` (close-readiness, 结账/反结账, close history).
+  api-client + data-source cut over to the real `/v1`. Live-verified end-to-end (browser + `/v1`).
+- **M3b-ui done** (2026-06-17): entry-time CF picker in fast-entry (auto-suggest from the chart default,
+  on the non-cash lines of 现金凭证) + post-hoc `POST /v1/cash-flow/tag` (journal_entry_line UPDATE RLS,
+  closed-period guard, `TAG_CASH_FLOW` audit) surfaced as the pre-close worklist. Live-verified in a browser
+  (picker pre-fills; 打标 drops 未打标 1 → 0; tie-out flips to true).
+  Next: **M3d** (export Excel/PDF + print) → **M3e** (final verify).
 - Decisions aligned 2026-06-16 (see Confirmed decisions); readiness review in `06`.
 - (history) first-draft Decision-Gate bundle. The key design decisions (CF tagging, report
   mapping, period-close coupling) are to be aligned with the user before implementation.

@@ -95,6 +95,31 @@ closed → reopened → re-closed (IS = 1000/700 in all three). Commit `9fbd2c9`
 - **LOW (by design)** 结转 voucher is self-posted (maker==checker, SoD-exempt system close,
   audited `CLOSE_PERIOD`).
 
+## 2026-06-17 — service-level tests + M3c-ui / M3b-ui (web)
+
+| Check | Result |
+|---|---|
+| Typecheck | pass (api + web) |
+| Lint | clean |
+| Tests | **32 files / 132 tests** (+5: `reports-close.integration` — service orchestration) |
+| OpenAPI quality / api-index / db ssot | regenerated; passed (46 endpoints) |
+
+**Service-level tests (closed the biggest QA gap).** `apps/api/src/reports/reports-close.integration.test`
+drives the real PeriodCloseService / ReportsService / CashFlowService against a live Postgres: before close
+(IS 1000 / BS balanced / CF tied), close (净利润 700), after close (IS still 1000 — regression, BS keeps the
+closing voucher, 未分配利润 stays 700), and the reopen→re-close window. Commit `5ef8a35`.
+
+**M3c-ui + M3a-ui (`feat 7111bb5`).** `/finance/reports` — 资产负债表 / 利润表 / 现金流量表 in tabs with a
+月/季/年/自定义 range picker (BS as-of range end; IS/CF over [from,to]); `/finance/period-close` —
+close-readiness + 结账 / 反结账 + history. Live-verified (browser + `/v1`, 2026-03 closed): 营业收入 1,000 /
+净利润 700, BS balanced, CF tied; all four range modes resolve; period-close shows 已结账 + reopen.
+
+**M3b-ui (`feat f596656` + `ac5d461`).** Entry-time CF picker in fast-entry (auto-suggest from the chart
+default on the non-cash lines of a 现金凭证) + post-hoc `POST /v1/cash-flow/tag` (journal_entry_line UPDATE
+RLS, closed-period guard, `TAG_CASH_FLOW` audit) as the pre-close worklist. Live-verified in a browser: the
+picker pre-fills "销售商品…"; 打标 from the worklist drops 未打标 1 → 0; API guards reject cash account /
+unknown item / closed period; tie-out flips false→true after tagging.
+
 ## Not yet verified (explicit)
-- M3c-ui (report views) + M3b-ui (CF-item picker) + M3d export — next.
-- A `close` CASL action (currently gated by `post` Voucher).
+- M3d export (Excel/PDF + print) — next.
+- A `close` CASL action (currently gated by `post` Voucher); tagging gated by `update` Voucher.
