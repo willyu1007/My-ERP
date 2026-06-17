@@ -7,7 +7,14 @@ My-ERP has a working M1 general ledger core and a web workbench that frames dail
 - State: in-progress
 - Backend-first implementation slice completed on 2026-06-13.
 - Implemented scope: WorkItem / WorkItemEvent / OutboxEvent schema and RLS, shared task contracts, platform authorization, task API, voucher-backed review/post adapter, metadata-only outbox envelope, and focused tests.
-- Deferred scope: UI wiring, payment approval workflows, configurable workflow policy tables, and My-Chat delivery worker.
+- **R2-UI done (2026-06-17):** `/finance/workbench` (我的工作台) — the first real web consumer of the
+  kernel. Views 待我处理 / 监督 / 我处理过; actions (领取 / 通过并过账 / 取消) rendered from each item's
+  backend `availableActions` with optimistic `expectedVersion`. Backend readiness fix: `viewWhere`
+  elevates supervision-capable callers (admin/SME-single-admin now see their tasks; see `07`). Live +
+  browser verified (submit → review task → 通过并过账 → posted → 我处理过). 136 tests green.
+- Deferred scope (keeps T-003 in-progress): **R3** cashier + payment approval (needs M2 cashier),
+  **R4** multi-module compatibility, the **outbox dispatch worker** (My-Chat delivery — `apps/workers`
+  is still a placeholder), `return`/`assign` actions, and configurable workflow policy tables.
 
 ## Goal
 Define and align a platform-compatible workflow/task roadmap so SME accounting daily work can become pipeline-like for users while remaining a reusable multi-workflow ERP capability.
