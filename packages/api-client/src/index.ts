@@ -10,6 +10,8 @@
 import type { components } from './generated/schema';
 
 export type Account = components['schemas']['Account'];
+export type TrialBalance = components['schemas']['TrialBalance'];
+export type AccountLedger = components['schemas']['AccountLedger'];
 export type Voucher = components['schemas']['Voucher'];
 export type VoucherLine = components['schemas']['VoucherLine'];
 export type CreateVoucher = components['schemas']['CreateVoucher'];
@@ -97,6 +99,8 @@ export interface ApiClient {
   submitVoucher(id: string): Promise<Voucher>;
   postVoucher(id: string, body?: { confirmSinglePerson?: boolean }): Promise<Voucher>;
   listAccounts(): Promise<Account[]>;
+  trialBalance(): Promise<TrialBalance>;
+  accountLedger(code: string): Promise<AccountLedger>;
   listIntakes(params?: { status?: string }): Promise<Intake[]>;
   getIntake(id: string): Promise<Intake>;
   captureIntake(body: CaptureIntake): Promise<Intake>;
@@ -189,6 +193,9 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
     postVoucher: (id, body) =>
       request<Voucher>('POST', `/v1/vouchers/${encodeURIComponent(id)}/post`, body ?? {}),
     listAccounts: () => request<Account[]>('GET', '/v1/accounts'),
+    trialBalance: () => request<TrialBalance>('GET', '/v1/ledger/trial-balance'),
+    accountLedger: (code) =>
+      request<AccountLedger>('GET', `/v1/ledger/accounts/${encodeURIComponent(code)}`),
     listIntakes: (params) =>
       request<Intake[]>('GET', `/v1/intakes${params?.status ? `?status=${params.status}` : ''}`),
     getIntake: (id) => request<Intake>('GET', `/v1/intakes/${encodeURIComponent(id)}`),

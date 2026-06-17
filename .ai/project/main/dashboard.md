@@ -25,18 +25,18 @@ Project: `main`
 <!-- AUTO-GENERATED:START dashboard -->
 ## Summary
 
-- Tasks: 8 (planned: 2, in-progress: 0, blocked: 0, done: 6, archived: 0)
+- Tasks: 8 (planned: 0, in-progress: 0, blocked: 0, done: 8, archived: 0)
 
 ## Recent tasks
 
 | Task | Status | Feature | Dev Docs |
 | --- | --- | --- | --- |
+| T-002 web-workbench-foundation | done | F-000 | dev-docs/active/web-workbench-foundation |
 | T-005 finance-contract-transaction-lifecycle | done | F-000 | dev-docs/active/finance-contract-transaction-lifecycle |
+| T-008 erp-multi-workflow-compat | done | F-000 | dev-docs/active/erp-multi-workflow-compat |
 | T-003 workflow-task-kernel-finance-pipeline | done | F-000 | dev-docs/active/workflow-task-kernel-finance-pipeline |
 | T-006 finance-period-close-and-reports | done | F-000 | dev-docs/active/finance-period-close-and-reports |
 | T-007 finance-cashier-payments | done | F-000 | dev-docs/active/finance-cashier-payments |
-| T-008 erp-multi-workflow-compat | planned | F-000 | dev-docs/active/erp-multi-workflow-compat |
 | T-004 finance-intake-fast-entry | done | F-000 | dev-docs/active/finance-intake-fast-entry |
 | T-001 m1-general-ledger-core | done | F-000 | dev-docs/active/m1-general-ledger-core |
-| T-002 web-workbench-foundation | planned | F-000 | dev-docs/active/web-workbench-foundation |
 <!-- AUTO-GENERATED:END dashboard -->

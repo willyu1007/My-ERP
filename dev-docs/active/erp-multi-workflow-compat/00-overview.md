@@ -7,10 +7,16 @@ kernel without finance-specific hacks leaking into platform code — plus module
 navigation pattern for multiple modules / workstreams. Spun out as its own task at the 2026-06-17 split.
 
 ## Status
-- State: planned
-- Created 2026-06-17 from T-003 R4. Intentionally **premature** until a second real module exists — building
-  a generic abstraction before the second consumer risks overfitting (a stated T-003 risk). Revisit when a
-  non-finance module (or M2 cashier as a distinct workstream) makes the second consumer concrete.
+- State: done
+- Closed 2026-06-18 at **isolation-verified scope**. R4's durable, buildable-now core is delivered: the
+  WorkItem task kernel is **proven module-agnostic** — `packages/db/src/work-item-kernel-generic.integration.test`
+  registers + claims a non-finance (`procurement`) work item through the same generic repos, asserting the
+  kernel stores the module's own `moduleKey/workItemType/sourceType` verbatim with **no finance vocabulary in
+  the kernel** (finance specifics live in `apps/api` adapters — `voucher-workflow.ts`/`payment-workflow.ts` —
+  never in `packages/*` kernel code). That test is also the worked **registration example** R4 asked for.
+- **Deferred until a real second module exists** (building them now would overfit — the stated T-003 risk):
+  a concrete non-finance ERP module and the **multi-module / multi-workstream nav**. When a real module
+  arrives, spin a fresh task that consumes this verified kernel.
 
 ## Goal
 - A worked example of a non-finance module registering a workflow (e.g. a generic approval, or 采购申请) via

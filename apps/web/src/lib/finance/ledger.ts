@@ -162,7 +162,8 @@ export interface LedgerRow {
 }
 
 export interface AccountLedger {
-  readonly account: AccountVM;
+  /** Only code + name are read by the detail page (works for both fixtures + /v1). */
+  readonly account: { readonly code: string; readonly name: string };
   readonly opening: LedgerBalance;
   readonly rows: readonly LedgerRow[];
   readonly closing: LedgerBalance;
@@ -233,5 +234,5 @@ export function computeAccountLedger(
     balanceDir: dirOf(runningDebit),
   };
 
-  return { account, opening, rows, closing };
+  return { account: { code: account.code, name: account.name }, opening, rows, closing };
 }

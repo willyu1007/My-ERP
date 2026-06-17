@@ -32,11 +32,11 @@ tasks:
     updated: 2026-06-12
   - id: T-002
     slug: web-workbench-foundation
-    status: planned
+    status: done
     milestone_id: M-000
     feature_id: F-000
     dev_docs_path: dev-docs/active/web-workbench-foundation
-    updated: 2026-06-09
+    updated: 2026-06-18
   - id: T-003
     slug: workflow-task-kernel-finance-pipeline
     status: done
@@ -74,8 +74,8 @@ tasks:
     updated: 2026-06-17
   - id: T-008
     slug: erp-multi-workflow-compat
-    status: planned
+    status: done
     milestone_id: M-000
     feature_id: F-000
     dev_docs_path: dev-docs/active/erp-multi-workflow-compat
-    updated: 2026-06-17
+    updated: 2026-06-18

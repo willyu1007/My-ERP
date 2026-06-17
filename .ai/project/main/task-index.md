@@ -11,11 +11,11 @@ Project: `main`
 | Task | Status | Feature | Dev Docs |
 | --- | --- | --- | --- |
 | T-001 m1-general-ledger-core | done | F-000 | dev-docs/active/m1-general-ledger-core |
-| T-002 web-workbench-foundation | planned | F-000 | dev-docs/active/web-workbench-foundation |
+| T-002 web-workbench-foundation | done | F-000 | dev-docs/active/web-workbench-foundation |
 | T-003 workflow-task-kernel-finance-pipeline | done | F-000 | dev-docs/active/workflow-task-kernel-finance-pipeline |
 | T-004 finance-intake-fast-entry | done | F-000 | dev-docs/active/finance-intake-fast-entry |
 | T-005 finance-contract-transaction-lifecycle | done | F-000 | dev-docs/active/finance-contract-transaction-lifecycle |
 | T-006 finance-period-close-and-reports | done | F-000 | dev-docs/active/finance-period-close-and-reports |
 | T-007 finance-cashier-payments | done | F-000 | dev-docs/active/finance-cashier-payments |
-| T-008 erp-multi-workflow-compat | planned | F-000 | dev-docs/active/erp-multi-workflow-compat |
+| T-008 erp-multi-workflow-compat | done | F-000 | dev-docs/active/erp-multi-workflow-compat |
 <!-- AUTO-GENERATED:END task-index -->

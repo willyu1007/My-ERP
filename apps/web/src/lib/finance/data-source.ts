@@ -47,7 +47,7 @@ import {
 } from './ledger';
 import { getFinanceApi, requireFinanceApi } from './request-scope';
 import type { AccountVM, VoucherVM } from './types';
-import { accountToVM, voucherToVM } from './vm-map';
+import { accountLedgerToVM, accountToVM, trialBalanceToVM, voucherToVM } from './vm-map';
 
 export async function listVouchers(): Promise<readonly VoucherVM[]> {
   const api = getFinanceApi();
@@ -97,14 +97,24 @@ export async function extractIntake(id: string): Promise<Intake> {
   return requireFinanceApi().extractIntake(id);
 }
 
-// Ledger reports are derived locally from fixtures today; the real backend
-// computes them server-side (post → balances) and returns the same shapes.
+// Trial balance / account ledger: the backend derives them server-side (post →
+// balances); the data-source maps the `/v1` shape to the same VM. Demo mode falls
+// back to the fixture-derived computation.
 export async function getTrialBalance(): Promise<TrialBalance> {
-  return computeTrialBalance(ACCOUNTS, VOUCHERS, OPENING_BALANCES);
+  const api = getFinanceApi();
+  if (!api) return computeTrialBalance(ACCOUNTS, VOUCHERS, OPENING_BALANCES);
+  return trialBalanceToVM(await api.trialBalance());
 }
 
 export async function getAccountLedger(code: string): Promise<AccountLedger | null> {
-  return computeAccountLedger(code, ACCOUNTS, VOUCHERS, OPENING_BALANCES);
+  const api = getFinanceApi();
+  if (!api) return computeAccountLedger(code, ACCOUNTS, VOUCHERS, OPENING_BALANCES);
+  try {
+    return accountLedgerToVM(await api.accountLedger(code));
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return null;
+    throw err;
+  }
 }
 
 // --- Statutory reports (T-006 M3c) ---
