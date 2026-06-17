@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-06-17T11:54:13.746Z",
+  "updatedAt": "2026-06-17T15:16:27.828Z",
   "ssot": {
     "mode": "repo-prisma",
     "source": {
@@ -602,6 +602,224 @@
           "type": "index",
           "fields": [
             "ledgerBookId"
+          ],
+          "name": null,
+          "map": null
+        },
+        {
+          "type": "unique",
+          "fields": [
+            "ledgerBookId",
+            "code"
+          ],
+          "name": null,
+          "map": null
+        }
+      ]
+    },
+    {
+      "name": "Contract",
+      "dbName": "contract",
+      "schema": null,
+      "columns": [
+        {
+          "name": "amount",
+          "type": "Decimal",
+          "nullable": true,
+          "list": false,
+          "dbName": null,
+          "dbType": "Decimal",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "code",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "counterparty",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "\"\"",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "created_at",
+          "dbType": "Timestamptz",
+          "default": "now()",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "createdBy",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "created_by",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "currency",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "\"CNY\"",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "endDate",
+          "type": "DateTime",
+          "nullable": true,
+          "list": false,
+          "dbName": "end_date",
+          "dbType": "Date",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "id",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": "Uuid",
+          "default": "uuid()",
+          "primaryKey": true,
+          "unique": false
+        },
+        {
+          "name": "ledgerBookId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "ledger_book_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "startDate",
+          "type": "DateTime",
+          "nullable": true,
+          "list": false,
+          "dbName": "start_date",
+          "dbType": "Date",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "status",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "\"draft\"",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "summary",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "\"\"",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "title",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "type",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "\"other\"",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "updated_at",
+          "dbType": "Timestamptz",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "version",
+          "type": "Int",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "0",
+          "primaryKey": false,
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "field": "ledgerBook",
+          "to": "LedgerBook",
+          "optional": false,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "ledgerBookId"
+          ],
+          "references": [
+            "id"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "type": "index",
+          "fields": [
+            "ledgerBookId",
+            "status"
           ],
           "name": null,
           "map": null
@@ -1223,6 +1441,17 @@
           "unique": false
         },
         {
+          "name": "contractId",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "contract_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
           "name": "createdAt",
           "type": "DateTime",
           "nullable": false,
@@ -1406,6 +1635,15 @@
           "type": "index",
           "fields": [
             "ledgerBookId",
+            "contractId"
+          ],
+          "name": null,
+          "map": null
+        },
+        {
+          "type": "index",
+          "fields": [
+            "ledgerBookId",
             "status"
           ],
           "name": null,
@@ -1560,6 +1798,15 @@
         {
           "field": "cashFlowItems",
           "to": "CashFlowItem",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
+        },
+        {
+          "field": "contracts",
+          "to": "Contract",
           "optional": false,
           "list": true,
           "relationName": null,

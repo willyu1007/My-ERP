@@ -621,6 +621,7 @@ export interface VoucherEntity {
   reversalOf: string | null;
   reversedBy: string | null;
   attachments: number;
+  contractId: string | null;
   createdAt: Date;
   lines: VoucherLineEntity[];
 }
@@ -645,6 +646,8 @@ export interface CreateVoucherInput {
   totalDebit: string;
   totalCredit: string;
   lines: readonly VoucherLineInput[];
+  /** Optional Contract link (T-005 dimension). */
+  contractId?: string | null;
 }
 
 type RawLine = {
@@ -689,6 +692,7 @@ function toVoucher(v: {
   reversalOf: string | null;
   reversedBy: string | null;
   attachments: number;
+  contractId: string | null;
   createdAt: Date;
   lines?: RawLine[];
 }): VoucherEntity {
@@ -708,6 +712,7 @@ function toVoucher(v: {
     reversalOf: v.reversalOf,
     reversedBy: v.reversedBy,
     attachments: v.attachments,
+    contractId: v.contractId,
     createdAt: v.createdAt,
     lines: (v.lines ?? []).map(toVoucherLine),
   };
@@ -745,6 +750,7 @@ export async function createVoucherTx(
       maker: input.maker,
       totalDebit: input.totalDebit,
       totalCredit: input.totalCredit,
+      contractId: input.contractId ?? null,
       lines: { create: lineCreateData(input.ledgerBookId, input.lines) },
     },
     include: { lines: { orderBy: { lineNo: 'asc' } } },
@@ -2084,6 +2090,183 @@ export async function updatePaymentDocTx(
   });
   if (res.count === 0) return null;
   return getPaymentDocTx(tx, id);
+}
+
+/* ---- Contract (合同, T-005) — ledger-scoped ---- */
+
+export interface ContractEntity {
+  id: string;
+  ledgerBookId: string;
+  code: string;
+  title: string;
+  type: string;
+  counterparty: string;
+  amount: string | null;
+  currency: string;
+  status: string;
+  startDate: string | null;
+  endDate: string | null;
+  summary: string;
+  createdBy: string;
+  version: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+function toContract(c: {
+  id: string;
+  ledgerBookId: string;
+  code: string;
+  title: string;
+  type: string;
+  counterparty: string;
+  amount: Prisma.Decimal | null;
+  currency: string;
+  status: string;
+  startDate: Date | null;
+  endDate: Date | null;
+  summary: string;
+  createdBy: string;
+  version: number;
+  createdAt: Date;
+  updatedAt: Date;
+}): ContractEntity {
+  return {
+    id: c.id,
+    ledgerBookId: c.ledgerBookId,
+    code: c.code,
+    title: c.title,
+    type: c.type,
+    counterparty: c.counterparty,
+    amount: c.amount ? c.amount.toFixed(2) : null,
+    currency: c.currency,
+    status: c.status,
+    startDate: c.startDate ? c.startDate.toISOString().slice(0, 10) : null,
+    endDate: c.endDate ? c.endDate.toISOString().slice(0, 10) : null,
+    summary: c.summary,
+    createdBy: c.createdBy,
+    version: c.version,
+    createdAt: c.createdAt,
+    updatedAt: c.updatedAt,
+  };
+}
+
+export interface CreateContractInput {
+  ledgerBookId: string;
+  code: string;
+  title: string;
+  type: string;
+  counterparty: string;
+  amount?: string | null;
+  currency?: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  summary?: string;
+  createdBy: string;
+}
+
+export async function createContractTx(
+  tx: TxClient,
+  input: CreateContractInput,
+): Promise<ContractEntity> {
+  const row = await tx.contract.create({
+    data: {
+      ledgerBookId: input.ledgerBookId,
+      code: input.code,
+      title: input.title,
+      type: input.type,
+      counterparty: input.counterparty,
+      amount: input.amount ?? null,
+      currency: input.currency ?? 'CNY',
+      status: 'draft',
+      startDate: input.startDate ? new Date(input.startDate) : null,
+      endDate: input.endDate ? new Date(input.endDate) : null,
+      summary: input.summary ?? '',
+      createdBy: input.createdBy,
+    },
+  });
+  return toContract(row);
+}
+
+export async function getContractTx(tx: TxClient, id: string): Promise<ContractEntity | null> {
+  const row = await tx.contract.findUnique({ where: { id } });
+  return row ? toContract(row) : null;
+}
+
+export async function listContractsTx(
+  tx: TxClient,
+  filters?: { status?: string; type?: string },
+): Promise<ContractEntity[]> {
+  const rows = await tx.contract.findMany({
+    where: {
+      ...(filters?.status ? { status: filters.status } : {}),
+      ...(filters?.type ? { type: filters.type } : {}),
+    },
+    orderBy: [{ createdAt: 'desc' }, { code: 'desc' }],
+  });
+  return rows.map(toContract);
+}
+
+export async function countContractsTx(tx: TxClient): Promise<number> {
+  return tx.contract.count();
+}
+
+export interface UpdateContractInput {
+  expectedVersion: number;
+  title?: string;
+  type?: string;
+  counterparty?: string;
+  amount?: string | null;
+  currency?: string;
+  status?: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  summary?: string;
+}
+
+/** Optimistic update (version-guarded). Returns null on a version mismatch (conflict). */
+export async function updateContractTx(
+  tx: TxClient,
+  id: string,
+  input: UpdateContractInput,
+): Promise<ContractEntity | null> {
+  const data: Prisma.ContractUpdateManyMutationInput = { version: { increment: 1 } };
+  if (input.title !== undefined) data.title = input.title;
+  if (input.type !== undefined) data.type = input.type;
+  if (input.counterparty !== undefined) data.counterparty = input.counterparty;
+  if (input.amount !== undefined) data.amount = input.amount;
+  if (input.currency !== undefined) data.currency = input.currency;
+  if (input.status !== undefined) data.status = input.status;
+  if (input.startDate !== undefined) data.startDate = input.startDate ? new Date(input.startDate) : null;
+  if (input.endDate !== undefined) data.endDate = input.endDate ? new Date(input.endDate) : null;
+  if (input.summary !== undefined) data.summary = input.summary;
+
+  const res = await tx.contract.updateMany({ where: { id, version: input.expectedVersion }, data });
+  if (res.count === 0) return null;
+  return getContractTx(tx, id);
+}
+
+/** Vouchers / payments linked to a contract — the timeline's authoritative documents (T-005). */
+export async function listVouchersByContractTx(
+  tx: TxClient,
+  contractId: string,
+): Promise<VoucherEntity[]> {
+  const rows = await tx.journalVoucher.findMany({
+    where: { contractId },
+    orderBy: [{ date: 'asc' }, { no: 'asc' }],
+  });
+  return rows.map((v) => toVoucher(v));
+}
+
+export async function listPaymentDocsByContractTx(
+  tx: TxClient,
+  contractId: string,
+): Promise<PaymentDocEntity[]> {
+  const rows = await tx.paymentDoc.findMany({
+    where: { contractId },
+    orderBy: [{ date: 'asc' }, { no: 'asc' }],
+  });
+  return rows.map(toPaymentDoc);
 }
 
 export { Prisma } from '@prisma/client';

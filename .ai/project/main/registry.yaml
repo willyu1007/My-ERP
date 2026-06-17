@@ -53,11 +53,11 @@ tasks:
     updated: 2026-06-16
   - id: T-005
     slug: finance-contract-transaction-lifecycle
-    status: planned
+    status: in-progress
     milestone_id: M-000
     feature_id: F-000
     dev_docs_path: dev-docs/active/finance-contract-transaction-lifecycle
-    updated: 2026-06-14
+    updated: 2026-06-17
   - id: T-006
     slug: finance-period-close-and-reports
     status: done

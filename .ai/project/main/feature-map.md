@@ -33,7 +33,7 @@ Project: `main`
 | T-002 web-workbench-foundation | planned | dev-docs/active/web-workbench-foundation |
 | T-003 workflow-task-kernel-finance-pipeline | done | dev-docs/active/workflow-task-kernel-finance-pipeline |
 | T-004 finance-intake-fast-entry | done | dev-docs/active/finance-intake-fast-entry |
-| T-005 finance-contract-transaction-lifecycle | planned | dev-docs/active/finance-contract-transaction-lifecycle |
+| T-005 finance-contract-transaction-lifecycle | in-progress | dev-docs/active/finance-contract-transaction-lifecycle |
 | T-006 finance-period-close-and-reports | done | dev-docs/active/finance-period-close-and-reports |
 | T-007 finance-cashier-payments | done | dev-docs/active/finance-cashier-payments |
 | T-008 erp-multi-workflow-compat | planned | dev-docs/active/erp-multi-workflow-compat |

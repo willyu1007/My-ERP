@@ -13,9 +13,15 @@ focused on voucher fast-entry + capture intake. The contract aggregate is define
 scope).
 
 ## Status
-- State: planned
-- Design is captured here and in `roadmap.md` / `02-architecture.md`; depends on entities that land
-  in M2 (cashier funds) to be fully useful, and reuses T-004's intake pipeline for contract scans.
+- State: in-progress
+- Decisions aligned 2026-06-17 (MVP-first · free-text counterparty · entry-time linking — see `01-plan`).
+  M2 cashier (T-007) is done, so payments join the timeline and `PaymentDoc.contractId` is reserved.
+- **C1 done (2026-06-17)**: `Contract` model + migration (ledger RLS) + `JournalVoucher.contractId`
+  (+ index) + Contract repos (CRUD, version-guarded update, count) + `listVouchers/PaymentDocsByContractTx`
+  (the timeline dimension) + a Contract RLS integration test (isolation, optimistic update, contractId
+  linkage). Next: **C2** contract API + thread `contractId` through voucher/payment create.
+- Design is captured here and in `roadmap.md` / `02-architecture.md`; reuses T-004's intake pipeline
+  for contract scans (deferred).
 
 ## Goal
 - A thin, finance-side `Contract` aggregate: entity, optional links from `JournalVoucher.contractId`

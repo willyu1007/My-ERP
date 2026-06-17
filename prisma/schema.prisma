@@ -125,6 +125,7 @@ model LedgerBook {
   periodCloses    PeriodClose[]
   cashFlowItems   CashFlowItem[]
   paymentDocs     PaymentDoc[]
+  contracts       Contract[]
 
   @@index([orgId])
   @@map("ledger_book")
@@ -252,6 +253,8 @@ model JournalVoucher {
   /// The reversal voucher created from this one (set on the original when reversed).
   reversedBy   String?   @map("reversed_by") @db.Uuid
   attachments  Int       @default(0)
+  /// Optional link to a Contract (T-005) — auxiliary-accounting dimension + timeline anchor.
+  contractId   String?   @map("contract_id") @db.Uuid
   createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   ledgerBook LedgerBook         @relation(fields: [ledgerBookId], references: [id], onDelete: Cascade)
@@ -259,6 +262,7 @@ model JournalVoucher {
 
   @@unique([ledgerBookId, no])
   @@index([ledgerBookId, status])
+  @@index([ledgerBookId, contractId])
   @@map("journal_voucher")
 }
 
@@ -465,4 +469,35 @@ model PaymentDoc {
   @@unique([ledgerBookId, no])
   @@index([ledgerBookId, status])
   @@map("payment_doc")
+}
+
+/// 合同 (T-005 MVP). A thin finance-side aggregate that *coordinates* the documents
+/// of one economic relationship (vouchers / payments link via contractId) and anchors
+/// a read-only timeline. It never owns document business state. Ledger-scoped (RLS),
+/// no physical delete. Lifecycle stays a simple status field in the MVP (D2 stages deferred).
+model Contract {
+  id           String    @id @default(uuid()) @db.Uuid
+  ledgerBookId String    @map("ledger_book_id") @db.Uuid
+  code         String
+  title        String
+  /// sales | purchase | service | other — a finance label, not an order/fulfilment driver.
+  type         String    @default("other")
+  counterparty String    @default("")
+  amount       Decimal?  @db.Decimal(18, 2)
+  currency     String    @default("CNY")
+  /// draft | active | closed
+  status       String    @default("draft")
+  startDate    DateTime? @map("start_date") @db.Date
+  endDate      DateTime? @map("end_date") @db.Date
+  summary      String    @default("")
+  createdBy    String    @map("created_by")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  version      Int       @default(0)
+
+  ledgerBook LedgerBook @relation(fields: [ledgerBookId], references: [id], onDelete: Cascade)
+
+  @@unique([ledgerBookId, code])
+  @@index([ledgerBookId, status])
+  @@map("contract")
 }
