@@ -1,5 +1,4 @@
 import '@willyu1007/web-workbench/styles/index.css';
-import './chrome.css';
 import type { ReactNode } from 'react';
 
 export const metadata = {

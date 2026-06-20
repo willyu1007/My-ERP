@@ -1,56 +1,10 @@
 /**
- * Finance scenario configuration — supplies the domain-agnostic @my-erp/ui
- * AppShell with finance navigation. Platform-level: My-ERP is a modular ERP and
- * finance is the first module, so `home` points at the ERP overview (看板) and
- * the finance module lives under the /finance namespace (future modules get
- * theirs). The 工作流 group is an extensible list: a "+" registers new
- * workflows.
+ * Finance shell config. The full ShellNav (groups, scenario switcher, sections,
+ * home, create, 添加工作流) is assembled with its toast/router callbacks in the
+ * client wrapper `@/components/workbench-shell`; this module only holds the
+ * shared sidebar badge key that both the wrapper (badgeKey) and the (workbench)
+ * layout (badges map) reference.
  */
-import type { ShellNav } from '@my-erp/ui';
 
 /** Badge key for open daily-accounting work in the sidebar. */
-export const NAV_BADGE_DAILY_ACCOUNTING_OPEN = 'dailyAccountingOpen';
-
-export const financeNav: ShellNav = {
-  home: { label: '看板', href: '/' },
-  module: { label: '财务' },
-  groups: [
-    {
-      label: '工作流',
-      showIcons: false,
-      add: { label: '添加工作流', hint: '新增工作流需鉴权与初始化后启用（即将开放）' },
-      items: [
-        {
-          href: '/finance/daily-accounting',
-          label: '凭证处理',
-          match: ['/finance/daily-accounting', '/finance/vouchers'],
-          badgeKey: NAV_BADGE_DAILY_ACCOUNTING_OPEN,
-        },
-        { href: '/finance/payments', label: '出纳收付' },
-        { href: '/finance/contracts', label: '合同' },
-        { href: '/finance/period-close', label: '期末结账' },
-      ],
-    },
-    {
-      label: '查询',
-      showIcons: false,
-      items: [
-        { href: '/finance/ledger', label: '账簿查询' },
-        { href: '/finance/reports', label: '财务报表' },
-      ],
-    },
-    {
-      label: '设置',
-      showIcons: false,
-      items: [
-        {
-          href: '/finance/settings',
-          label: '账务设置',
-          match: ['/finance/settings', '/finance/accounts'],
-        },
-      ],
-    },
-  ],
-  create: [{ href: '/finance/daily-accounting', label: '录入凭证' }],
-  sections: [{ prefix: '/system', label: '系统', href: '/system/health' }],
-};
+export const NAV_BADGE_DAILY_ACCOUNTING_OPEN = "dailyAccountingOpen";

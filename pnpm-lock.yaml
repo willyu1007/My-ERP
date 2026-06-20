@@ -98,8 +98,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/ui
       '@willyu1007/web-workbench':
-        specifier: ^0.3.0
-        version: 0.3.0(next@15.5.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: ^0.4.0
+        version: 0.4.0(next@15.5.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       next:
         specifier: ^15.1.0
         version: 15.5.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -196,8 +196,8 @@ importers:
   packages/ui:
     dependencies:
       '@willyu1007/web-workbench':
-        specifier: ^0.3.0
-        version: 0.3.0(next@15.5.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: ^0.4.0
+        version: 0.4.0(next@15.5.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
     devDependencies:
       '@types/react':
         specifier: ^19.0.0
@@ -1219,8 +1219,8 @@ packages:
   '@vitest/utils@2.1.9':
     resolution: {integrity: sha512-v0psaMSkNJ3A2NMrUEHFRzJtDPFn+/VWZ5WxImB21T9fjucJRmS7xCS3ppEnARb9y11OAzaD+P2Ps+b+BGX5iQ==}
 
-  '@willyu1007/web-workbench@0.3.0':
-    resolution: {integrity: sha512-F59tfQ1HPXLiqDJcK68ItY2QgFUEHcdeQTXm9xmDcGqFttKbIVyb7vz3N3Cvl3l724Mxw0RMEdG1aQDFc5ACpQ==, tarball: https://npm.pkg.github.com/download/@willyu1007/web-workbench/0.3.0/ffd87de323fe9b837665e18547f8abc19ec17abb}
+  '@willyu1007/web-workbench@0.4.0':
+    resolution: {integrity: sha512-57iv+WxmlGkOMyodL7PezySyXWmqlNcunv2uEZ0KaDnf3W7oKjO38C1oIHaMabToEC+0S6oEgKA/WQ+azGkiQw==, tarball: https://npm.pkg.github.com/download/@willyu1007/web-workbench/0.4.0/25b2a2ed93b49f8901fe8c3544e7d97b2dc0fbe1}
     peerDependencies:
       next: '>=15'
       react: '>=19'
@@ -3291,7 +3291,7 @@ snapshots:
       loupe: 3.2.1
       tinyrainbow: 1.2.0
 
-  '@willyu1007/web-workbench@0.3.0(next@15.5.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@willyu1007/web-workbench@0.4.0(next@15.5.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
     dependencies:
       next: 15.5.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       react: 19.2.7

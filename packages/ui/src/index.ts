@@ -16,13 +16,10 @@
 // tabs, topbar-slot, StatusBadge, InsightCard, and the contract types.
 export * from '@willyu1007/web-workbench';
 
-// Host chrome — not in the shared kit ("lock the chrome, vary the content").
-export * from './components/app-shell';
-export * from './components/sidebar';
-export * from './components/sidebar-create';
-export * from './components/account-menu';
-export * from './components/breadcrumb';
+// Host chrome the kit still leaves to the host: toast + a host Drawer + copy
+// field. The app shell / sidebar / breadcrumb / scenario switcher / nav config
+// now come from the kit (0.4.0) via the star re-export above — the hand-rolled
+// versions were removed in the shell migration.
 export * from './components/toast';
 export { Drawer as HostDrawer } from './components/overlay';
 export * from './components/copy-field';
-export * from './model/nav';

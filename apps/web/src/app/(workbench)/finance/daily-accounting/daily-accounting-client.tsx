@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { ListView, Queue, StatusBadge, type RowModel } from '@my-erp/ui';
+import { ActionButton, ListView, Queue, StatusBadge, type RowModel } from '@my-erp/ui';
 import type { CashFlowItem, Contract } from '@my-erp/api-client';
 import { formatDate, formatMoney } from '@/lib/finance/format';
 import { VOUCHER_STATUS_LABELS, voucherStatusTone } from '@/lib/finance/types';
@@ -159,14 +159,9 @@ export function DailyAccountingClient({
   const actions = (
     <div className={styles.actions}>
       {demo && <span className={styles.demoBadge}>演示数据</span>}
-      <button
-        type="button"
-        className="mt-btn mt-btn--primary mt-btn--sm"
-        aria-expanded={entryOpen}
-        onClick={() => setEntryOpen((v) => !v)}
-      >
+      <ActionButton kind="primary" onClick={() => setEntryOpen((v) => !v)}>
         {entryOpen ? '收起录入' : '快速制单'}
-      </button>
+      </ActionButton>
     </div>
   );
 
