@@ -1,0 +1,3 @@
+{
+  "extends": ["@willyu1007/web-workbench/stylelint"]
+}

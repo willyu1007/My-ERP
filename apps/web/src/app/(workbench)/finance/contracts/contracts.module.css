@@ -23,12 +23,12 @@
 
 .detailKey {
   color: var(--fg-3);
-  font-size: 13px;
+  font-size: var(--small-size);
 }
 
 .detailVal {
   color: var(--fg-1);
-  font-size: 13px;
+  font-size: var(--small-size);
 }
 
 /* Timeline */
@@ -67,23 +67,23 @@
 
 .tlDate {
   color: var(--fg-3);
-  font-size: 12px;
+  font-size: var(--caption-size);
   min-width: 84px;
 }
 
 .tlTitle {
-  font-weight: 600;
+  font-weight: var(--h3-weight);
   color: var(--fg-1);
-  font-size: 13px;
+  font-size: var(--small-size);
 }
 
 .tlAmount {
   margin-left: auto;
-  font-size: 13px;
+  font-size: var(--small-size);
 }
 
 .tlSummary {
   color: var(--fg-3);
-  font-size: 12px;
+  font-size: var(--caption-size);
   padding-left: 84px;
 }

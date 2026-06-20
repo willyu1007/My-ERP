@@ -19,7 +19,7 @@
   background: transparent;
   padding: var(--sp-1) var(--sp-3);
   border-radius: 6px;
-  font-size: 13px;
+  font-size: var(--small-size);
   color: var(--fg-2);
   cursor: pointer;
 }
@@ -44,12 +44,12 @@
   border: 1px solid var(--border-1);
   border-radius: 6px;
   color: var(--fg-1);
-  font-size: 13px;
+  font-size: var(--small-size);
 }
 
 .sep {
   color: var(--fg-3);
-  font-size: 13px;
+  font-size: var(--small-size);
 }
 
 .toolbar {
@@ -62,7 +62,7 @@
 
 /* Statutory statement table — paper-register feel, mono amounts. */
 .lvl0 td {
-  font-weight: 600;
+  font-weight: var(--h3-weight);
   color: var(--fg-1);
 }
 
@@ -76,5 +76,5 @@
 }
 
 .total td {
-  font-weight: 700;
+  font-weight: var(--h1-weight);
 }

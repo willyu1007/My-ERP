@@ -15,7 +15,7 @@
 .head {
   padding: 0 var(--sp-1);
   color: var(--fg-3);
-  font-size: 12px;
+  font-size: var(--caption-size);
 }
 
 .cell {
@@ -48,7 +48,7 @@
   padding: var(--sp-1) var(--sp-2);
   border-radius: 6px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--small-size);
   color: var(--fg-2);
 }
 
@@ -65,7 +65,7 @@
 .menuEmpty {
   padding: var(--sp-2);
   color: var(--fg-3);
-  font-size: 13px;
+  font-size: var(--small-size);
 }
 
 .del {
@@ -89,7 +89,7 @@
 
 .cfLabel {
   color: var(--fg-3);
-  font-size: 12px;
+  font-size: var(--caption-size);
   white-space: nowrap;
 }
 
@@ -101,7 +101,7 @@
   border: 1px solid var(--border-1);
   border-radius: 6px;
   color: var(--fg-2);
-  font-size: 12px;
+  font-size: var(--caption-size);
 }
 
 @media (max-width: 720px) {

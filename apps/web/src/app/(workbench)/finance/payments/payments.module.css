@@ -13,7 +13,7 @@
   background: transparent;
   padding: var(--sp-1) var(--sp-3);
   border-radius: 6px;
-  font-size: 13px;
+  font-size: var(--small-size);
   color: var(--fg-2);
   cursor: pointer;
 }
@@ -45,7 +45,7 @@
 .tab {
   padding: var(--sp-1) var(--sp-3);
   border-radius: 6px;
-  font-size: 13px;
+  font-size: var(--small-size);
   color: var(--fg-2);
   text-decoration: none;
   border: 1px solid var(--border-1);
@@ -70,10 +70,10 @@
 
 .detailKey {
   color: var(--fg-3);
-  font-size: 13px;
+  font-size: var(--small-size);
 }
 
 .detailVal {
   color: var(--fg-1);
-  font-size: 13px;
+  font-size: var(--small-size);
 }

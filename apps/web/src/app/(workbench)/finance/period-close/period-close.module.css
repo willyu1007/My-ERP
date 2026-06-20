@@ -18,5 +18,5 @@
   border: 1px solid var(--border-1);
   border-radius: 6px;
   color: var(--fg-1);
-  font-size: 13px;
+  font-size: var(--small-size);
 }

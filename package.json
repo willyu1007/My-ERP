@@ -17,6 +17,7 @@
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint apps packages",
+    "lint:css": "stylelint \"apps/**/*.css\" \"packages/**/*.css\"",
     "test": "vitest run",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -40,6 +41,7 @@
     "eslint": "^9.9.0",
     "prettier": "^3.3.0",
     "prisma": "^6.2.0",
+    "stylelint": "^17.13.0",
     "typescript": "^5.5.0",
     "typescript-eslint": "^8.3.0",
     "vitest": "^2.0.0"

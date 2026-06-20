@@ -20,7 +20,7 @@
   gap: var(--sp-2);
   margin-top: var(--sp-2);
   color: var(--fg-2);
-  font-size: 13px;
+  font-size: var(--small-size);
   line-height: 1.5;
 }
 
@@ -52,7 +52,7 @@
 
 /* 演示数据 chip — quiet, signals fixtures mode (no backend). */
 .demoBadge {
-  font-size: 12px;
+  font-size: var(--caption-size);
   color: var(--fg-3);
   background: var(--mt-sand);
   padding: 3px 10px;
