@@ -44,13 +44,6 @@ export default async function PaymentsPage({
 
   return (
     <div className="wb-scene wb-stack wb-stack--lg">
-      <div className="wb-stack wb-stack--sm">
-        <h1 className="wb-section__title">出纳收付款</h1>
-        <p className="wb-muted">
-          收/付款单：申请 → 审批 → 确认收付（自动生成并过账结算凭证）。系统记录与审批，不代为划款。
-        </p>
-      </div>
-
       <PaymentCreateForm accounts={accounts} contracts={contracts} initialDate={today} />
 
       <Section title="收付款单">

@@ -14,11 +14,6 @@ export default async function LedgerPage() {
 
   return (
     <div className="wb-scene wb-stack wb-stack--lg">
-      <div className="wb-stack wb-stack--sm">
-        <h1 className="wb-section__title">账簿查询 · 试算平衡表</h1>
-        <p className="wb-muted">从已过账凭证 + 期初余额派生（演示）。点击科目查看明细账。</p>
-      </div>
-
       <StatStrip>
         <Stat label="本期借方发生" value={formatMoney(tb.totals.periodDebit)} />
         <Stat label="本期贷方发生" value={formatMoney(tb.totals.periodCredit)} />

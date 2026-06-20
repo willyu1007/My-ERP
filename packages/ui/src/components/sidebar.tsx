@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ShellNav } from '../model/nav';
 import { AccountMenu } from './account-menu';
-import { IconHome, IconSearch, IconSidebar } from '@willyu1007/web-workbench';
+import { IconHome, IconSearch, IconSidebar, IconPlus } from '@willyu1007/web-workbench';
 import { SidebarCreate } from './sidebar-create';
 import { useToast } from './toast';
 
@@ -83,48 +83,79 @@ export function Sidebar({
               )}
             </div>
           )}
-          {nav.groups.map((group, gi) => (
-            <div key={group.label ?? `group-${gi}`} className="wb-nav__group">
-              {group.label && <p className="wb-nav__group-label">{group.label}</p>}
-              {group.items.map((item) => {
-                const active =
-                  !item.soon && (item.match ?? [item.href]).some((p) => matchPrefix(pathname, p));
-                const count = item.badgeKey ? (badges[item.badgeKey] ?? 0) : 0;
-                if (item.soon) {
+          {nav.groups.map((group, gi) => {
+            const add = group.add;
+            return (
+              <div key={group.label ?? `group-${gi}`} className="wb-nav__group">
+                {(group.label || add) && (
+                  <div className="wb-nav__grouphead">
+                    {group.label && <p className="wb-nav__group-label">{group.label}</p>}
+                    {add &&
+                      (add.href ? (
+                        <Link
+                          href={add.href}
+                          onClick={onClose}
+                          className="wb-nav__add"
+                          aria-label={add.label}
+                          title={add.label}
+                        >
+                          <IconPlus size={15} />
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          className="wb-nav__add"
+                          aria-label={add.label}
+                          title={add.label}
+                          onClick={() => toast.notify('info', add.label, add.hint ?? '即将开放')}
+                        >
+                          <IconPlus size={15} />
+                        </button>
+                      ))}
+                  </div>
+                )}
+                {group.items.map((item) => {
+                  const active =
+                    !item.soon && (item.match ?? [item.href]).some((p) => matchPrefix(pathname, p));
+                  const count = item.badgeKey ? (badges[item.badgeKey] ?? 0) : 0;
+                  const itemClass = `wb-nav__item${group.showIcons ? '' : ' wb-nav__item--noicon'}`;
+
+                  if (item.soon) {
+                    return (
+                      <button
+                        key={item.href}
+                        type="button"
+                        className={itemClass}
+                        aria-disabled="true"
+                        disabled
+                      >
+                        {group.showIcons && item.icon && (
+                          <span className="wb-nav__icon">{item.icon}</span>
+                        )}
+                        <span className="wb-nav__label">{item.label}</span>
+                        <span className="wb-nav__soon">待上线</span>
+                      </button>
+                    );
+                  }
                   return (
-                    <button
+                    <Link
                       key={item.href}
-                      type="button"
-                      className={`wb-nav__item${group.showIcons ? '' : ' wb-nav__item--noicon'}`}
-                      aria-disabled="true"
-                      disabled
+                      href={item.href}
+                      onClick={onClose}
+                      className={`${itemClass}${active ? ' wb-nav__item--active' : ''}`}
+                      aria-current={active ? 'page' : undefined}
                     >
                       {group.showIcons && item.icon && (
                         <span className="wb-nav__icon">{item.icon}</span>
                       )}
                       <span className="wb-nav__label">{item.label}</span>
-                      <span className="wb-nav__soon">待上线</span>
-                    </button>
+                      {count > 0 && <span className="wb-nav__count">{count}</span>}
+                    </Link>
                   );
-                }
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={onClose}
-                    className={`wb-nav__item${group.showIcons ? '' : ' wb-nav__item--noicon'}${active ? ' wb-nav__item--active' : ''}`}
-                    aria-current={active ? 'page' : undefined}
-                  >
-                    {group.showIcons && item.icon && (
-                      <span className="wb-nav__icon">{item.icon}</span>
-                    )}
-                    <span className="wb-nav__label">{item.label}</span>
-                    {count > 0 && <span className="wb-nav__count">{count}</span>}
-                  </Link>
-                );
-              })}
-            </div>
-          ))}
+                })}
+              </div>
+            );
+          })}
         </nav>
 
         <div className="wb-sidebar__foot">

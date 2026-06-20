@@ -23,3 +23,39 @@
   font-size: 13px;
   line-height: 1.5;
 }
+
+/* 快速制单 panel — slides down from the action button. Uses the grid-rows
+ * 0fr→1fr trick so it animates to its natural height (no fixed max-height),
+ * and stays mounted while collapsed so in-progress input is preserved. */
+.entryPanel {
+  display: grid;
+  grid-template-rows: 0fr;
+  margin-bottom: 0;
+  transition:
+    grid-template-rows 200ms var(--ease-out, ease),
+    margin-bottom 200ms var(--ease-out, ease);
+}
+.entryPanelOpen {
+  grid-template-rows: 1fr;
+  margin-bottom: var(--sp-5, 20px);
+}
+.entryPanelInner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 演示数据 chip — quiet, signals fixtures mode (no backend). */
+.demoBadge {
+  font-size: 12px;
+  color: var(--fg-3);
+  background: var(--mt-sand);
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}

@@ -1,8 +1,10 @@
 /**
  * Finance scenario configuration — supplies the domain-agnostic @my-erp/ui
  * AppShell with finance navigation. Platform-level: My-ERP is a modular ERP and
- * finance is the first module, so `home` points at the ERP overview and the
- * finance module lives under the /finance namespace (future modules get theirs).
+ * finance is the first module, so `home` points at the ERP overview (看板) and
+ * the finance module lives under the /finance namespace (future modules get
+ * theirs). The 工作流 group is an extensible list: a "+" registers new
+ * workflows.
  */
 import type { ShellNav } from '@my-erp/ui';
 
@@ -11,33 +13,22 @@ export const NAV_BADGE_DAILY_ACCOUNTING_OPEN = 'dailyAccountingOpen';
 
 export const financeNav: ShellNav = {
   home: { label: '看板', href: '/' },
+  module: { label: '财务' },
   groups: [
     {
       label: '工作流',
       showIcons: false,
+      add: { label: '添加工作流', hint: '新增工作流需鉴权与初始化后启用（即将开放）' },
       items: [
-        {
-          href: '/finance/workbench',
-          label: '我的工作台',
-        },
         {
           href: '/finance/daily-accounting',
           label: '凭证处理',
           match: ['/finance/daily-accounting', '/finance/vouchers'],
           badgeKey: NAV_BADGE_DAILY_ACCOUNTING_OPEN,
         },
-        {
-          href: '/finance/payments',
-          label: '出纳收付',
-        },
-        {
-          href: '/finance/contracts',
-          label: '合同',
-        },
-        {
-          href: '/finance/period-close',
-          label: '期末结账',
-        },
+        { href: '/finance/payments', label: '出纳收付' },
+        { href: '/finance/contracts', label: '合同' },
+        { href: '/finance/period-close', label: '期末结账' },
       ],
     },
     {
@@ -61,8 +52,5 @@ export const financeNav: ShellNav = {
     },
   ],
   create: [{ href: '/finance/daily-accounting', label: '录入凭证' }],
-  sections: [
-    { prefix: '/finance', label: '财务', href: '/finance/daily-accounting' },
-    { prefix: '/system', label: '系统', href: '/system/health' },
-  ],
+  sections: [{ prefix: '/system', label: '系统', href: '/system/health' }],
 };

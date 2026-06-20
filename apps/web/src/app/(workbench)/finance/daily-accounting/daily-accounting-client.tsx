@@ -122,14 +122,18 @@ export function DailyAccountingClient({
   cashFlowItems,
   contracts,
   initialDate,
+  demo = false,
 }: {
   readonly vouchers: readonly VoucherVM[];
   readonly accounts: readonly AccountVM[];
   readonly cashFlowItems: readonly CashFlowItem[];
   readonly contracts: readonly Contract[];
   readonly initialDate: string;
+  /** Fixtures/demo mode (no backend) — shows a "演示数据" badge. */
+  readonly demo?: boolean;
 }) {
   const [queue, setQueue] = useState<QueueKey>('open');
+  const [entryOpen, setEntryOpen] = useState(false);
   const filtered = vouchers.filter((v) => matchesQueue(v, queue));
 
   const nav = (
@@ -150,31 +154,55 @@ export function DailyAccountingClient({
     </div>
   );
 
-  // 录入凭证 is the inline VoucherFastEntry above; no separate create button needed.
+  // 快速制单 slides a fast-entry panel down from this action; the form stays
+  // mounted (collapsed) so in-progress input survives queue switches.
+  const actions = (
+    <div className={styles.actions}>
+      {demo && <span className={styles.demoBadge}>演示数据</span>}
+      <button
+        type="button"
+        className="mt-btn mt-btn--primary mt-btn--sm"
+        aria-expanded={entryOpen}
+        onClick={() => setEntryOpen((v) => !v)}
+      >
+        {entryOpen ? '收起录入' : '快速制单'}
+      </button>
+    </div>
+  );
 
   return (
     <div className="wb-scene wb-stack wb-stack--lg">
-      <VoucherFastEntry
-        accounts={accounts}
-        cashFlowItems={cashFlowItems}
-        contracts={contracts}
-        initialDate={initialDate}
-        headerAction={<CaptureButton />}
-      />
       <ListView<VoucherVM>
         items={filtered}
         nav={nav}
+        actions={actions}
         empty={{ title: '暂无待处理事项', desc: '当前队列没有需要处理的凭证。' }}
         present={(items) => (
-          <div className={styles.queueScope}>
-            <Queue<VoucherVM>
-              items={items}
-              rowKey={(voucher) => voucher.id}
-              toRow={voucherToRow}
-              actionLabel={(voucher) => actionLabel(voucher.status)}
-              drawer={drawerFor}
-              empty={{ title: '暂无待处理事项', desc: '当前队列没有需要处理的凭证。' }}
-            />
+          <div>
+            <div
+              className={`${styles.entryPanel}${entryOpen ? ` ${styles.entryPanelOpen}` : ''}`}
+              inert={!entryOpen}
+            >
+              <div className={styles.entryPanelInner}>
+                <VoucherFastEntry
+                  accounts={accounts}
+                  cashFlowItems={cashFlowItems}
+                  contracts={contracts}
+                  initialDate={initialDate}
+                  headerAction={<CaptureButton />}
+                />
+              </div>
+            </div>
+            <div className={styles.queueScope}>
+              <Queue<VoucherVM>
+                items={items}
+                rowKey={(voucher) => voucher.id}
+                toRow={voucherToRow}
+                actionLabel={(voucher) => actionLabel(voucher.status)}
+                drawer={drawerFor}
+                empty={{ title: '暂无待处理事项', desc: '当前队列没有需要处理的凭证。' }}
+              />
+            </div>
           </div>
         )}
       />

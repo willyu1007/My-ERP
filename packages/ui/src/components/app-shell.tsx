@@ -10,18 +10,40 @@ import { Sidebar } from './sidebar';
 import { ToastProvider } from './toast';
 import { TopbarSlotContext } from '@willyu1007/web-workbench';
 
-function sectionFor(nav: ShellNav, pathname: string): Crumb {
+function sectionFor(nav: ShellNav, pathname: string): Crumb | null {
   const hit = nav.sections.find(
     (c) => pathname === c.prefix || pathname.startsWith(`${c.prefix}/`),
   );
-  if (hit) return { label: hit.label, href: hit.href };
-  return nav.home ? { label: nav.home.label, href: nav.home.href } : { label: '首页', href: '/' };
+  return hit ? { label: hit.label, href: hit.href } : null;
+}
+
+/** The active sidebar workflow for this route, used as a topbar crumb. */
+function activeWorkflowFor(nav: ShellNav, pathname: string): Crumb | null {
+  for (const group of nav.groups) {
+    for (const item of group.items) {
+      if (item.soon) continue;
+      const matches = item.match ?? [item.href];
+      if (matches.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+        return { label: item.label, href: item.href };
+      }
+    }
+  }
+  return null;
 }
 
 function TopbarBreadcrumb({ nav }: { readonly nav: ShellNav }): React.ReactElement {
   const pathname = usePathname();
   const trail = useBreadcrumbTrail();
-  const items: readonly Crumb[] = [sectionFor(nav, pathname), ...trail];
+  const workflow = activeWorkflowFor(nav, pathname);
+  const section = sectionFor(nav, pathname);
+  // On a workflow route: 模块 > 工作流 (> page trail). Otherwise fall back to a
+  // matched section (e.g. /system). The home/dashboard shows no crumb.
+  const head: readonly Crumb[] = workflow
+    ? [...(nav.module ? [nav.module] : []), workflow]
+    : section
+      ? [section]
+      : [];
+  const items: readonly Crumb[] = [...head, ...trail];
   return (
     <div className="wb-topbar__crumbs">
       {items.map((item, i) => {

@@ -47,13 +47,6 @@ export default async function ReportsPage({
 
   return (
     <div className="wb-scene wb-stack wb-stack--lg">
-      <div className="wb-stack wb-stack--sm">
-        <h1 className="wb-section__title">财务报表</h1>
-        <p className="wb-muted">
-          资产负债表 · 利润表 · 现金流量表 —— 从已过账凭证 + 现金流量打标派生。
-        </p>
-      </div>
-
       <ReportRangePicker range={range} />
 
       {configured ? (

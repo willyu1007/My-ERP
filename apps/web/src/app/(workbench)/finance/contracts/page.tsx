@@ -16,11 +16,6 @@ export default async function ContractsPage() {
 
   return (
     <div className="wb-scene wb-stack wb-stack--lg">
-      <div className="wb-stack wb-stack--sm">
-        <h1 className="wb-section__title">合同</h1>
-        <p className="wb-muted">以合同为主视角串起一笔交易的凭证与收付款；合同是辅助核算维度与时间线锚点。</p>
-      </div>
-
       <ContractCreateForm />
 
       <Section title="合同列表">

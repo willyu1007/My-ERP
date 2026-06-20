@@ -1,0 +1,37 @@
+/*
+ * Host-chrome additions layered on top of @willyu1007/web-workbench styles.
+ * Scope: sidebar nav enhancements that the shared kit leaves to the host —
+ * the group "+" action (e.g. add a workflow). Reuses the kit's tokens
+ * (--fg-*, --mt-sand*, --r-md, --t-fast) so it themes light/dark automatically.
+ * Candidate to upstream into the kit later.
+ */
+
+/* Group header row: label on the left, "+" action on the right. */
+.wb-nav__grouphead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 4px;
+}
+
+.wb-nav__add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  margin-bottom: 3px;
+  border: 0;
+  border-radius: var(--r-md, 6px);
+  background: transparent;
+  color: var(--fg-3);
+  cursor: pointer;
+  transition:
+    background var(--t-fast, 120ms) var(--ease-out, ease),
+    color var(--t-fast, 120ms) var(--ease-out, ease);
+}
+.wb-nav__add:hover {
+  background: var(--mt-sand);
+  color: var(--fg-1);
+}

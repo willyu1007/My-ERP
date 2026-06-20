@@ -35,11 +35,6 @@ const SETTINGS: readonly {
 export default function FinanceSettingsPage() {
   return (
     <div className="wb-scene wb-stack wb-stack--lg">
-      <div className="wb-stack wb-stack--sm">
-        <h1 className="wb-section__title">账务设置</h1>
-        <p className="wb-muted">账套、科目、期初、资金账户与审批策略。</p>
-      </div>
-
       <Section title="设置项">
         <div className="wb-cardgrid">
           {SETTINGS.map((item) =>

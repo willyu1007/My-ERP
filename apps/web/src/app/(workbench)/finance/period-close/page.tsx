@@ -41,13 +41,6 @@ export default async function PeriodClosePage({
 
   return (
     <div className="wb-scene wb-stack wb-stack--lg">
-      <div className="wb-stack wb-stack--sm">
-        <h1 className="wb-section__title">期末结账</h1>
-        <p className="wb-muted">
-          结转损益至本年利润、锁定会计期间；如需更正可反结账（红冲结转凭证）。
-        </p>
-      </div>
-
       <PeriodCloseClient period={period} readiness={readiness} periods={periods} />
 
       {untagged.length > 0 && (
