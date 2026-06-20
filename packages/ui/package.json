@@ -16,7 +16,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@willyu1007/web-workbench": "^0.4.0"
+    "@willyu1007/web-workbench": "^0.4.1"
   },
   "peerDependencies": {
     "next": ">=15",

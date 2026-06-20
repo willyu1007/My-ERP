@@ -76,7 +76,7 @@ export default async function ContractDetailPage({
               <div key={`${item.refType}-${item.refId}-${i}`} className={styles.tlItem}>
                 <div className={styles.tlHead}>
                   <span className={styles.tlDate}>{item.date}</span>
-                  <span className="wb-muted" style={{ fontSize: 12 }}>
+                  <span className="wb-muted" style={{ fontSize: "var(--caption-size)" }}>
                     [{TIMELINE_KIND[item.kind] ?? item.kind}]
                   </span>
                   {title}

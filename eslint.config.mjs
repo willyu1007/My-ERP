@@ -1,5 +1,6 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
+import workbench from '@willyu1007/web-workbench/eslint';
 
 // Flat config. Type-aware linting is intentionally off for P0a (fast, robust);
 // it can be enabled per-package later when the domain layers grow.
@@ -26,4 +27,6 @@ export default tseslint.config(
       ],
     },
   },
+  // Batch 1 typography lock: ban inline font-size/weight/family (use scale tokens).
+  ...workbench,
 );
