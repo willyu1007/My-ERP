@@ -37,7 +37,7 @@
   "devDependencies": {
     "@eslint/js": "^9.9.0",
     "@types/node": "^20.14.0",
-    "@willyu1007/web-workbench": "^0.5.0",
+    "@willyu1007/web-workbench": "^0.6.0",
     "eslint": "^9.9.0",
     "prettier": "^3.3.0",
     "prisma": "^6.2.0",
