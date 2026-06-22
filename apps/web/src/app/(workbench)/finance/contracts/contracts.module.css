@@ -71,6 +71,11 @@
   min-width: 84px;
 }
 
+.tlKind {
+  color: var(--fg-2);
+  font-size: var(--caption-size);
+}
+
 .tlTitle {
   font-weight: var(--h3-weight);
   color: var(--fg-1);
