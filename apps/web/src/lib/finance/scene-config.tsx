@@ -6,5 +6,8 @@
  * layout (badges map) reference.
  */
 
-/** Badge key for open daily-accounting work in the sidebar. */
-export const NAV_BADGE_DAILY_ACCOUNTING_OPEN = "dailyAccountingOpen";
+/**
+ * Badge key for my open work-item tasks in the sidebar (我的工作台). Sourced from
+ * the WorkItem kernel (`my_tasks`), not derived from voucher status — see T-009.
+ */
+export const NAV_BADGE_MY_TASKS_OPEN = "myTasksOpen";

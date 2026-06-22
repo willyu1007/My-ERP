@@ -1,0 +1,35 @@
+/* Structural-only feature CSS (token-driven), mirroring payments.module.css.
+   View tabs + the trailing action cluster; all color/spacing/radius come from
+   kit tokens so the B1 boundary + ui:guard stay clean. */
+
+.tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.tab {
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: 6px;
+  font-size: var(--small-size);
+  color: var(--fg-2);
+  text-decoration: none;
+  border: 1px solid var(--border-1);
+}
+
+.tabActive {
+  background: var(--bg-float);
+  color: var(--fg-1);
+  border-color: var(--fg-3);
+}
+
+.taskTitle {
+  font-weight: var(--h3-weight);
+}
+
+.actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  justify-content: flex-end;
+}

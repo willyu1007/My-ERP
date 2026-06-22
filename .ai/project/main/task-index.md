@@ -18,4 +18,5 @@ Project: `main`
 | T-006 finance-period-close-and-reports | done | F-000 | dev-docs/active/finance-period-close-and-reports |
 | T-007 finance-cashier-payments | done | F-000 | dev-docs/active/finance-cashier-payments |
 | T-008 erp-multi-workflow-compat | done | F-000 | dev-docs/active/erp-multi-workflow-compat |
+| T-009 finance-workbench-kernel-rewire | in-progress | F-000 | dev-docs/active/finance-workbench-kernel-rewire |
 <!-- AUTO-GENERATED:END task-index -->

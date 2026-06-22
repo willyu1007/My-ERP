@@ -3,46 +3,57 @@ import {
   Hub,
   IconBook,
   IconClipboard,
+  type DashAttention,
   type WorkflowModule,
 } from '@my-erp/ui';
-import { listVouchers } from '@/lib/finance/data-source';
+import type { WorkItem } from '@my-erp/api-client';
+import { listPayments, listVouchers, listWorkItems } from '@/lib/finance/data-source';
 import { formatDate, formatMoney } from '@/lib/finance/format';
+import { WORK_ITEM_SUBSTATUS_LABEL, WORK_ITEM_TITLE } from '@/lib/finance/work-item-display';
+import {
+  resolveWorkItemRef,
+  workItemDeepLink,
+  type WorkItemSourceRef,
+} from '@/lib/finance/work-item-source';
 import { VOUCHER_STATUS_LABELS, type VoucherVM } from '@/lib/finance/types';
 
-function attentionFor(voucher: VoucherVM) {
-  if (voucher.status === 'draft') {
-    return {
-      id: voucher.id,
-      title: `${voucher.no} 待补全`,
-      detail: `${formatDate(voucher.date)} · ${voucher.summary} · ${formatMoney(voucher.totalDebit)} CNY`,
-      tone: 'warning' as const,
-      href: `/finance/vouchers/${voucher.id}`,
-      cta: '补全凭证',
-      workflow: '凭证',
-    };
-  }
-  if (voucher.status === 'pending') {
-    return {
-      id: voucher.id,
-      title: `${voucher.no} 待审核`,
-      detail: `${formatDate(voucher.date)} · ${voucher.summary} · ${formatMoney(voucher.totalDebit)} CNY`,
-      tone: 'accent' as const,
-      href: `/finance/vouchers/${voucher.id}`,
-      cta: '去审核',
-      workflow: '凭证',
-    };
-  }
-  return null;
+/**
+ * Map a kernel work item → a Hub 待办. The attention list is sourced from the
+ * WorkItem task kernel (`my_tasks`), NOT derived from voucher status (T-009) — the
+ * voucher stats below remain legitimate read-model counts.
+ */
+function attentionFromTask(it: WorkItem, ref: WorkItemSourceRef | null): DashAttention {
+  const title = WORK_ITEM_TITLE[it.titleKey] ?? it.titleKey;
+  const tone: DashAttention['tone'] =
+    it.subStatus === 'pending_review'
+      ? 'accent'
+      : it.subStatus === 'pending_confirmation' || it.subStatus === 'pending_completion'
+        ? 'warning'
+        : 'info';
+  const isPayment = it.sourceType === 'PaymentDoc';
+  const actions = it.availableActions ?? [];
+  const cta = actions.includes('complete') ? '去处理' : actions.includes('claim') ? '去领取' : '去查看';
+  return {
+    id: it.id,
+    title: ref ? `${ref.no} ${title}` : title,
+    detail: ref
+      ? `${formatDate(ref.date)} · ${ref.summary} · ${formatMoney(ref.amount)} CNY`
+      : (WORK_ITEM_SUBSTATUS_LABEL[it.subStatus] ?? '待处理'),
+    tone,
+    href: workItemDeepLink(it.sourceType, it.sourceId),
+    cta,
+    workflow: isPayment ? '收付' : '凭证',
+  };
 }
 
-function financeModule(vouchers: readonly VoucherVM[]): WorkflowModule {
+function financeModule(
+  vouchers: readonly VoucherVM[],
+  attention: readonly DashAttention[],
+): WorkflowModule {
   const draft = vouchers.filter((v) => v.status === 'draft');
   const pending = vouchers.filter((v) => v.status === 'pending');
   const posted = vouchers.filter((v) => v.status === 'posted');
   const reversed = vouchers.filter((v) => v.status === 'reversed');
-  const attention = vouchers.map(attentionFor).filter((item): item is NonNullable<typeof item> =>
-    Boolean(item),
-  );
 
   return {
     key: 'finance-vouchers',
@@ -63,10 +74,10 @@ function financeModule(vouchers: readonly VoucherVM[]): WorkflowModule {
           <div className="wb-list wb-list--framed">
             <EntityRow
               model={{
-                href: '/finance/daily-accounting',
-                title: '凭证队列',
-                note: '从待补全和待审核队列继续处理，不展示静态流程说明。',
-                metrics: [{ label: '待处理', value: draft.length + pending.length }],
+                href: '/finance/workbench',
+                title: '我的工作台',
+                note: '从内核派发的待办队列继续处理（待我处理 / 监督 / 我处理过）。',
+                metrics: [{ label: '我的待办', value: attention.length }],
                 status: { tone: 'warning', label: '待处理' },
               }}
             />
@@ -104,6 +115,16 @@ function financeModule(vouchers: readonly VoucherVM[]): WorkflowModule {
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
-  const vouchers = await listVouchers();
-  return <Hub modules={[financeModule(vouchers)]} />;
+  const [vouchers, payments, workItems] = await Promise.all([
+    listVouchers(),
+    listPayments(),
+    listWorkItems('my_tasks'),
+  ]);
+  const voucherById = new Map(vouchers.map((v) => [v.id, v]));
+  const paymentById = new Map(payments.map((p) => [p.id, p]));
+  const attention = workItems.map((it) =>
+    attentionFromTask(it, resolveWorkItemRef(it, voucherById, paymentById)),
+  );
+
+  return <Hub modules={[financeModule(vouchers, attention)]} />;
 }

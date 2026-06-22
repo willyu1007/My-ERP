@@ -79,3 +79,10 @@ tasks:
     feature_id: F-000
     dev_docs_path: dev-docs/active/erp-multi-workflow-compat
     updated: 2026-06-18
+  - id: T-009
+    slug: finance-workbench-kernel-rewire
+    status: in-progress
+    milestone_id: M-000
+    feature_id: F-000
+    dev_docs_path: dev-docs/active/finance-workbench-kernel-rewire
+    updated: 2026-06-22

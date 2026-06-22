@@ -202,16 +202,11 @@ export async function listWorkItems(view: WorkItemView): Promise<readonly WorkIt
   return api.listWorkItems({ view });
 }
 
-/** A single work item, or `null` (not found / not visible / demo mode). */
-export async function getWorkItem(id: string): Promise<WorkItem | null> {
+/** Count of my open/claimed tasks for the sidebar badge (`0` in demo mode). */
+export async function countMyOpenTasks(): Promise<number> {
   const api = getFinanceApi();
-  if (!api) return null;
-  try {
-    return await api.getWorkItem(id);
-  } catch (err) {
-    if (err instanceof ApiError && err.status === 404) return null;
-    throw err;
-  }
+  if (!api) return 0;
+  return (await api.listWorkItems({ view: 'my_tasks' })).length;
 }
 
 /** Run a backend-authorized work-item action (claim / complete / cancel). Requires the backend. */

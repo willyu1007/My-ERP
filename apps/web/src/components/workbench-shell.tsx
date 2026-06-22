@@ -12,7 +12,7 @@
 
 import type { ReactNode } from "react";
 import { AppShell, ToastProvider, useToast, type ShellNav } from "@my-erp/ui";
-import { NAV_BADGE_DAILY_ACCOUNTING_OPEN } from "@/lib/finance/scene-config";
+import { NAV_BADGE_MY_TASKS_OPEN } from "@/lib/finance/scene-config";
 
 const REGISTERED = [{ key: "erp", name: "智能ERP", mark: "智" }] as const;
 
@@ -62,10 +62,15 @@ function ShellWithNav({
         },
         items: [
           {
+            href: "/finance/workbench",
+            label: "我的工作台",
+            match: ["/finance/workbench"],
+            badgeKey: NAV_BADGE_MY_TASKS_OPEN,
+          },
+          {
             href: "/finance/daily-accounting",
             label: "凭证处理",
             match: ["/finance/daily-accounting", "/finance/vouchers"],
-            badgeKey: NAV_BADGE_DAILY_ACCOUNTING_OPEN,
           },
           { href: "/finance/payments", label: "出纳收付" },
           { href: "/finance/contracts", label: "合同" },

@@ -16,6 +16,10 @@ My-ERP has a working M1 general ledger core and a web workbench that frames dail
   backend `availableActions` with optimistic `expectedVersion`. Backend readiness fix: `viewWhere`
   elevates supervision-capable callers (admin/SME-single-admin now see their tasks; see `07`). Live +
   browser verified (submit → review task → 通过并过账 → posted → 我处理过). 136 tests green.
+  > **Superseded (2026-06-22, T-009):** this `/finance/workbench` page was deleted in commit `14930db`
+  > during the web-workbench kit 0.4.0 convergence and was NOT restored through 0.5.0/0.6.0/0.6.1, so the
+  > web silently regressed to voucher-list-derived 待办. The kernel (backend) stayed intact. The page was
+  > rebuilt on the 0.6.1 kit under **T-009 (finance-workbench-kernel-rewire)**.
 - Spun out (not part of this closed task): **R3** cashier + payment approval — **shipped in T-007**;
   **R4** multi-module compatibility — **T-008** (planned). Genuinely still deferred: the **outbox dispatch
   worker** (My-Chat delivery — `apps/workers` is a placeholder), `return`/`assign` work-item actions, and
