@@ -1,19 +1,15 @@
 import type { ReactNode } from 'react';
-import { countMyOpenTasks } from '@/lib/finance/data-source';
-import { NAV_BADGE_MY_TASKS_OPEN } from '@/lib/finance/scene-config';
 import { WorkbenchShell } from '@/components/workbench-shell';
 
 /**
  * Workbench route group — wraps every page in the kit's locked AppShell (via the
  * host WorkbenchShell client wrapper) with the finance navigation. Identity is
- * mocked in W1 (no Logto yet). The sidebar badge counts my open tasks from the
- * WorkItem kernel (T-009) and flows through the data-source seam (0 in demo mode).
+ * mocked in W1 (no Logto yet). The personal task queue lives on the home 看板
+ * (方案 A), so the sidebar no longer carries a 我的工作台 badge.
  */
-export default async function WorkbenchLayout({ children }: { readonly children: ReactNode }) {
-  const myTasksOpen = await countMyOpenTasks();
-
+export default function WorkbenchLayout({ children }: { readonly children: ReactNode }) {
   return (
-    <WorkbenchShell accountName="演示会计" badges={{ [NAV_BADGE_MY_TASKS_OPEN]: myTasksOpen }}>
+    <WorkbenchShell accountName="演示会计" badges={{}}>
       {children}
     </WorkbenchShell>
   );

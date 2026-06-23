@@ -12,7 +12,6 @@
 
 import type { ReactNode } from "react";
 import { AppShell, ToastProvider, useToast, type ShellNav } from "@my-erp/ui";
-import { NAV_BADGE_MY_TASKS_OPEN } from "@/lib/finance/scene-config";
 
 const REGISTERED = [{ key: "erp", name: "智能ERP", mark: "智" }] as const;
 
@@ -61,12 +60,6 @@ function ShellWithNav({
             toast.notify("info", "添加工作流", "新增工作流需鉴权与初始化后启用（即将开放）"),
         },
         items: [
-          {
-            href: "/finance/workbench",
-            label: "我的工作台",
-            match: ["/finance/workbench"],
-            badgeKey: NAV_BADGE_MY_TASKS_OPEN,
-          },
           {
             href: "/finance/daily-accounting",
             label: "凭证处理",
