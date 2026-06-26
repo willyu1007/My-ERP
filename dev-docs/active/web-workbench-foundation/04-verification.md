@@ -23,7 +23,7 @@
 | Lint | `pnpm lint` | ✓ 无告警 |
 | UI governance | `pnpm ui:governance` | ✓ validate OK + guard OK（19 feature 文件 token-only，零 inline-style/hex）|
 | 全量构建 | `pnpm build` | ✓ 全包 + `next build`；8 路由（`/`·accounts·ledger 静态，vouchers 三页 + health 为 `ƒ` force-dynamic）|
-| 运行时渲染 | `next start` → `curl :3200` | ✓ W1 当时全部 200；`/` ERP 总览（模块卡：财务「已上线」+ 采购/库存/销售/人力「敬请期待」）；凭证队列、`/finance/vouchers/v-003` 详情（价税分离分录 + 借贷平衡）、`/finance/vouchers/new` 制单（借贷不平指示 + 保存草稿禁用）；坏 id → 404。W2c 后凭证队列 canonical 路由为 `/finance/daily-accounting`，`/finance/vouchers` 仅 redirect。 |
+| 运行时渲染 | `next start` → `curl :3200` | ✓ W1 当时全部 200；`/` ERP 总览（模块卡：财务「已上线」+ 采购/库存/销售/人力「敬请期待」）；凭证队列、`/finance/vouchers/v-003` 详情（价税分离分录 + 借贷平衡）、historical `/finance/vouchers/new` 制单（借贷不平指示 + 暂存禁用）；坏 id → 404。W2c 后凭证队列 canonical 路由为 `/finance/daily-accounting`，`/finance/vouchers` 仅 redirect。 |
 
 要点：领域无关 ↔ 财务语义边界守住（`packages/ui` 零财务词汇；VM/标签/fixtures/data-source 全在 `apps/web/src/lib/finance`）；前端借贷平衡用整数分精确计算（零浮点，镜像 `@my-erp/finance-domain` 的 `isBalanced`，服务层不变式留待 M1 P3）；data-source 为唯一 demo→真切换点（`TODO(P1–P5)` 注释在位）。
 

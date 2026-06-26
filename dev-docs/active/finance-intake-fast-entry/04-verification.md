@@ -20,7 +20,7 @@ Commands and outcomes:
 | Typecheck | `pnpm typecheck` | pass (incl. `apps/web` with the new grid + server actions) |
 | UI governance | `pnpm ui:governance` | pass — validate OK; guard OK, 29 feature files token-only (no inline styles / hex) |
 | Tests | `pnpm test` | pass — 20 files / 97 tests (no regression) |
-| Runtime smoke | `pnpm --filter @my-erp/web dev` → `GET /finance/daily-accounting` | HTTP 200; SSR HTML contains 快速制单 / 科目 / 借方 / 贷方 / 一键配平 / 保存草稿 / 提交; compiled clean, no errors/warnings in dev log |
+| Runtime smoke | `pnpm --filter @my-erp/web dev` → `GET /finance/daily-accounting` | Historical S1 smoke: HTTP 200; SSR HTML contained the original fast-entry markers. Current UI labels are `制单` / `暂存` / `提交` after T-010 hardening. |
 
 ## 2026-06-15 — S2 (Intake/Attachment schema + RLS)
 

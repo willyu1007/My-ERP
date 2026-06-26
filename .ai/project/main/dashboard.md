@@ -25,12 +25,13 @@ Project: `main`
 <!-- AUTO-GENERATED:START dashboard -->
 ## Summary
 
-- Tasks: 9 (planned: 0, in-progress: 1, blocked: 0, done: 8, archived: 0)
+- Tasks: 10 (planned: 0, in-progress: 1, blocked: 0, done: 9, archived: 0)
 
 ## Recent tasks
 
 | Task | Status | Feature | Dev Docs |
 | --- | --- | --- | --- |
+| T-010 fast-entry-stash-drafts | done | F-000 | dev-docs/active/fast-entry-stash-drafts |
 | T-009 finance-workbench-kernel-rewire | in-progress | F-000 | dev-docs/active/finance-workbench-kernel-rewire |
 | T-002 web-workbench-foundation | done | F-000 | dev-docs/active/web-workbench-foundation |
 | T-005 finance-contract-transaction-lifecycle | done | F-000 | dev-docs/active/finance-contract-transaction-lifecycle |

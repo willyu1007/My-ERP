@@ -38,4 +38,5 @@ Project: `main`
 | T-007 finance-cashier-payments | done | dev-docs/active/finance-cashier-payments |
 | T-008 erp-multi-workflow-compat | done | dev-docs/active/erp-multi-workflow-compat |
 | T-009 finance-workbench-kernel-rewire | in-progress | dev-docs/active/finance-workbench-kernel-rewire |
+| T-010 fast-entry-stash-drafts | done | dev-docs/active/fast-entry-stash-drafts |
 <!-- AUTO-GENERATED:END feature-map -->

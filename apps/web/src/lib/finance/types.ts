@@ -75,6 +75,8 @@ export interface VoucherVM {
   readonly attachments: number;
   /** 关联合同 id（T-005 维度）；未关联为 null。 */
   readonly contractId: string | null;
+  /** 制单 UI 暂存 payload；仅 draft 状态用于恢复表单，不参与账务计算。 */
+  readonly draftPayload: unknown | null;
 }
 
 /** 期初余额（启用期建账）。借/贷二选一，全部期初合计须借贷平衡。 */

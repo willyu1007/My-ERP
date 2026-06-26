@@ -52,7 +52,7 @@ What changed:
 - New `apps/web/src/app/(workbench)/finance/daily-accounting/voucher-fast-entry.tsx`: the inline,
   keyboard-first grid + an `AccountCombobox` (fuzzy match on code+name, leaf+active only). Token-only
   styling in `voucher-fast-entry.module.css` (passes `pnpm ui:governance`).
-- New `actions.ts` (`'use server'`): `saveDraftAction` / `submitNewAction` call the data-source
+- New `actions.ts` (`'use server'`): `stashDraftAction` / `submitNewAction` call the data-source
   create/submit; return a `SaveResult` (`ok` | `unconfigured` | `error`) so the client can demo-toast
   when the backend is absent.
 - `page.tsx` now fetches accounts + today and passes them; `daily-accounting-client.tsx` renders
@@ -63,7 +63,7 @@ Behavior:
   ArrowUp/Down + Enter to pick; Escape closes.
 - Single-side-per-line mutual exclusion (typing debit clears credit); integer-cent balance badge;
   auto-balance hint (placeholder of the contra amount) + a `一键配平` button.
-- Actions: `保存草稿` (create) + `提交` (create→submit). **Posting stays in the review queue** (SoD).
+- Actions: `暂存` (create draft recovery) + `提交` (create→submit). **Posting stays in the review queue** (SoD).
 - On success: success toast + form reset + `router.refresh()`. When unconfigured: demo toast (reads
   still work on fixtures).
 - Built for reuse as the S5 intake-prefilled confirm surface (blank vs prefilled is just initial state).
@@ -176,7 +176,7 @@ What changed (all in `apps/web`):
   already existed).
 - `data-source.ts`: `updateVoucher`, `captureIntake`, `extractIntake`.
 - `<VoucherFastEntry>`: **edit/confirm mode** — optional `voucherId` + `initial` (prefilled draft) +
-  `headerAction` slot. With `voucherId`, 保存草稿 PATCHes and 提交 confirms (PATCH → submit); without it,
+  `headerAction` slot. With `voucherId`, 暂存 PATCHes and 提交 confirms (PATCH → submit); without it,
   the original create/create+submit path. Seeds state from `initial`.
 - `actions.ts`: `updateDraftAction`, `confirmAction` (update→submit), `captureAction` (capture→extract;
   returns the auto-drafted voucher id).

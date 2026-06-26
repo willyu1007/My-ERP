@@ -1082,6 +1082,27 @@ components:
         debit: { type: string, nullable: true, description: '2dp; exactly one of debit/credit' }
         credit: { type: string, nullable: true }
         cashFlowItem: { type: string, nullable: true }
+    FastEntryDraftPayload:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        version: { type: integer, enum: [1] }
+        summary: { type: string, maxLength: 500 }
+        contractId: { type: string, format: uuid, nullable: true }
+        lines:
+          type: array
+          maxItems: 100
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              accountCode: { type: string, maxLength: 64 }
+              accountName: { type: string, maxLength: 120 }
+              summary: { type: string, maxLength: 500 }
+              debit: { type: string, description: '2dp draft amount, optional' }
+              credit: { type: string, description: '2dp draft amount, optional' }
+              cashFlowItem: { type: string, maxLength: 64 }
     Voucher:
       type: object
       required: [id, ledgerBookId, no, date, period, status, summary, totalDebit, totalCredit, maker, lines]
@@ -1102,21 +1123,28 @@ components:
         reversedBy: { type: string, format: uuid, nullable: true }
         attachments: { type: integer }
         contractId: { type: string, format: uuid, nullable: true, description: 'Contract link (T-005)' }
+        draftPayload:
+          allOf:
+            - $ref: '#/components/schemas/FastEntryDraftPayload'
+          nullable: true
         lines:
           type: array
           items: { $ref: '#/components/schemas/VoucherLine' }
     CreateVoucher:
       type: object
-      required: [date, summary, lines]
+      required: [date]
       properties:
         date: { type: string, format: date }
         summary: { type: string }
         contractId: { type: string, format: uuid, nullable: true, description: 'Optional Contract link (T-005)' }
+        draftPayload:
+          allOf:
+            - $ref: '#/components/schemas/FastEntryDraftPayload'
+          nullable: true
         lines:
           type: array
           items:
             type: object
-            required: [accountCode]
             properties:
               accountCode: { type: string }
               summary: { type: string }

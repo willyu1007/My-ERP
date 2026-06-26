@@ -105,6 +105,26 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS + CHECK — journal voucher (ledger
     ).rejects.toThrow();
   });
 
+  it('clears UI draft payload when a voucher leaves draft', async () => {
+    const result = await withLedgerScope(LB_A, async (tx) => {
+      const v = await createVoucherTx(tx, {
+        ...balanced(LB_A),
+        no: '记-2026-004',
+        draftPayload: {
+          version: 1,
+          summary: '暂存表单',
+          lines: [{ summary: '未选科目行' }],
+        },
+      });
+      expect(v.draftPayload).toMatchObject({ version: 1, summary: '暂存表单' });
+      await setVoucherStatusTx(tx, v.id, { status: 'pending', clearDraftPayload: true });
+      return getVoucherTx(tx, v.id);
+    });
+
+    expect(result?.status).toBe('pending');
+    expect(result?.draftPayload).toBeNull();
+  });
+
   it('WITH CHECK blocks creating a voucher in another ledger', async () => {
     await expect(
       withLedgerScope(LB_A, (tx) => createVoucherTx(tx, { ...balanced(LB_B), no: '记-2026-003' })),

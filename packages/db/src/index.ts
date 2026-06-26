@@ -622,6 +622,7 @@ export interface VoucherEntity {
   reversedBy: string | null;
   attachments: number;
   contractId: string | null;
+  draftPayload: unknown | null;
   createdAt: Date;
   lines: VoucherLineEntity[];
 }
@@ -648,6 +649,8 @@ export interface CreateVoucherInput {
   lines: readonly VoucherLineInput[];
   /** Optional Contract link (T-005 dimension). */
   contractId?: string | null;
+  /** UI-only quick-entry draft payload. Draft status only; not an accounting source. */
+  draftPayload?: unknown | null;
 }
 
 type RawLine = {
@@ -693,6 +696,7 @@ function toVoucher(v: {
   reversedBy: string | null;
   attachments: number;
   contractId: string | null;
+  draftPayload: unknown | null;
   createdAt: Date;
   lines?: RawLine[];
 }): VoucherEntity {
@@ -713,6 +717,7 @@ function toVoucher(v: {
     reversedBy: v.reversedBy,
     attachments: v.attachments,
     contractId: v.contractId,
+    draftPayload: v.draftPayload ?? null,
     createdAt: v.createdAt,
     lines: (v.lines ?? []).map(toVoucherLine),
   };
@@ -751,6 +756,10 @@ export async function createVoucherTx(
       totalDebit: input.totalDebit,
       totalCredit: input.totalCredit,
       contractId: input.contractId ?? null,
+      draftPayload:
+        input.draftPayload === undefined || input.draftPayload === null
+          ? Prisma.JsonNull
+          : (input.draftPayload as Prisma.InputJsonValue),
       lines: { create: lineCreateData(input.ledgerBookId, input.lines) },
     },
     include: { lines: { orderBy: { lineNo: 'asc' } } },
@@ -783,6 +792,8 @@ export interface UpdateDraftVoucherInput {
   lines: readonly VoucherLineInput[];
   /** Optional Contract link (T-005 dimension). */
   contractId?: string | null;
+  /** UI-only quick-entry draft payload. Draft status only; not an accounting source. */
+  draftPayload?: unknown | null;
 }
 
 export async function updateDraftVoucherTx(
@@ -801,6 +812,10 @@ export async function updateDraftVoucherTx(
       totalDebit: input.totalDebit,
       totalCredit: input.totalCredit,
       contractId: input.contractId ?? null,
+      draftPayload:
+        input.draftPayload === undefined || input.draftPayload === null
+          ? Prisma.JsonNull
+          : (input.draftPayload as Prisma.InputJsonValue),
       lines: { create: lineCreateData(ledgerBookId, input.lines) },
     },
   });
@@ -811,6 +826,8 @@ export interface VoucherStatusPatch {
   checker?: string | null;
   postedAt?: Date | null;
   reversedBy?: string | null;
+  /** Clear UI-only draft recovery data when the voucher leaves draft. */
+  clearDraftPayload?: boolean;
 }
 
 export async function setVoucherStatusTx(
@@ -825,6 +842,7 @@ export async function setVoucherStatusTx(
       ...(patch.checker !== undefined ? { checker: patch.checker } : {}),
       ...(patch.postedAt !== undefined ? { postedAt: patch.postedAt } : {}),
       ...(patch.reversedBy !== undefined ? { reversedBy: patch.reversedBy } : {}),
+      ...(patch.clearDraftPayload ? { draftPayload: Prisma.JsonNull } : {}),
     },
   });
 }
@@ -1673,7 +1691,10 @@ export async function getAttachmentTx(tx: TxClient, id: string): Promise<Attachm
   return row ? toAttachment(row) : null;
 }
 
-export async function createIntakeTx(tx: TxClient, input: CreateIntakeInput): Promise<IntakeEntity> {
+export async function createIntakeTx(
+  tx: TxClient,
+  input: CreateIntakeInput,
+): Promise<IntakeEntity> {
   const row = await tx.intake.create({
     data: {
       orgId: input.orgId,
@@ -2241,7 +2262,8 @@ export async function updateContractTx(
   if (input.amount !== undefined) data.amount = input.amount;
   if (input.currency !== undefined) data.currency = input.currency;
   if (input.status !== undefined) data.status = input.status;
-  if (input.startDate !== undefined) data.startDate = input.startDate ? new Date(input.startDate) : null;
+  if (input.startDate !== undefined)
+    data.startDate = input.startDate ? new Date(input.startDate) : null;
   if (input.endDate !== undefined) data.endDate = input.endDate ? new Date(input.endDate) : null;
   if (input.summary !== undefined) data.summary = input.summary;
 

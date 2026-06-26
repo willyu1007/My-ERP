@@ -108,12 +108,12 @@ Placement (**F2**): an always-present inline panel at the top of `/finance/daily
 navigation). The **same** component is reused as the S5 intake-prefilled confirm surface — one editor
 for blank-start and intake drafts.
 
-Action set (**F3**): `保存草稿` (create) + `提交` (submit, draft→pending; T-003 auto-creates the
+Action set (**F3**): `暂存` (draft recovery; hardened by T-010) + `提交` (submit, draft→pending; T-003 auto-creates the
 reviewer work item). **Posting is not in the entry surface** — `POST /v1/vouchers/:id/post` enforces
 SoD / single-person二次确认 and belongs to the review queue.
 
 Invariants preserved from the current form and service layer: front-end debit/credit balance in
-integer cents (zero float), leaf + active account only, single-side per line, summary required,
+integer cents (zero float), leaf + active account only, single-side per line, summary required for submit,
 ≥1 line with content, ≥2 lines.
 
 ## New entities (minimum data models)
@@ -282,7 +282,7 @@ DETAIL FETCH:       My-Chat confirm card ──(deepLink, authorized)──▶ E
   generating from `docs/context/api/openapi.yaml`; payloads align with `CreateVoucherDto`.
 - **F2 — fast-entry placement**: an always-present inline panel atop `/finance/daily-accounting`; the
   same `<VoucherFastEntry>` is reused for the S5 intake confirm surface.
-- **F3 — entry action set**: `保存草稿` + `提交` only; posting belongs to the review queue (SoD /
+- **F3 — entry action set**: `暂存` + `提交` only; posting belongs to the review queue (SoD /
   single-person二次确认), not the entry surface.
 - **G1 — high-confidence auto-draft**: on `extracted`, the posting template runs automatically;
   high confidence drafts straight to `pending_confirmation`. Lowest friction, matches α.

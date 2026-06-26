@@ -25,7 +25,7 @@
 - 页面：
   - W1 初版凭证列表；W2c 后 canonical 队列入口为 `daily-accounting/page.tsx` + client（`ListView` + 状态筛选：待处理/待补全/待审核/已过账/已红冲）
   - 凭证详情 `vouchers/[id]/page.tsx`（detail 模板：分录表 + 摘要/状态/合计 card；借贷合计与平衡标识）
-  - 制单 `vouchers/new/page.tsx`（form 模板：多分录、科目选择、借贷金额、**前端借贷平衡校验**、保存草稿）
+  - 制单 `vouchers/new/page.tsx`（historical form 模板：多分录、科目选择、借贷金额、**前端借贷平衡校验**、暂存）
 
 **验收**
 - [ ] 日常账务处理入口、凭证详情、制单在 demo 数据下可用，全部走 `ListView/detail/form` 模板与 token 样式

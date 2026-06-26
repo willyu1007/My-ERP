@@ -56,57 +56,169 @@ interface ParsedLine {
   cashFlowItem?: string | null;
 }
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+interface FastEntryDraftPayload {
+  version: 1;
+  summary?: string;
+  contractId?: string | null;
+  lines?: {
+    accountCode?: string;
+    accountName?: string;
+    summary?: string;
+    debit?: string;
+    credit?: string;
+    cashFlowItem?: string;
+  }[];
+}
 
-function parseHeader(body: unknown): {
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MAX_DRAFT_LINES = 100;
+const MAX_SUMMARY_LEN = 500;
+const MAX_ACCOUNT_CODE_LEN = 64;
+const MAX_ACCOUNT_NAME_LEN = 120;
+const MAX_CASH_FLOW_ITEM_LEN = 64;
+
+function optionalString(value: unknown, field: string, maxLength: number): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== 'string') throw new BadRequestException(`${field} must be a string`);
+  if (value.length > maxLength)
+    throw new BadRequestException(`${field} must be at most ${maxLength} chars`);
+  return value;
+}
+
+function parseDraftPayload(value: unknown): FastEntryDraftPayload | null {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'object' || Array.isArray(value))
+    throw new BadRequestException('draftPayload must be an object');
+  const raw = value as Record<string, unknown>;
+  if (raw.version !== 1) throw new BadRequestException('draftPayload.version must be 1');
+
+  let contractId: string | null | undefined;
+  if (raw.contractId === null || raw.contractId === '') contractId = null;
+  else if (raw.contractId !== undefined) {
+    if (typeof raw.contractId !== 'string' || !UUID_RE.test(raw.contractId))
+      throw new BadRequestException('draftPayload.contractId must be a uuid');
+    contractId = raw.contractId;
+  }
+
+  let lines: FastEntryDraftPayload['lines'];
+  if (raw.lines !== undefined) {
+    if (!Array.isArray(raw.lines))
+      throw new BadRequestException('draftPayload.lines must be an array');
+    if (raw.lines.length > MAX_DRAFT_LINES)
+      throw new BadRequestException(
+        `draftPayload.lines must contain at most ${MAX_DRAFT_LINES} items`,
+      );
+    lines = raw.lines.map((item, index) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item))
+        throw new BadRequestException(`draftPayload.lines[${index}] must be an object`);
+      const line = item as Record<string, unknown>;
+      const debit = optionalString(line.debit, `draftPayload.lines[${index}].debit`, 32);
+      const credit = optionalString(line.credit, `draftPayload.lines[${index}].credit`, 32);
+      parseAmount(debit, `draftPayload.lines[${index}].debit`);
+      parseAmount(credit, `draftPayload.lines[${index}].credit`);
+      if (debit && credit)
+        throw new BadRequestException(
+          `draftPayload.lines[${index}] cannot have both debit and credit`,
+        );
+      const parsedLine: NonNullable<FastEntryDraftPayload['lines']>[number] = {};
+      const accountCode = optionalString(
+        line.accountCode,
+        `draftPayload.lines[${index}].accountCode`,
+        MAX_ACCOUNT_CODE_LEN,
+      );
+      const accountName = optionalString(
+        line.accountName,
+        `draftPayload.lines[${index}].accountName`,
+        MAX_ACCOUNT_NAME_LEN,
+      );
+      const summary = optionalString(
+        line.summary,
+        `draftPayload.lines[${index}].summary`,
+        MAX_SUMMARY_LEN,
+      );
+      const cashFlowItem = optionalString(
+        line.cashFlowItem,
+        `draftPayload.lines[${index}].cashFlowItem`,
+        MAX_CASH_FLOW_ITEM_LEN,
+      );
+      if (accountCode !== undefined) parsedLine.accountCode = accountCode;
+      if (accountName !== undefined) parsedLine.accountName = accountName;
+      if (summary !== undefined) parsedLine.summary = summary;
+      if (debit !== undefined) parsedLine.debit = debit;
+      if (credit !== undefined) parsedLine.credit = credit;
+      if (cashFlowItem !== undefined) parsedLine.cashFlowItem = cashFlowItem;
+      return parsedLine;
+    });
+  }
+
+  const payload: FastEntryDraftPayload = { version: 1 };
+  const summary = optionalString(raw.summary, 'draftPayload.summary', MAX_SUMMARY_LEN);
+  if (summary !== undefined) payload.summary = summary;
+  if (contractId !== undefined) payload.contractId = contractId;
+  if (lines !== undefined) payload.lines = lines;
+  return payload;
+}
+
+export function parseVoucherBody(body: unknown): {
   date: string;
   summary: string;
   rawLines: unknown;
   contractId: string | null;
+  draftPayload: FastEntryDraftPayload | null;
 } {
   const b = (body ?? {}) as Record<string, unknown>;
   const date = assertDate(b.date);
-  if (typeof b.summary !== 'string' || b.summary.trim() === '')
-    throw new BadRequestException('summary is required');
+  const summary = typeof b.summary === 'string' ? b.summary.trim() : '';
   let contractId: string | null = null;
   if (b.contractId != null && b.contractId !== '') {
     if (typeof b.contractId !== 'string' || !UUID_RE.test(b.contractId))
       throw new BadRequestException('contractId must be a uuid');
     contractId = b.contractId;
   }
-  return { date, summary: b.summary.trim(), rawLines: b.lines, contractId };
+  return {
+    date,
+    summary,
+    rawLines: b.lines,
+    contractId,
+    draftPayload: parseDraftPayload(b.draftPayload),
+  };
 }
 
-/** Parse + per-line validate (each line one-sided); compute totals via Money (no float). */
-function parseLines(raw: unknown): {
+/** Parse draft lines. Account-bearing lines become normalized accounting lines. */
+export function parseVoucherLines(raw: unknown): {
   lines: ParsedLine[];
   totalDebit: string;
   totalCredit: string;
 } {
+  if (raw === undefined || raw === null) raw = [];
   if (!Array.isArray(raw)) throw new BadRequestException('lines must be an array');
   let debit = Money.zero();
   let credit = Money.zero();
-  const lines = raw.map((item) => {
+  const lines: ParsedLine[] = [];
+  raw.forEach((item) => {
     const l = (item ?? {}) as Record<string, unknown>;
-    if (typeof l.accountCode !== 'string' || l.accountCode === '')
-      throw new BadRequestException('line accountCode is required');
+    const accountCode = typeof l.accountCode === 'string' ? l.accountCode.trim() : '';
     const d = parseAmount(l.debit, 'debit');
     const c = parseAmount(l.credit, 'credit');
     if (d && c) throw new BadRequestException('a line cannot have both a debit and a credit');
-    if (!d && !c) throw new BadRequestException('a line must have a debit or a credit');
+    if (accountCode === '') return;
     if (d) debit = debit.add(Money.of(d));
     if (c) credit = credit.add(Money.of(c));
     const line: ParsedLine = {
-      accountCode: l.accountCode,
-      summary: typeof l.summary === 'string' ? l.summary : '',
+      accountCode,
+      summary: typeof l.summary === 'string' ? l.summary.trim() : '',
       debit: d,
       credit: c,
     };
     if (typeof l.cashFlowItem === 'string') line.cashFlowItem = l.cashFlowItem;
     if (l.aux !== undefined) line.aux = l.aux;
-    return line;
+    lines.push(line);
   });
   return { lines, totalDebit: debit.toString(), totalCredit: credit.toString() };
+}
+
+export function assertVoucherSummaryForSubmit(summary: string): void {
+  if (summary.trim() === '') throw new BadRequestException('summary is required');
 }
 
 /** Validate every line's account is an active leaf in the ledger; denormalize names. */
@@ -162,8 +274,8 @@ export class VouchersController {
     @CurrentIdentity() identity: Identity,
     @Body() body: unknown,
   ) {
-    const { date, summary, rawLines, contractId } = parseHeader(body);
-    const { lines, totalDebit, totalCredit } = parseLines(rawLines);
+    const { date, summary, rawLines, contractId, draftPayload } = parseVoucherBody(body);
+    const { lines, totalDebit, totalCredit } = parseVoucherLines(rawLines);
     const period = date.slice(0, 7);
     return withLedgerScope(ledgerBookId, async (tx) => {
       const enriched = await enrichLines(tx, lines);
@@ -179,6 +291,7 @@ export class VouchersController {
         totalDebit,
         totalCredit,
         contractId,
+        draftPayload,
         lines: enriched,
       });
       await appendAuditRecordTx(tx, {
@@ -199,8 +312,8 @@ export class VouchersController {
     @Param('id') id: string,
     @Body() body: unknown,
   ) {
-    const { date, summary, rawLines, contractId } = parseHeader(body);
-    const { lines, totalDebit, totalCredit } = parseLines(rawLines);
+    const { date, summary, rawLines, contractId, draftPayload } = parseVoucherBody(body);
+    const { lines, totalDebit, totalCredit } = parseVoucherLines(rawLines);
     return withLedgerScope(ledgerBookId, async (tx) => {
       const existing = await getVoucherTx(tx, id);
       if (!existing) throw new NotFoundException('voucher not found');
@@ -216,6 +329,7 @@ export class VouchersController {
         totalDebit,
         totalCredit,
         contractId,
+        draftPayload,
         lines: enriched,
       });
       return getVoucherTx(tx, id);
@@ -238,9 +352,10 @@ export class VouchersController {
         throw new BadRequestException(`cannot submit a ${voucher.status} voucher`);
       if (await isPeriodClosedTx(tx, voucher.period))
         throw new BadRequestException('会计期间已结账，请先反结账');
+      assertVoucherSummaryForSubmit(voucher.summary);
       const error = voucherBalanceError(voucher.lines);
       if (error) throw new BadRequestException(error);
-      await setVoucherStatusTx(tx, id, { status: 'pending' });
+      await setVoucherStatusTx(tx, id, { status: 'pending', clearDraftPayload: true });
       await appendAuditRecordTx(tx, {
         actorId: identity.userId,
         action: 'SUBMIT_VOUCHER',

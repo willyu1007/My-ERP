@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Section, useToast } from '@my-erp/ui';
+import { Section, Select, useToast } from '@my-erp/ui';
 import type { CashFlowItem, UntaggedCashLine } from '@my-erp/api-client';
 import { formatMoney } from '@/lib/finance/format';
 import { tagCashFlowAction } from './actions';
-import styles from './period-close.module.css';
 
 const CF_GROUPS: readonly { readonly activity: string; readonly label: string }[] = [
   { activity: 'operating', label: '经营活动' },
@@ -39,6 +38,17 @@ export function CashFlowWorklist({
   const [pending, start] = useTransition();
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [picked, setPicked] = useState<Record<string, string>>({});
+  const cashFlowOptions = useMemo(
+    () => [
+      { value: '', label: '请选择' },
+      ...CF_GROUPS.flatMap((g) =>
+        cashFlowItems
+          .filter((i) => i.activity === g.activity)
+          .map((i) => ({ value: i.code, label: `${g.label} · ${i.name}` })),
+      ),
+    ],
+    [cashFlowItems],
+  );
 
   const valueFor = (l: UntaggedCashLine): string =>
     picked[rowKey(l)] ?? defaults[l.accountCode] ?? '';
@@ -61,7 +71,11 @@ export function CashFlowWorklist({
         toast.notify('success', '已打标', `${l.voucherNo} · ${l.accountName}`);
         router.refresh();
       } else if (res.reason === 'unconfigured') {
-        toast.notify('info', '演示模式', '未连接后端（设置 API_BASE_URL / API_DEV_TOKEN 后可打标）');
+        toast.notify(
+          'info',
+          '演示模式',
+          '未连接后端（设置 API_BASE_URL / API_DEV_TOKEN 后可打标）',
+        );
       } else {
         toast.notify('error', '打标失败', res.message);
       }
@@ -100,26 +114,12 @@ export function CashFlowWorklist({
                   <td className="wb-muted">{l.summary}</td>
                   <td className="wb-table__cell--end wb-mono">{amountOf(l)}</td>
                   <td>
-                    <select
-                      className={styles.input}
+                    <Select
                       value={valueFor(l)}
-                      aria-label="现金流量项目"
-                      onChange={(e) => setPicked((p) => ({ ...p, [k]: e.target.value }))}
-                    >
-                      <option value="">（请选择）</option>
-                      {CF_GROUPS.map((g) => {
-                        const items = cashFlowItems.filter((i) => i.activity === g.activity);
-                        return items.length === 0 ? null : (
-                          <optgroup key={g.activity} label={g.label}>
-                            {items.map((i) => (
-                              <option key={i.code} value={i.code}>
-                                {i.name}
-                              </option>
-                            ))}
-                          </optgroup>
-                        );
-                      })}
-                    </select>
+                      ariaLabel="现金流量项目"
+                      options={cashFlowOptions}
+                      onChange={(value) => setPicked((p) => ({ ...p, [k]: value }))}
+                    />
                   </td>
                   <td className="wb-table__cell--end">
                     <button

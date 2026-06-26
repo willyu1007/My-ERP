@@ -62,10 +62,7 @@ function voucherToRow(voucher: VoucherVM): RowModel {
     title: voucher.summary,
     sub: voucher.no,
     note: `来源：${voucher.maker} 制单 · 当前：${VOUCHER_STATUS_LABELS[voucher.status]} · 下游：${nextStep(voucher.status)}`,
-    meta: [
-      { text: formatDate(voucher.date) },
-      { text: `${voucher.attachments} 附件` },
-    ],
+    meta: [{ text: formatDate(voucher.date) }, { text: `${voucher.attachments} 附件` }],
     metrics: [{ label: '金额', value: `${formatMoney(voucher.totalDebit)} CNY` }],
     status: {
       tone: voucherStatusTone(voucher.status) ?? 'muted',
@@ -154,13 +151,13 @@ export function DailyAccountingClient({
     </div>
   );
 
-  // 快速制单 slides a fast-entry panel down from this action; the form stays
+  // 制单 slides a fast-entry panel down from this action; the form stays
   // mounted (collapsed) so in-progress input survives queue switches.
   const actions = (
     <div className={styles.actions}>
       {demo && <span className={styles.demoBadge}>演示数据</span>}
       <ActionButton kind="primary" onClick={() => setEntryOpen((v) => !v)}>
-        {entryOpen ? '收起录入' : '快速制单'}
+        {entryOpen ? '收起录入' : '制单'}
       </ActionButton>
     </div>
   );

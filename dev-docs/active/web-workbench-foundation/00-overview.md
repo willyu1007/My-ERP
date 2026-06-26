@@ -9,7 +9,7 @@ My-ERP 的 `apps/web` 从 P0a 骨架演进为可复用 web workbench。当前 IA
   全面切到真实 `/v1`（凭证/科目/工作台/出纳/合同/报表/期末结账均走后端；本次补完**账簿试算平衡 + 明细账**的
   `/v1` 切换，删除最后一处 fixtures 双轨），角色待办经 **T-003 我的工作台** 提供。fixtures 仅作 demo 模式回退。
 - 注：sidebar 分组在后续迭代改名为 **工作流 / 查询 / 设置**（早期文档写作「财务工作流/财务功能/财务设置」）；
-  顶层「录入凭证」入口指向 `/finance/daily-accounting` 内联快速制单（旧 `/finance/vouchers/new` 演示表单已删）。
+  顶层「录入凭证」入口指向 `/finance/daily-accounting` 内联制单（旧 `/finance/vouchers/new` 演示表单已删）。
 - **W2a–W2d done** —— 科目树 / 账簿（试算平衡 + 明细账，已切 `/v1`）/ 财务入口工作流化均完成并验证（见 04-verification）。在 `main` 上实现（沿用 P0a：不另开分支）。
 - 架构修正（W1）：首页是 **ERP 整体**（模块化平台，财务是第一个模块），财务模块按 `/finance/` 命名空间；凭证二级导航按 **工作流动作**（制单/审核/过账/红冲）组织。
 - W2a：`/finance/accounts` 科目树（多级 + 辅助核算 + 启停）；`AccountVM` 扩展 parentCode/level/auxTypes/active；凭证分录挂末级；制单下拉仅末级且启用。

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { useToast } from '@my-erp/ui';
+import { Select, useToast } from '@my-erp/ui';
 import type { Contract } from '@my-erp/api-client';
 import type { AccountVM } from '@/lib/finance/types';
 import { isCashAccountCode } from '@/lib/finance/account';
@@ -38,6 +38,18 @@ export function PaymentCreateForm({
   const postable = accounts.filter((a) => a.isLeaf && a.active);
   const cashAccounts = postable.filter((a) => isCashAccountCode(a.code));
   const contraAccounts = postable.filter((a) => !isCashAccountCode(a.code));
+  const cashAccountOptions = [
+    { value: '', label: '选择账户' },
+    ...cashAccounts.map((a) => ({ value: a.code, label: `${a.code} ${a.name}` })),
+  ];
+  const contraAccountOptions = [
+    { value: '', label: '选择科目' },
+    ...contraAccounts.map((a) => ({ value: a.code, label: `${a.code} ${a.name}` })),
+  ];
+  const contractOptions = [
+    { value: '', label: '不关联' },
+    ...openContracts.map((c) => ({ value: c.id, label: `${c.code} ${c.title}` })),
+  ];
 
   const amountOk = AMOUNT_RE.test(amount) && Number(amount) > 0;
   const canSubmit =
@@ -65,7 +77,11 @@ export function PaymentCreateForm({
         toast.notify('success', '已创建', res.no ?? '');
         router.push(`/finance/payments/${res.id}`);
       } else if (!res.ok && res.reason === 'unconfigured') {
-        toast.notify('info', '演示模式', '未连接后端（设置 API_BASE_URL / API_DEV_TOKEN 后可创建）');
+        toast.notify(
+          'info',
+          '演示模式',
+          '未连接后端（设置 API_BASE_URL / API_DEV_TOKEN 后可创建）',
+        );
       } else if (!res.ok) {
         toast.notify('error', '创建失败', res.message);
       }
@@ -93,7 +109,12 @@ export function PaymentCreateForm({
       <div className={styles.formGrid}>
         <label className="mt-field">
           <span className="mt-label">日期</span>
-          <input className="mt-input" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <input
+            className="mt-input"
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
         </label>
         <label className="mt-field">
           <span className="mt-label">{direction === 'receipt' ? '付款方' : '收款方'}</span>
@@ -114,32 +135,26 @@ export function PaymentCreateForm({
             onChange={(e) => setAmount(e.target.value)}
           />
         </label>
-        <label className="mt-field">
-          <span className="mt-label">{direction === 'receipt' ? '收款账户' : '付款账户'}（货币资金）</span>
-          <select className="mt-select" value={cashAccountCode} onChange={(e) => setCashAccountCode(e.target.value)}>
-            <option value="">选择账户</option>
-            {cashAccounts.map((a) => (
-              <option key={a.id} value={a.code}>
-                {a.code} {a.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="mt-field">
+        <div className="mt-field">
+          <span className="mt-label">
+            {direction === 'receipt' ? '收款账户' : '付款账户'}（货币资金）
+          </span>
+          <Select
+            value={cashAccountCode}
+            options={cashAccountOptions}
+            onChange={setCashAccountCode}
+            ariaLabel={direction === 'receipt' ? '收款账户' : '付款账户'}
+          />
+        </div>
+        <div className="mt-field">
           <span className="mt-label">对方科目</span>
-          <select
-            className="mt-select"
+          <Select
             value={contraAccountCode}
-            onChange={(e) => setContraAccountCode(e.target.value)}
-          >
-            <option value="">选择科目</option>
-            {contraAccounts.map((a) => (
-              <option key={a.id} value={a.code}>
-                {a.code} {a.name}
-              </option>
-            ))}
-          </select>
-        </label>
+            options={contraAccountOptions}
+            onChange={setContraAccountCode}
+            ariaLabel="对方科目"
+          />
+        </div>
         <label className="mt-field">
           <span className="mt-label">摘要</span>
           <input
@@ -149,17 +164,15 @@ export function PaymentCreateForm({
             onChange={(e) => setSummary(e.target.value)}
           />
         </label>
-        <label className="mt-field">
+        <div className="mt-field">
           <span className="mt-label">关联合同（可选）</span>
-          <select className="mt-select" value={contractId} onChange={(e) => setContractId(e.target.value)}>
-            <option value="">不关联</option>
-            {openContracts.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.code} {c.title}
-              </option>
-            ))}
-          </select>
-        </label>
+          <Select
+            value={contractId}
+            options={contractOptions}
+            onChange={setContractId}
+            ariaLabel="关联合同"
+          />
+        </div>
       </div>
 
       <div className="wb-row">

@@ -86,3 +86,10 @@ tasks:
     feature_id: F-000
     dev_docs_path: dev-docs/active/finance-workbench-kernel-rewire
     updated: 2026-06-22
+  - id: T-010
+    slug: fast-entry-stash-drafts
+    status: done
+    milestone_id: M-000
+    feature_id: F-000
+    dev_docs_path: dev-docs/active/fast-entry-stash-drafts
+    updated: 2026-06-26

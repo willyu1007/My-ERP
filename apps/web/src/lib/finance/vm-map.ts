@@ -103,5 +103,6 @@ export function voucherToVM(v: Voucher): VoucherVM {
     checker: v.checker ?? null,
     attachments: v.attachments ?? 0,
     contractId: v.contractId ?? null,
+    draftPayload: v.draftPayload ?? null,
   };
 }

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-06-17T15:16:27.828Z",
+  "updatedAt": "2026-06-26T05:51:02.211Z",
   "ssot": {
     "mode": "repo-prisma",
     "source": {
@@ -1469,6 +1469,17 @@
           "list": false,
           "dbName": null,
           "dbType": "Date",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "draftPayload",
+          "type": "Json",
+          "nullable": true,
+          "list": false,
+          "dbName": "draft_payload",
+          "dbType": null,
           "default": null,
           "primaryKey": false,
           "unique": false

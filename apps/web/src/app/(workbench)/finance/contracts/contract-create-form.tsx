@@ -2,12 +2,16 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { useToast } from '@my-erp/ui';
+import { Select, useToast } from '@my-erp/ui';
 import { CONTRACT_TYPE } from '@/lib/finance/contract-display';
 import { createContractAction } from './actions';
 import styles from './contracts.module.css';
 
 const AMOUNT_RE = /^\d+(\.\d{1,2})?$/;
+const CONTRACT_TYPE_OPTIONS = Object.entries(CONTRACT_TYPE).map(([value, label]) => ({
+  value,
+  label,
+}));
 
 /** 新建合同 — drafts a Contract (code auto-assigned), then routes to its detail/timeline. */
 export function ContractCreateForm() {
@@ -36,7 +40,11 @@ export function ContractCreateForm() {
         toast.notify('success', '已创建', res.code ?? '');
         router.push(`/finance/contracts/${res.id}`);
       } else if (!res.ok && res.reason === 'unconfigured') {
-        toast.notify('info', '演示模式', '未连接后端（设置 API_BASE_URL / API_DEV_TOKEN 后可创建）');
+        toast.notify(
+          'info',
+          '演示模式',
+          '未连接后端（设置 API_BASE_URL / API_DEV_TOKEN 后可创建）',
+        );
       } else if (!res.ok) {
         toast.notify('error', '创建失败', res.message);
       }
@@ -49,25 +57,30 @@ export function ContractCreateForm() {
       <div className={styles.formGrid}>
         <label className="mt-field">
           <span className="mt-label">合同名称</span>
-          <input className="mt-input" value={title} placeholder="如：年度供货合同" onChange={(e) => setTitle(e.target.value)} />
+          <input
+            className="mt-input"
+            value={title}
+            placeholder="如：年度供货合同"
+            onChange={(e) => setTitle(e.target.value)}
+          />
         </label>
-        <label className="mt-field">
+        <div className="mt-field">
           <span className="mt-label">类型</span>
-          <select
-            className="mt-select"
+          <Select
             value={type}
-            onChange={(e) => setType(e.target.value as typeof type)}
-          >
-            {Object.entries(CONTRACT_TYPE).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
-              </option>
-            ))}
-          </select>
-        </label>
+            options={CONTRACT_TYPE_OPTIONS}
+            onChange={(value) => setType(value as typeof type)}
+            ariaLabel="合同类型"
+          />
+        </div>
         <label className="mt-field">
           <span className="mt-label">对方单位</span>
-          <input className="mt-input" value={counterparty} placeholder="客户 / 供应商" onChange={(e) => setCounterparty(e.target.value)} />
+          <input
+            className="mt-input"
+            value={counterparty}
+            placeholder="客户 / 供应商"
+            onChange={(e) => setCounterparty(e.target.value)}
+          />
         </label>
         <label className="mt-field">
           <span className="mt-label">合同金额（可选）</span>
@@ -81,7 +94,11 @@ export function ContractCreateForm() {
         </label>
         <label className="mt-field">
           <span className="mt-label">摘要</span>
-          <input className="mt-input" value={summary} onChange={(e) => setSummary(e.target.value)} />
+          <input
+            className="mt-input"
+            value={summary}
+            onChange={(e) => setSummary(e.target.value)}
+          />
         </label>
       </div>
       <div className="wb-row">

@@ -1,3 +1,232 @@
+.topbar {
+  position: relative;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.titleGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.titleGroup :global(.wb-card__title) {
+  margin: 0;
+}
+
+.headerAction {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.topActions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.topActions :global(.wb-menu2__pop) {
+  top: calc(100% + 4px);
+}
+
+.topActions :global(.mt-menu) {
+  min-width: 144px;
+  padding: 4px;
+  border-color: var(--border-1);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.08));
+}
+
+.topActions :global(.mt-menu-item) {
+  min-height: 36px;
+  padding: 0 var(--sp-2);
+  border-radius: 6px;
+  color: var(--fg-2);
+  font-size: var(--small-size);
+}
+
+.topActions :global(.mt-menu-item:disabled) {
+  cursor: default;
+  color: var(--fg-3);
+}
+
+.topActions :global(.mt-menu-item:disabled:hover) {
+  background: transparent;
+}
+
+.metaField {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.dateButton {
+  width: 138px;
+  height: 30px;
+  padding: 0 9px;
+  background: #fff;
+  border: 1px solid var(--border-1);
+  border-radius: 6px;
+  color: var(--fg-1);
+  cursor: pointer;
+  font-size: var(--body-size);
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+}
+
+.dateButton:hover {
+  background: var(--bg-hover);
+}
+
+.nativeDateInput {
+  position: absolute;
+  inset: auto auto 0 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.periodText {
+  color: var(--fg-2);
+  font-size: var(--body-size);
+  white-space: nowrap;
+}
+
+.entryMetaRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+.amountStatus {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+.totalPair {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  white-space: nowrap;
+}
+
+.balanceState {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  color: var(--fg-3);
+  font-size: var(--small-size);
+  font-weight: var(--body-weight);
+  white-space: nowrap;
+}
+
+.balanceState_success {
+  color: var(--mt-navy);
+}
+
+.balanceState_danger {
+  color: var(--danger-fg, #c2410c);
+}
+
+.balanceState_muted {
+  color: var(--fg-3);
+}
+
+.balanceStateDot {
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  border-radius: 999px;
+}
+
+.summaryEditor {
+  position: relative;
+  display: flex;
+  flex: 0 0 320px;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.summaryEditor:focus-within {
+  z-index: 70;
+}
+
+.summaryLabel {
+  flex: 0 0 auto;
+  color: var(--fg-2);
+  font-size: var(--small-size);
+  font-weight: var(--body-weight);
+  white-space: nowrap;
+}
+
+.summaryField {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.summaryInput {
+  width: 100%;
+  height: 32px;
+  min-height: 32px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: var(--small-size);
+}
+
+.requiredInput::placeholder {
+  color: var(--danger-fg, #c2410c);
+  opacity: 1;
+}
+
+.summaryPanel {
+  position: absolute;
+  z-index: 70;
+  top: calc(100% + 4px);
+  right: 0;
+  width: min(520px, 48vw);
+  min-height: 112px;
+  background: var(--bg-float);
+  box-shadow: var(--shadow-md);
+  resize: vertical;
+}
+
+.lineSummaryEditor {
+  position: relative;
+}
+
+.lineSummaryEditor:focus-within {
+  z-index: 70;
+}
+
+.formInput {
+  font-weight: var(--medium-weight, 500);
+}
+
+.formInput::placeholder {
+  font-weight: var(--body-weight);
+}
+
+.lineSummaryInput {
+  width: 100%;
+}
+
+.lineSummaryPanel {
+  right: auto;
+  left: 0;
+}
+
 .grid {
   display: flex;
   flex-direction: column;
@@ -7,13 +236,12 @@
 .head,
 .row {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) 52px;
   gap: var(--sp-2);
   align-items: start;
 }
 
 .head {
-  padding: 0 var(--sp-1);
   color: var(--fg-3);
   font-size: var(--caption-size);
 }
@@ -26,33 +254,70 @@
   position: relative;
 }
 
-.menu {
-  position: absolute;
-  z-index: 30;
-  top: calc(100% + 2px);
-  left: 0;
-  right: 0;
-  max-height: 240px;
+.accountPicker {
+  z-index: 80;
   overflow-y: auto;
-  padding: var(--sp-1);
+  padding: var(--sp-2);
   background: var(--bg-float);
   border: 1px solid var(--border-1);
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow: var(--shadow-md);
 }
 
-.option {
+.accountSections {
   display: flex;
-  gap: var(--sp-2);
-  align-items: baseline;
-  padding: var(--sp-1) var(--sp-2);
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: var(--small-size);
-  color: var(--fg-2);
+  flex-direction: column;
+  gap: var(--sp-1);
 }
 
-.optionActive {
+.accountOptions {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--sp-2);
+}
+
+.accountSection {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: var(--sp-2);
+  align-items: start;
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--border-1);
+}
+
+.accountSection:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.accountSectionTitle {
+  margin: 0;
+  padding-top: 4px;
+  color: var(--mt-navy);
+  font-size: var(--small-size);
+  font-weight: var(--body-weight);
+  white-space: nowrap;
+}
+
+.accountOption {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--sp-2);
+  align-items: baseline;
+  min-height: 32px;
+  padding: 4px var(--sp-2);
+  background: var(--bg-float);
+  border: 1px solid var(--border-1);
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--fg-2);
+  font-size: var(--small-size);
+  font-weight: var(--body-weight);
+  text-align: left;
+}
+
+.accountOption:hover,
+.accountOptionActive {
   background: var(--bg-hover);
   color: var(--fg-1);
 }
@@ -72,11 +337,22 @@
   align-self: center;
 }
 
-.totals {
+.actionBar {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: var(--sp-3);
+}
+
+.actionGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.primaryAction {
+  min-height: 34px;
+  padding: 0 var(--sp-3);
 }
 
 /* CF-item tagging row — sits under a non-cash line of a 现金凭证 (D1/D2). */
@@ -91,17 +367,6 @@
   color: var(--fg-3);
   font-size: var(--caption-size);
   white-space: nowrap;
-}
-
-.cfSelect {
-  height: 28px;
-  max-width: 320px;
-  padding: 0 var(--sp-2);
-  background: var(--bg-float);
-  border: 1px solid var(--border-1);
-  border-radius: 6px;
-  color: var(--fg-2);
-  font-size: var(--caption-size);
 }
 
 @media (max-width: 720px) {

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Select } from '@my-erp/ui';
 import { quarterOf, type RangeMode, type ResolvedRange } from '@/lib/finance/report-range';
 import styles from './reports.module.css';
 
@@ -11,6 +12,11 @@ const MODES: readonly { readonly key: RangeMode; readonly label: string }[] = [
   { key: 'year', label: '年' },
   { key: 'custom', label: '自定义' },
 ];
+
+const QUARTER_OPTIONS = [1, 2, 3, 4].map((q) => ({
+  value: String(q),
+  label: `第 ${q} 季度`,
+}));
 
 /**
  * Report period picker (T-006 M3c). Switches the resolved [from, to] window via
@@ -78,16 +84,12 @@ export function ReportRangePicker({ range }: { readonly range: ResolvedRange }) 
               onChange={(e) => setYear(Number(e.target.value))}
               aria-label="年份"
             />
-            <select
-              className={styles.input}
-              value={quarter}
-              onChange={(e) => setQuarter(Number(e.target.value))}
-              aria-label="季度"
-            >
-              {[1, 2, 3, 4].map((q) => (
-                <option key={q} value={q}>{`第 ${q} 季度`}</option>
-              ))}
-            </select>
+            <Select
+              value={String(quarter)}
+              options={QUARTER_OPTIONS}
+              onChange={(value) => setQuarter(Number(value))}
+              ariaLabel="季度"
+            />
           </>
         )}
         {mode === 'year' && (

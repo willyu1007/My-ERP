@@ -31,8 +31,8 @@ function toFailure(err: unknown): ActionFailure {
   return { ok: false, reason, message };
 }
 
-/** Create a draft voucher (draft stays draft). */
-export async function saveDraftAction(input: CreateVoucher): Promise<SaveResult> {
+/** Stash incomplete quick-entry work as a draft voucher (draft stays draft). */
+export async function stashDraftAction(input: CreateVoucher): Promise<SaveResult> {
   try {
     const v = await createVoucher(input);
     return { ok: true, id: v.id, no: v.no, submitted: false };
@@ -74,7 +74,12 @@ export async function confirmAction(id: string, input: CreateVoucher): Promise<S
 }
 
 export type CaptureResult =
-  | { readonly ok: true; readonly intakeId: string; readonly status: string; readonly voucherId: string | null }
+  | {
+      readonly ok: true;
+      readonly intakeId: string;
+      readonly status: string;
+      readonly voucherId: string | null;
+    }
   | ActionFailure;
 
 /** Capture an attachment + run extraction (auto-drafts a voucher when high-confidence). */

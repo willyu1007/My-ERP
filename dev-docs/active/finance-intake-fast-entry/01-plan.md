@@ -63,7 +63,7 @@ Steps:
 - Placement (**F2**): an always-present inline fast-entry panel at the top of
   `/finance/daily-accounting` (zero navigation, no modal). The **same** `<VoucherFastEntry>` is
   reused as the S5 intake-confirm surface.
-- Action set (**F3**): `保存草稿` (create) + `提交` (submit, draft→pending) only. Posting belongs to
+- Action set (**F3**): `暂存` (draft recovery; hardened by T-010) + `提交` (submit, draft→pending) only. Posting belongs to
   the review queue (`/post` enforces SoD / single-person二次确认); the entry surface does not post.
 - Keep the old `/finance/vouchers/new` page and the row drawer as deep links / inspection, not the
   primary path.

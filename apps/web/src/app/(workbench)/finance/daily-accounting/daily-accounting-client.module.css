@@ -24,10 +24,11 @@
   line-height: 1.5;
 }
 
-/* 快速制单 panel — slides down from the action button. Uses the grid-rows
+/* 制单 panel — slides down from the action button. Uses the grid-rows
  * 0fr→1fr trick so it animates to its natural height (no fixed max-height),
  * and stays mounted while collapsed so in-progress input is preserved. */
 .entryPanel {
+  position: relative;
   display: grid;
   grid-template-rows: 0fr;
   margin-bottom: 0;
@@ -36,12 +37,18 @@
     margin-bottom 200ms var(--ease-out, ease);
 }
 .entryPanelOpen {
+  z-index: 20;
   grid-template-rows: 1fr;
   margin-bottom: var(--sp-5, 20px);
 }
 .entryPanelInner {
   overflow: hidden;
   min-height: 0;
+}
+
+.queueScope {
+  position: relative;
+  z-index: 1;
 }
 
 .actions {
