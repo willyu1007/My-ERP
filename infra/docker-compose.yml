@@ -16,10 +16,11 @@ services:
       POSTGRES_USER: myerp
       POSTGRES_PASSWORD: myerp
       POSTGRES_DB: myerp
-    # Host port 5433 (not the default 5432) so My-ERP coexists with other local
-    # Postgres instances on this machine. Container still listens on 5432 internally.
+    # Host port 5433 by default (not 5432) so My-ERP coexists with other local
+    # Postgres instances. Override MY_ERP_POSTGRES_PORT when another local
+    # project already owns 5433. Container still listens on 5432 internally.
     ports:
-      - '5433:5432'
+      - '${MY_ERP_POSTGRES_PORT:-5433}:5432'
     volumes:
       - my-erp-pgdata:/var/lib/postgresql/data
     healthcheck:

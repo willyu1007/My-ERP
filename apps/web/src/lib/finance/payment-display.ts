@@ -1,5 +1,5 @@
 /** Display labels + tones for 出纳收付款 (T-007). Pure (no React). */
-import type { CardTone } from '@my-erp/ui';
+import type { CardTone } from '@my-erp/ui/contracts';
 
 export const PAYMENT_DIRECTION: Record<string, string> = { receipt: '收款', payment: '付款' };
 

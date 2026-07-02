@@ -52,12 +52,23 @@ function mintToken() {
 
 const prisma = new PrismaClient();
 try {
-  await prisma.organization.upsert({ where: { id: ORG }, update: {}, create: { id: ORG, name: 'Dev Org' } });
+  await prisma.organization.upsert({
+    where: { id: ORG },
+    update: {},
+    create: { id: ORG, name: 'Dev Org' },
+  });
   await prisma.ledgerBook.upsert({
     where: { id: LB },
     update: { singlePersonMode: true },
     // single-person mode so the one dev user can post their own vouchers (demo).
-    create: { id: LB, orgId: ORG, name: 'Dev Book', baseCurrency: 'CNY', fiscalYear: 2026, singlePersonMode: true },
+    create: {
+      id: LB,
+      orgId: ORG,
+      name: 'Dev Book',
+      baseCurrency: 'CNY',
+      fiscalYear: 2026,
+      singlePersonMode: true,
+    },
   });
   await prisma.membership.upsert({
     where: { orgId_userId: { orgId: ORG, userId: USER } },

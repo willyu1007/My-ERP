@@ -151,7 +151,7 @@
 
 **遗留 TODO（P4）**
 - 期间筛选（trial-balance/明细账按期间）；总账（汇总账）视图；导出（Excel/PDF，M3 范围）。
-- 前端 W2b 的 data-source 可切到这两个端点（demo→真）。
+- 前端 data-source 后续已收敛为 API 优先路径；fixture 仅作本地只读 fallback。
 
 ## P5 — 期初建账（完成）
 

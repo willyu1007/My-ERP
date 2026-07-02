@@ -25,7 +25,7 @@
 | 全量构建 | `pnpm build` | ✓ 全包 + `next build`；8 路由（`/`·accounts·ledger 静态，vouchers 三页 + health 为 `ƒ` force-dynamic）|
 | 运行时渲染 | `next start` → `curl :3200` | ✓ W1 当时全部 200；`/` ERP 总览（模块卡：财务「已上线」+ 采购/库存/销售/人力「敬请期待」）；凭证队列、`/finance/vouchers/v-003` 详情（价税分离分录 + 借贷平衡）、historical `/finance/vouchers/new` 制单（借贷不平指示 + 暂存禁用）；坏 id → 404。W2c 后凭证队列 canonical 路由为 `/finance/daily-accounting`，`/finance/vouchers` 仅 redirect。 |
 
-要点：领域无关 ↔ 财务语义边界守住（`packages/ui` 零财务词汇；VM/标签/fixtures/data-source 全在 `apps/web/src/lib/finance`）；前端借贷平衡用整数分精确计算（零浮点，镜像 `@my-erp/finance-domain` 的 `isBalanced`，服务层不变式留待 M1 P3）；data-source 为唯一 demo→真切换点（`TODO(P1–P5)` 注释在位）。
+要点：领域无关 ↔ 财务语义边界守住（`packages/ui` 零财务词汇；VM/标签/fixtures/data-source 全在 `apps/web/src/lib/finance`）；前端借贷平衡用整数分精确计算（零浮点，镜像 `@my-erp/finance-domain` 的 `isBalanced`，后续服务层不变式已在 M1 P3 落地）；data-source 后续收敛为 API 优先、fixture fallback 的单一路径。
 
 ### W1 代码自审复核 — 2026-06-10
 
@@ -81,7 +81,7 @@
 | UI governance | `pnpm ui:governance` | ✓ validate OK + guard OK（25 feature files token-only；旧 `VouchersClient` 删除后减少 1 个 feature file）|
 | 公共 UI suite | `node .ai/tests/run.mjs --suite ui` | ✗ 仓库缺 `.ai/skills/features/ui/ui-governance-gate/scripts/ui_gate.py`，suite 在 ui-governance-gate 启动前失败；最新证据 `.ai/.tmp/tests/ui/20260612-022512-74787b`；本轮可用 gate 已由 `pnpm ui:governance` 覆盖 |
 | 路由 | `curl :3200` | ✓ `/`、`/finance/daily-accounting`、`/finance/vouchers/new`、`/finance/vouchers/v-003`、`/finance/ledger`、`/finance/ledger/100201`、`/finance/accounts`、`/finance/settings` 均 200；`/finance/vouchers` 307 → `/finance/daily-accounting` |
-| 视觉 | Browser + Playwright | ✓ 桌面与移动 drawer 只显示「财务工作流 / 财务功能 / 财务设置」；`期末结账` 显示 `待上线`；不再出现「记账凭证 / 会计科目 / 账簿」同级入口 |
+| 视觉 | Browser + Playwright | ✓ 早期验证：桌面与移动 drawer 从资源入口收敛为工作流/查询/设置分组；后续 UI 迭代中 `期末结账` 已上线为 `/finance/period-close` 工作流入口 |
 | 本地服务 | `env ... pnpm dev` | ✓ Web `:3200` 与 API `:8000` 已启动；API `/health` 为 `degraded`（当前未启 `localhost:5433` 开发库） |
 
 要点：本轮只改变 Web 信息架构与 demo 页面表达；后端 API、Prisma schema、财务状态机均未变更。清理复查已删除旧资源列表双轨，金额排序不使用浮点。

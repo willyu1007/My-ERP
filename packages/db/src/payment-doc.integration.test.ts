@@ -59,7 +59,9 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS — payment doc (ledger-scoped)', (
   });
 
   it('creates, lists, and isolates payment docs by ledger', async () => {
-    const created = await withLedgerScope(LB_A, (tx) => createPaymentDocTx(tx, input('收-2026-06-001')));
+    const created = await withLedgerScope(LB_A, (tx) =>
+      createPaymentDocTx(tx, input('收-2026-06-001')),
+    );
     expect(created.status).toBe('draft');
     expect(created.amount).toBe('1000.00');
     expect(created.date).toBe('2026-06-10');
@@ -76,10 +78,16 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS — payment doc (ledger-scoped)', (
   });
 
   it('optimistic update bumps version; a stale version conflicts (null)', async () => {
-    const created = await withLedgerScope(LB_A, (tx) => createPaymentDocTx(tx, input('收-2026-06-002')));
+    const created = await withLedgerScope(LB_A, (tx) =>
+      createPaymentDocTx(tx, input('收-2026-06-002')),
+    );
 
     const approved = await withLedgerScope(LB_A, (tx) =>
-      updatePaymentDocTx(tx, created.id, { expectedVersion: 0, status: 'approved', approver: 'sup-a' }),
+      updatePaymentDocTx(tx, created.id, {
+        expectedVersion: 0,
+        status: 'approved',
+        approver: 'sup-a',
+      }),
     );
     expect(approved?.status).toBe('approved');
     expect(approved?.version).toBe(1);

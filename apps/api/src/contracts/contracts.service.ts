@@ -85,7 +85,11 @@ export class ContractsService {
     });
   }
 
-  async list(identity: Identity, ledgerBookId: string, filters: { status?: string; type?: string }) {
+  async list(
+    identity: Identity,
+    ledgerBookId: string,
+    filters: { status?: string; type?: string },
+  ) {
     return withScope(identity.orgId, ledgerBookId, async (tx) =>
       (await listContractsTx(tx, filters)).map(toDto),
     );

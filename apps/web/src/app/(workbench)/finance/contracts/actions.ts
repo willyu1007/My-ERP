@@ -6,7 +6,11 @@ import { createContract, updateContract } from '@/lib/finance/data-source';
 
 export type ContractActionResult =
   | { readonly ok: true; readonly id?: string; readonly code?: string }
-  | { readonly ok: false; readonly reason: 'unconfigured' | 'conflict' | 'error'; readonly message: string };
+  | {
+      readonly ok: false;
+      readonly reason: 'unconfigured' | 'conflict' | 'error';
+      readonly message: string;
+    };
 
 function toFailure(err: unknown): ContractActionResult {
   const message = err instanceof Error ? err.message : String(err);

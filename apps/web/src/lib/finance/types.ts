@@ -4,7 +4,7 @@
  * data-source from demo fixtures to the real /v1 API (P1–P5) must not change
  * them. Keep this file domain-typed and presentation-agnostic (no React).
  */
-import type { CardTone } from '@my-erp/ui';
+import type { CardTone } from '@my-erp/ui/contracts';
 
 /** 会计科目类别（《小企业会计准则》一级分类）。 */
 export type AccountCategory = 'asset' | 'liability' | 'equity' | 'cost' | 'profitLoss';

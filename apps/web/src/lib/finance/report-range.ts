@@ -25,7 +25,12 @@ export function lastDayOfMonth(year: number, month: number): string {
 
 export function monthRange(period: string): ResolvedRange {
   const [y, m] = period.split('-').map(Number);
-  return { mode: 'month', from: `${period}-01`, to: lastDayOfMonth(y, m), label: `${y} 年 ${m} 月` };
+  return {
+    mode: 'month',
+    from: `${period}-01`,
+    to: lastDayOfMonth(y, m),
+    label: `${y} 年 ${m} 月`,
+  };
 }
 
 export function quarterRange(year: number, quarter: number): ResolvedRange {

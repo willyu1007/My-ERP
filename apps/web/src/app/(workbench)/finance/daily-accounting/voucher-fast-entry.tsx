@@ -7,24 +7,16 @@
  * 暂存 / 提交 (post stays in the review queue, per SoD). Integer-cent math,
  * zero float (借贷必平). Reused as the intake-confirm surface in S5.
  */
-import {
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type ReactNode,
-} from 'react';
-import { createPortal } from 'react-dom';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { IconMore, Menu, Select, useToast } from '@my-erp/ui';
+import { useToast } from '@my-erp/ui/feedback';
+import { IconMore, Menu, Select } from '@my-erp/ui/primitives';
 import type { CashFlowItem, Contract, CreateVoucher } from '@my-erp/api-client';
 import { isCashAccountCode } from '@/lib/finance/account';
 import { centsToString, sumCents, toCents } from '@/lib/finance/money';
 import { formatMoney, formatPeriod } from '@/lib/finance/format';
-import type { AccountCategory, AccountVM } from '@/lib/finance/types';
+import type { AccountVM } from '@/lib/finance/types';
+import { AccountPicker } from '../_components/account-picker';
 import {
   confirmAction,
   stashDraftAction,
@@ -78,22 +70,6 @@ const CF_GROUPS: readonly { readonly activity: string; readonly label: string }[
   { activity: 'investing', label: '投资活动' },
   { activity: 'financing', label: '筹资活动' },
 ];
-
-const ACCOUNT_CATEGORIES: readonly {
-  readonly value: AccountCategory;
-  readonly label: string;
-}[] = [
-  { value: 'asset', label: '资产' },
-  { value: 'liability', label: '负债' },
-  { value: 'equity', label: '权益' },
-  { value: 'cost', label: '成本' },
-  { value: 'profitLoss', label: '损益' },
-];
-
-const PICKER_GAP = 6;
-const PICKER_WIDTH = 820;
-const PICKER_HEIGHT = 360;
-const VIEWPORT_MARGIN = 12;
 
 function SummaryEditor({
   value,
@@ -251,299 +227,6 @@ function LineSummaryEditor({
           }}
         />
       ) : null}
-    </div>
-  );
-}
-
-function AccountPicker({
-  accounts,
-  value,
-  displayName,
-  invalid,
-  registerRef,
-  onSelect,
-  onClear,
-  onEnterEmpty,
-}: {
-  readonly accounts: readonly AccountVM[];
-  readonly value: string;
-  readonly displayName: string;
-  readonly invalid: boolean;
-  readonly registerRef: (el: HTMLInputElement | null) => void;
-  readonly onSelect: (account: AccountVM) => void;
-  readonly onClear: () => void;
-  readonly onEnterEmpty: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const [editing, setEditing] = useState(false);
-  const [active, setActive] = useState(0);
-  const [placement, setPlacement] = useState<'top' | 'bottom'>('bottom');
-  const [popoverStyle, setPopoverStyle] = useState<CSSProperties | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const popoverRef = useRef<HTMLDivElement | null>(null);
-
-  const normalizedQuery = query.trim().toLowerCase();
-  const filteredAccounts = useMemo(() => {
-    if (normalizedQuery === '') return accounts;
-    return accounts.filter(
-      (a) =>
-        a.code.toLowerCase().includes(normalizedQuery) ||
-        a.name.toLowerCase().includes(normalizedQuery),
-    );
-  }, [accounts, normalizedQuery]);
-  const grouped = useMemo(
-    () =>
-      ACCOUNT_CATEGORIES.map((c) => ({
-        ...c,
-        accounts: filteredAccounts.filter((a) => a.category === c.value),
-      })).filter((g) => g.accounts.length > 0),
-    [filteredAccounts],
-  );
-  const flatAccounts = useMemo(() => grouped.flatMap((g) => g.accounts), [grouped]);
-
-  const selectedText = value ? `${value} ${displayName}` : '';
-  const text = editing ? query : selectedText;
-
-  function setInputRef(el: HTMLInputElement | null): void {
-    inputRef.current = el;
-    registerRef(el);
-  }
-
-  function computePosition(): void {
-    const anchor = inputRef.current;
-    if (!anchor) return;
-    const rect = anchor.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const width = Math.min(PICKER_WIDTH, viewportWidth - VIEWPORT_MARGIN * 2);
-    const left = Math.min(
-      Math.max(rect.left, VIEWPORT_MARGIN),
-      viewportWidth - width - VIEWPORT_MARGIN,
-    );
-    const maxHeight = Math.min(PICKER_HEIGHT, viewportHeight - VIEWPORT_MARGIN * 2);
-    const measuredHeight = popoverRef.current?.getBoundingClientRect().height ?? maxHeight;
-    const panelHeight = Math.min(maxHeight, Math.max(1, measuredHeight));
-    const preferredTop =
-      placement === 'bottom' ? rect.bottom + PICKER_GAP : rect.top - panelHeight - PICKER_GAP;
-    const top = Math.min(
-      Math.max(preferredTop, VIEWPORT_MARGIN),
-      viewportHeight - panelHeight - VIEWPORT_MARGIN,
-    );
-
-    setPopoverStyle({
-      position: 'fixed',
-      left,
-      top,
-      width,
-      maxHeight,
-    });
-  }
-
-  function openPicker(): void {
-    const rect = inputRef.current?.getBoundingClientRect();
-    if (rect) {
-      const below = window.innerHeight - rect.bottom - VIEWPORT_MARGIN;
-      const above = rect.top - VIEWPORT_MARGIN;
-      setPlacement(below >= PICKER_HEIGHT || below >= above ? 'bottom' : 'top');
-    }
-    const selectedIndex = flatAccounts.findIndex((a) => a.code === value);
-    setActive(selectedIndex >= 0 ? selectedIndex : 0);
-    setOpen(true);
-  }
-
-  function choose(account: AccountVM): void {
-    onSelect(account);
-    setQuery('');
-    setEditing(false);
-    setOpen(false);
-  }
-
-  function restoreSelected(): void {
-    setQuery('');
-    setEditing(false);
-  }
-
-  function clearSelection({ keepOpen = false }: { readonly keepOpen?: boolean } = {}): void {
-    onClear();
-    setQuery('');
-    setEditing(false);
-    if (keepOpen) {
-      setActive(0);
-      setOpen(true);
-    } else {
-      setOpen(false);
-    }
-  }
-
-  function updateQuery(nextQuery: string): void {
-    if (selectedText) onClear();
-    setQuery(nextQuery);
-    setEditing(true);
-    setActive(0);
-    setOpen(true);
-  }
-
-  function onKeyDown(e: ReactKeyboardEvent<HTMLInputElement>): void {
-    if (!editing && selectedText && e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) {
-      e.preventDefault();
-      updateQuery(e.key);
-    } else if (!editing && selectedText && e.key === 'Backspace') {
-      e.preventDefault();
-      clearSelection({ keepOpen: true });
-    } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-      e.preventDefault();
-      if (!open) openPicker();
-      else setActive((i) => Math.min(i + 1, flatAccounts.length - 1));
-    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-      e.preventDefault();
-      if (!open) openPicker();
-      else setActive((i) => Math.max(i - 1, 0));
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (open && flatAccounts[active]) choose(flatAccounts[active]);
-      else if (open) onEnterEmpty();
-      else openPicker();
-    } else if (e.key === 'Escape') {
-      if (editing) restoreSelected();
-      else setOpen(false);
-    } else if (e.key === 'Tab') {
-      if (editing) restoreSelected();
-      setOpen(false);
-    }
-  }
-
-  useLayoutEffect(() => {
-    if (!open) return;
-    computePosition();
-  }, [open, placement, normalizedQuery, flatAccounts.length, grouped.length]);
-
-  useEffect(() => {
-    setActive(0);
-  }, [normalizedQuery]);
-
-  useEffect(() => {
-    if (!open) restoreSelected();
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent): void => {
-      const target = e.target;
-      if (!(target instanceof Node)) return;
-      if (inputRef.current?.contains(target)) return;
-      if (popoverRef.current?.contains(target)) return;
-      setOpen(false);
-    };
-    const onFrameChange = (): void => computePosition();
-    document.addEventListener('mousedown', onDown);
-    window.addEventListener('resize', onFrameChange);
-    window.addEventListener('scroll', onFrameChange, true);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      window.removeEventListener('resize', onFrameChange);
-      window.removeEventListener('scroll', onFrameChange, true);
-    };
-  }, [open]);
-
-  function onPopoverKeyDown(e: ReactKeyboardEvent<HTMLDivElement>): void {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      setOpen(false);
-      inputRef.current?.focus();
-    } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-      e.preventDefault();
-      setActive((i) => Math.min(i + 1, flatAccounts.length - 1));
-    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-      e.preventDefault();
-      setActive((i) => Math.max(i - 1, 0));
-    } else if (e.key === 'Enter' && flatAccounts[active]) {
-      e.preventDefault();
-      choose(flatAccounts[active]);
-    }
-  }
-
-  return (
-    <div className={styles.combo}>
-      <input
-        ref={setInputRef}
-        className={`mt-input ${styles.formInput}${
-          invalid ? ` mt-input--error ${styles.requiredInput}` : ''
-        }`}
-        value={text}
-        placeholder={invalid ? '请选择科目' : '编码或名称'}
-        role="combobox"
-        aria-invalid={invalid}
-        aria-expanded={open}
-        aria-controls={open ? 'fe-account-picker' : undefined}
-        aria-haspopup="dialog"
-        onChange={(e) => {
-          const nextValue = e.target.value;
-          if (selectedText && nextValue.trim() === '') {
-            clearSelection({ keepOpen: true });
-          } else if (!editing && selectedText && nextValue.startsWith(selectedText)) {
-            updateQuery(nextValue.slice(selectedText.length));
-          } else {
-            updateQuery(nextValue);
-          }
-        }}
-        onClick={openPicker}
-        onFocus={openPicker}
-        onKeyDown={onKeyDown}
-      />
-      {open
-        ? createPortal(
-            <div
-              id="fe-account-picker"
-              ref={popoverRef}
-              className={styles.accountPicker}
-              style={
-                popoverStyle ?? {
-                  position: 'fixed',
-                  top: 0,
-                  left: 0,
-                  width: PICKER_WIDTH,
-                  maxHeight: PICKER_HEIGHT,
-                  visibility: 'hidden',
-                }
-              }
-              role="dialog"
-              aria-label="选择科目"
-              onKeyDown={onPopoverKeyDown}
-            >
-              <div className={styles.accountSections} role="listbox" aria-label="科目">
-                {grouped.length === 0 ? <div className={styles.menuEmpty}>无匹配科目</div> : null}
-                {grouped.map((g) => (
-                  <section key={g.value} className={styles.accountSection}>
-                    <h3 className={styles.accountSectionTitle}>{g.label}</h3>
-                    <div className={styles.accountOptions}>
-                      {g.accounts.map((a) => {
-                        const flatIndex = flatAccounts.findIndex((item) => item.id === a.id);
-                        return (
-                          <button
-                            key={a.id}
-                            type="button"
-                            role="option"
-                            aria-selected={flatIndex === active}
-                            className={`${styles.accountOption}${
-                              flatIndex === active ? ` ${styles.accountOptionActive}` : ''
-                            }`}
-                            onClick={() => choose(a)}
-                            onMouseEnter={() => setActive(flatIndex)}
-                          >
-                            <span className={styles.optionCode}>{a.code}</span>
-                            <span>{a.name}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </section>
-                ))}
-              </div>
-            </div>,
-            document.body,
-          )
-        : null}
     </div>
   );
 }
@@ -824,8 +507,9 @@ export function VoucherFastEntry({
     <div className="mt-card wb-stack wb-stack--md">
       <div className={styles.topbar}>
         <div className={styles.titleGroup}>
-          <h2 className="wb-card__title">{voucherId ? '确认凭证' : '制单'}</h2>
+          {voucherId ? <h2 className="wb-card__title">确认凭证</h2> : null}
           <div className={styles.metaField}>
+            <span className={styles.metaLabel}>凭证日期</span>
             <button
               type="button"
               className={styles.dateButton}
@@ -844,7 +528,13 @@ export function VoucherFastEntry({
               onChange={(e) => setDate(e.target.value)}
             />
           </div>
-          <span className={styles.periodText}>会计期间 {period}</span>
+          <span className={styles.fieldDot} aria-hidden="true" />
+          <div className={styles.periodField}>
+            <span className={styles.metaLabel}>会计期间</span>
+            <span className={styles.periodValue}>{period}</span>
+          </div>
+          <span className={styles.fieldDot} aria-hidden="true" />
+          <SummaryEditor value={summary} invalid={summaryMissing} onChange={setSummary} />
         </div>
         <div className={styles.topActions}>
           <Menu label="更多操作" align="start" trigger={<IconMore size={18} aria-hidden="true" />}>
@@ -871,7 +561,6 @@ export function VoucherFastEntry({
             {balanceState.label}
           </span>
         </div>
-        <SummaryEditor value={summary} invalid={summaryMissing} onChange={setSummary} />
       </div>
 
       <div className={styles.grid}>

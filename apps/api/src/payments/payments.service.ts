@@ -83,12 +83,17 @@ function assertDate(value: string): void {
   if (!DATE_RE.test(value)) throw new BadRequestException('date must be YYYY-MM-DD');
 }
 function normalizeAmount(value: string): string {
-  if (!AMOUNT_RE.test(value ?? '')) throw new BadRequestException('amount must be a positive number (≤2dp)');
+  if (!AMOUNT_RE.test(value ?? ''))
+    throw new BadRequestException('amount must be a positive number (≤2dp)');
   const m = Money.of(value);
   if (m.isZero()) throw new BadRequestException('amount must be greater than zero');
   return m.toString();
 }
-function assertPostable(acct: AccountEntity | undefined, code: string, label: string): AccountEntity {
+function assertPostable(
+  acct: AccountEntity | undefined,
+  code: string,
+  label: string,
+): AccountEntity {
   if (!acct) throw new BadRequestException(`${label}科目不存在：${code}`);
   if (!acct.isLeaf) throw new BadRequestException(`${label}必须是末级科目：${code}`);
   if (!acct.active) throw new BadRequestException(`${label}科目已停用：${code}`);
@@ -115,7 +120,11 @@ export class PaymentsService {
     });
   }
 
-  async list(identity: Identity, ledgerBookId: string, filters: { status?: string; direction?: string }) {
+  async list(
+    identity: Identity,
+    ledgerBookId: string,
+    filters: { status?: string; direction?: string },
+  ) {
     return withScope(identity.orgId, ledgerBookId, async (tx) =>
       (await listPaymentDocsTx(tx, filters)).map(toDto),
     );
@@ -179,10 +188,14 @@ export class PaymentsService {
     return withScope(identity.orgId, ledgerBookId, async (tx) => {
       const doc = await getPaymentDocTx(tx, id);
       if (!doc) throw new NotFoundException('payment doc not found');
-      if (doc.status !== 'draft') throw new BadRequestException(`无法提交 ${doc.status} 状态的单据`);
+      if (doc.status !== 'draft')
+        throw new BadRequestException(`无法提交 ${doc.status} 状态的单据`);
       if (await isPeriodClosedTx(tx, doc.period))
         throw new BadRequestException('会计期间已结账，请先反结账');
-      const updated = await updatePaymentDocTx(tx, id, { expectedVersion, status: 'pending_approval' });
+      const updated = await updatePaymentDocTx(tx, id, {
+        expectedVersion,
+        status: 'pending_approval',
+      });
       if (!updated) throw new ConflictException('单据已变化，请刷新');
       await createPaymentApproveWorkItemTx(tx, {
         orgId: identity.orgId,
@@ -220,7 +233,8 @@ export class PaymentsService {
         actionKey: 'complete',
         workItemType: PAYMENT_APPROVE_WORK_ITEM_TYPE,
       });
-      for (const item of completed) await appendWorkItemOutboxEventTx(tx, item, 'work_item.completed', 'complete');
+      for (const item of completed)
+        await appendWorkItemOutboxEventTx(tx, item, 'work_item.completed', 'complete');
       await createPaymentConfirmWorkItemTx(tx, {
         orgId: identity.orgId,
         ledgerBookId,
@@ -242,7 +256,8 @@ export class PaymentsService {
     return withScope(identity.orgId, ledgerBookId, async (tx) => {
       const doc = await getPaymentDocTx(tx, id);
       if (!doc) throw new NotFoundException('payment doc not found');
-      if (doc.status !== 'approved') throw new BadRequestException(`单据未审批通过（当前 ${doc.status}）`);
+      if (doc.status !== 'approved')
+        throw new BadRequestException(`单据未审批通过（当前 ${doc.status}）`);
       if (await isPeriodClosedTx(tx, doc.period))
         throw new BadRequestException('会计期间已结账，请先反结账');
       const book = await getLedgerBookByIdTx(tx, ledgerBookId);
@@ -304,7 +319,8 @@ export class PaymentsService {
         actionKey: 'complete',
         workItemType: PAYMENT_CONFIRM_WORK_ITEM_TYPE,
       });
-      for (const item of completed) await appendWorkItemOutboxEventTx(tx, item, 'work_item.completed', 'complete');
+      for (const item of completed)
+        await appendWorkItemOutboxEventTx(tx, item, 'work_item.completed', 'complete');
       await this.audit(tx, identity, 'CONFIRM_PAYMENT', id, ledgerBookId, {
         settlementVoucherId: voucher.id,
         voucherNo: no,
@@ -333,7 +349,8 @@ export class PaymentsService {
         actorId: identity.userId,
         actionKey: 'cancel',
       });
-      for (const item of closed) await appendWorkItemOutboxEventTx(tx, item, 'work_item.canceled', 'cancel');
+      for (const item of closed)
+        await appendWorkItemOutboxEventTx(tx, item, 'work_item.canceled', 'cancel');
       await this.audit(tx, identity, 'VOID_PAYMENT', id, ledgerBookId, { reason: reason ?? null });
       return toDto(updated);
     });

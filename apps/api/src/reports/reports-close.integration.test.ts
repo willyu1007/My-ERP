@@ -97,7 +97,11 @@ describe.skipIf(!PG_AVAILABLE)('T-006 close → reports (service integration)', 
           totalCredit: total,
           lines,
         });
-        await setVoucherStatusTx(tx, v.id, { status: 'posted', checker: 'u2', postedAt: new Date() });
+        await setVoucherStatusTx(tx, v.id, {
+          status: 'posted',
+          checker: 'u2',
+          postedAt: new Date(),
+        });
       };
       // 实收资本 50000 (FN-IN-1) · 销售 1000 (OP-IN-1) · 费用 300 (OP-OUT-4) → 净利润 700
       await post(
@@ -105,7 +109,12 @@ describe.skipIf(!PG_AVAILABLE)('T-006 close → reports (service integration)', 
         '2026-03-01',
         [
           line({ accountCode: '1002', accountName: '银行存款', debit: '50000.00' }),
-          line({ accountCode: '4001', accountName: '实收资本', credit: '50000.00', cashFlowItem: 'FN-IN-1' }),
+          line({
+            accountCode: '4001',
+            accountName: '实收资本',
+            credit: '50000.00',
+            cashFlowItem: 'FN-IN-1',
+          }),
         ],
         '50000.00',
         '实收资本注入',
@@ -115,7 +124,12 @@ describe.skipIf(!PG_AVAILABLE)('T-006 close → reports (service integration)', 
         '2026-03-10',
         [
           line({ accountCode: '1002', accountName: '银行存款', debit: '1000.00' }),
-          line({ accountCode: '6001', accountName: '主营业务收入', credit: '1000.00', cashFlowItem: 'OP-IN-1' }),
+          line({
+            accountCode: '6001',
+            accountName: '主营业务收入',
+            credit: '1000.00',
+            cashFlowItem: 'OP-IN-1',
+          }),
         ],
         '1000.00',
         '销售收入',
@@ -124,7 +138,12 @@ describe.skipIf(!PG_AVAILABLE)('T-006 close → reports (service integration)', 
         '记-2026-03-003',
         '2026-03-15',
         [
-          line({ accountCode: '6601', accountName: '销售费用', debit: '300.00', cashFlowItem: 'OP-OUT-4' }),
+          line({
+            accountCode: '6601',
+            accountName: '销售费用',
+            debit: '300.00',
+            cashFlowItem: 'OP-OUT-4',
+          }),
           line({ accountCode: '1002', accountName: '银行存款', credit: '300.00' }),
         ],
         '300.00',

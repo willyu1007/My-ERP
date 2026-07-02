@@ -16,7 +16,11 @@ import {
 
 export type PaymentActionResult =
   | { readonly ok: true; readonly id?: string; readonly no?: string; readonly postedNo?: string }
-  | { readonly ok: false; readonly reason: 'unconfigured' | 'conflict' | 'error'; readonly message: string };
+  | {
+      readonly ok: false;
+      readonly reason: 'unconfigured' | 'conflict' | 'error';
+      readonly message: string;
+    };
 
 function toFailure(err: unknown): PaymentActionResult {
   const message = err instanceof Error ? err.message : String(err);
@@ -37,7 +41,22 @@ export async function createPaymentAction(input: CreatePayment): Promise<Payment
   }
 }
 
-export async function submitPaymentAction(id: string, expectedVersion: number): Promise<PaymentActionResult> {
+export async function createAndSubmitPaymentAction(
+  input: CreatePayment,
+): Promise<PaymentActionResult> {
+  try {
+    const created = await createPayment(input);
+    const submitted = await submitPayment(created.id, created.version);
+    return { ok: true, id: submitted.id, no: submitted.no };
+  } catch (err) {
+    return toFailure(err);
+  }
+}
+
+export async function submitPaymentAction(
+  id: string,
+  expectedVersion: number,
+): Promise<PaymentActionResult> {
   try {
     const p = await submitPayment(id, expectedVersion);
     return { ok: true, no: p.no };
@@ -46,7 +65,10 @@ export async function submitPaymentAction(id: string, expectedVersion: number): 
   }
 }
 
-export async function approvePaymentAction(id: string, expectedVersion: number): Promise<PaymentActionResult> {
+export async function approvePaymentAction(
+  id: string,
+  expectedVersion: number,
+): Promise<PaymentActionResult> {
   try {
     const p = await approvePayment(id, expectedVersion);
     return { ok: true, no: p.no };

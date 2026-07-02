@@ -47,9 +47,17 @@
 }
 
 .stmtMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   color: #555;
   margin: 0 0 8px;
   font-size: var(--caption-size);
+}
+
+.stmtMetaUnit {
+  white-space: nowrap;
 }
 
 .table {
@@ -57,26 +65,199 @@
   border-collapse: collapse;
 }
 
+.balanceSheetTable {
+  table-layout: fixed;
+}
+
 .table th,
 .table td {
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid #ece8df;
   padding: 5px 8px;
   text-align: left;
 }
 
-.table th:last-child,
+.table th.amt,
 .table td.amt {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-.lvl1 .label {
-  padding-left: 24px;
-  color: #333;
+.balanceSheetTable .projectColumn {
+  width: 36%;
 }
 
-.lvl0 td {
+.balanceSheetTable .amt {
+  width: 14%;
+}
+
+.balanceSideHeader {
+  padding: 7px 8px 6px;
+  border-top: 1px solid #666;
+  border-bottom: 1px solid #666;
+  color: #111;
+  font-size: var(--body-size);
+  font-weight: var(--h1-weight);
+  text-align: center;
+}
+
+.balanceRightSideHeader,
+.balanceRightProjectColumn {
+  border-left: 1px solid #666;
+}
+
+.balanceSheetTable .balanceSubsectionRow {
+  color: #111;
   font-weight: var(--h3-weight);
+}
+
+.balanceSheetTable .balanceSubsectionRow.projectColumn {
+  padding-left: 8px;
+}
+
+.balanceSheetTable .balanceDetailRow {
+  color: #333;
+  font-weight: var(--body-weight);
+}
+
+.balanceSheetTable .balanceDetailRow.projectColumn {
+  padding-left: 32px;
+}
+
+.balanceSheetTable .balanceSubtotalRow,
+.balanceSheetTable .balanceGrandTotalRow {
+  color: #111;
+  font-weight: var(--h3-weight);
+}
+
+.balanceSheetTable .balanceSubtotalRow {
+  border-top: 1px solid #666;
+}
+
+.balanceSheetTable .balanceSubtotalRow.projectColumn {
+  padding-left: 8px;
+}
+
+.balanceSheetTable .balanceSubtotalRow.amt,
+.balanceSheetTable .balanceGrandTotalRow.amt {
+  border-top: 2px solid #666;
+}
+
+.balanceSheetTable .balanceGrandTotalRow {
+  border-top: 2px solid #666;
+  border-bottom: 2px solid #666;
+  font-weight: var(--h1-weight);
+}
+
+.balanceBlankRow {
+  color: transparent;
+}
+
+.statutoryTable {
+  table-layout: fixed;
+}
+
+.statutoryTable .projectColumn {
+  width: 64%;
+}
+
+.statutoryTable .lineNoColumn {
+  width: 8%;
+  text-align: center;
+}
+
+.statutoryTable .amt {
+  width: 28%;
+}
+
+.statutoryTable .statutorySectionRow {
+  color: #111;
+  font-weight: var(--h3-weight);
+  border-top: 1px solid #b8b0a3;
+}
+
+.statutoryTable .statutorySectionRow.projectColumn {
+  padding-left: 8px;
+}
+
+.statutoryTable .statutoryPrimaryRow {
+  color: #333;
+  font-weight: var(--body-weight);
+}
+
+.statutoryTable .statutoryPrimaryRow.projectColumn {
+  padding-left: 8px;
+}
+
+.statutoryTable .statutoryDetailRow {
+  color: #333;
+  font-weight: var(--body-weight);
+}
+
+.statutoryTable .statutoryDetailRow.projectColumn {
+  padding-left: 24px;
+}
+
+.statutoryTable .statutorySubdetailRow {
+  color: #555;
+  font-weight: var(--body-weight);
+}
+
+.statutoryTable .statutorySubdetailRow.projectColumn {
+  padding-left: 40px;
+}
+
+.statutoryTable .statutoryCashFlowDetailRow {
+  color: #333;
+  font-weight: var(--body-weight);
+}
+
+.statutoryTable .statutoryCashFlowDetailRow.projectColumn {
+  padding-left: 32px;
+}
+
+.statutoryTable .statutoryCashFlowSubtotalRow {
+  color: #111;
+  border-top: 1px dashed #666;
+  font-weight: var(--h3-weight);
+}
+
+.statutoryTable .statutoryCashFlowSubtotalRow.projectColumn {
+  padding-left: 8px;
+}
+
+.statutoryTable .statutoryCashFlowSubtotalRow.amt {
+  border-top: 1px dashed #666;
+}
+
+.statutoryTable .statutorySubtotalRow,
+.statutoryTable .statutoryGrandTotalRow {
+  color: #111;
+}
+
+.statutoryTable .statutorySubtotalRow {
+  border-top: 1px solid #666;
+  font-weight: var(--h3-weight);
+}
+
+.statutoryTable .statutorySubtotalRow.projectColumn {
+  padding-left: 8px;
+}
+
+.statutoryTable .statutorySubtotalRow.amt,
+.statutoryTable .statutoryGrandTotalRow.amt {
+  border-top: 2px solid #666;
+}
+
+.statutoryTable .statutoryGrandTotalRow {
+  border-top: 2px solid #666;
+  border-bottom: 2px solid #666;
+  font-weight: var(--h1-weight);
+}
+
+.statutoryTable .lineNoColumn {
+  color: #666;
+  font-size: var(--caption-size);
+  font-weight: var(--body-weight);
 }
 
 .notice {

@@ -1,4 +1,4 @@
-import { StatusBadge, Section } from '@my-erp/ui';
+import { Section, StatusBadge } from '@my-erp/ui/primitives';
 
 type Health = { status: string; service: string; time: string };
 

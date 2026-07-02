@@ -5,11 +5,33 @@ describe('buildContractTimeline', () => {
   const input = {
     contract: { code: 'HT-2026-001', createdAt: '2026-06-01T08:00:00.000Z', title: '年度供货合同' },
     vouchers: [
-      { id: 'v1', no: '记-2026-06-002', date: '2026-06-15', summary: '尾款', status: 'posted', amount: '500.00' },
-      { id: 'v2', no: '记-2026-06-001', date: '2026-06-10', summary: '首款', status: 'posted', amount: '1000.00' },
+      {
+        id: 'v1',
+        no: '记-2026-06-002',
+        date: '2026-06-15',
+        summary: '尾款',
+        status: 'posted',
+        amount: '500.00',
+      },
+      {
+        id: 'v2',
+        no: '记-2026-06-001',
+        date: '2026-06-10',
+        summary: '首款',
+        status: 'posted',
+        amount: '1000.00',
+      },
     ],
     payments: [
-      { id: 'p1', no: '收-2026-06-001', date: '2026-06-12', summary: '合同收款', status: 'confirmed', amount: '1000.00', direction: 'receipt' },
+      {
+        id: 'p1',
+        no: '收-2026-06-001',
+        date: '2026-06-12',
+        summary: '合同收款',
+        status: 'confirmed',
+        amount: '1000.00',
+        direction: 'receipt',
+      },
     ],
   };
 

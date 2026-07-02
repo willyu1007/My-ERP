@@ -1,5 +1,5 @@
 /** Display labels + tones for 合同 (T-005). Pure (no React). */
-import type { CardTone } from '@my-erp/ui';
+import type { CardTone } from '@my-erp/ui/contracts';
 
 export const CONTRACT_TYPE: Record<string, string> = {
   sales: '销售',

@@ -2,7 +2,7 @@
 
 import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { useToast } from '@my-erp/ui';
+import { useToast } from '@my-erp/ui/feedback';
 import { setContractStatusAction } from '../actions';
 
 /** draft → 执行中 → 已归档 (simple MVP status; D2 lifecycle deferred). */
@@ -41,12 +41,22 @@ export function ContractStatusActions({
   return (
     <div className="wb-row wb-row--wrap">
       {status === 'draft' && (
-        <button type="button" className="mt-btn mt-btn--primary" disabled={pending} onClick={() => run('启用', 'active')}>
+        <button
+          type="button"
+          className="mt-btn mt-btn--primary"
+          disabled={pending}
+          onClick={() => run('启用', 'active')}
+        >
           启用合同
         </button>
       )}
       {status === 'active' && (
-        <button type="button" className="mt-btn mt-btn--secondary" disabled={pending} onClick={() => run('归档', 'closed')}>
+        <button
+          type="button"
+          className="mt-btn mt-btn--secondary"
+          disabled={pending}
+          onClick={() => run('归档', 'closed')}
+        >
           归档合同
         </button>
       )}

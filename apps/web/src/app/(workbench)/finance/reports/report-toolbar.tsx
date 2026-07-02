@@ -41,7 +41,12 @@ export function ReportToolbar({
       <button type="button" className="mt-btn mt-btn--secondary mt-btn--sm" onClick={exportCsv}>
         导出 Excel
       </button>
-      <a className="mt-btn mt-btn--ghost mt-btn--sm" href={printHref} target="_blank" rel="noopener">
+      <a
+        className="mt-btn mt-btn--ghost mt-btn--sm"
+        href={printHref}
+        target="_blank"
+        rel="noopener"
+      >
         打印 / 导出 PDF
       </a>
     </div>

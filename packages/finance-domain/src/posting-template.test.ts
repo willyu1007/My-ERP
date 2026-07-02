@@ -20,7 +20,11 @@ describe('T-004 posting templates', () => {
   });
 
   it('maps an outflow slip to a bank credit + open contra debit', () => {
-    const built = buildDraftFromExtraction({ docType: 'bank_slip', direction: 'out', amount: '500.00' });
+    const built = buildDraftFromExtraction({
+      docType: 'bank_slip',
+      direction: 'out',
+      amount: '500.00',
+    });
     expect(built?.draft.lines[0]).toMatchObject({ accountCode: '1002', credit: '500.00' });
     expect(built?.draft.lines[1].debit).toBe('500.00');
   });

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Breadcrumb, Section } from '@my-erp/ui';
+import { Breadcrumb, Section } from '@my-erp/ui/primitives';
 import { getAccountLedger } from '@/lib/finance/data-source';
 import { formatMoney } from '@/lib/finance/format';
 

@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { StatusBadge, EntityTable, Scene, Stat, StatStrip } from '@my-erp/ui';
-import type { TableColumn } from '@my-erp/ui';
+import type { TableColumn } from '@my-erp/ui/contracts';
+import { EntityTable } from '@my-erp/ui/list';
+import { Scene, Stat, StatStrip, StatusBadge } from '@my-erp/ui/primitives';
 import {
   ACCOUNT_CATEGORY_LABELS,
   ACCOUNT_DIRECTION_LABELS,

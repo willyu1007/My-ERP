@@ -15,7 +15,8 @@ import type { Identity } from '@my-erp/platform';
 import { DATE_RE } from '../common/parse-date';
 
 function assertDate(value: string | undefined, name: string): string {
-  if (!value || !DATE_RE.test(value)) throw new BadRequestException(`${name} must be a valid YYYY-MM-DD date`);
+  if (!value || !DATE_RE.test(value))
+    throw new BadRequestException(`${name} must be a valid YYYY-MM-DD date`);
   return value;
 }
 function categoryOf(accounts: readonly AccountEntity[]): (code: string) => string {
@@ -79,7 +80,14 @@ export class ReportsService {
         activity: i.activity,
         direction: i.direction,
       }));
-      return cashFlowStatement(await getPostedEntriesTx(tx), items, f, t, await closeVoucherIds(tx));
+      return cashFlowStatement(
+        await getPostedEntriesTx(tx),
+        await getOpeningBalancesTx(tx),
+        items,
+        f,
+        t,
+        await closeVoucherIds(tx),
+      );
     });
   }
 }

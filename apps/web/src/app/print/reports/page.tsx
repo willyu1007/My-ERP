@@ -1,16 +1,15 @@
-import { Fragment } from 'react';
-import type {
-  BalanceSheet,
-  CashFlowStatement,
-  IncomeStatement,
-  ReportLine,
-} from '@my-erp/api-client';
+import type { BalanceSheet, CashFlowStatement, IncomeStatement } from '@my-erp/api-client';
 import {
   getBalanceSheet,
   getCashFlowStatement,
   getIncomeStatement,
 } from '@/lib/finance/data-source';
-import { formatMoney } from '@/lib/finance/format';
+import { BalanceSheetStatement } from '@/components/finance/balance-sheet-statement';
+import { StatutoryStatement } from '@/components/finance/statutory-statement';
+import {
+  buildCashFlowStatementRows,
+  buildIncomeStatementRows,
+} from '@/lib/finance/statutory-statements';
 import { PrintButton } from './print-button';
 import styles from './print.module.css';
 
@@ -19,54 +18,46 @@ export const dynamic = 'force-dynamic';
 const first = (v: string | string[] | undefined): string | undefined =>
   Array.isArray(v) ? v[0] : v;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const cell = (amount: string): string => (amount === '0.00' ? '' : formatMoney(amount));
 
-const ACTIVITY_LABEL: Record<string, string> = {
-  operating: '一、经营活动产生的现金流量',
-  investing: '二、投资活动产生的现金流量',
-  financing: '三、筹资活动产生的现金流量',
+const balanceSheetClasses = {
+  root: styles.stmt,
+  title: styles.stmtTitle,
+  meta: styles.stmtMeta,
+  metaUnit: styles.stmtMetaUnit,
+  table: `${styles.table} ${styles.balanceSheetTable}`,
+  sideHeaderRow: styles.balanceSideHeaderRow,
+  sideHeader: styles.balanceSideHeader,
+  rightSideHeader: styles.balanceRightSideHeader,
+  label: styles.label,
+  projectColumn: styles.projectColumn,
+  rightProjectColumn: styles.balanceRightProjectColumn,
+  amountColumn: styles.amt,
+  subsectionRow: styles.balanceSubsectionRow,
+  detailRow: styles.balanceDetailRow,
+  subtotalRow: styles.balanceSubtotalRow,
+  grandTotalRow: styles.balanceGrandTotalRow,
+  blankRow: styles.balanceBlankRow,
 };
 
-function LineRows({ lines }: { readonly lines: readonly ReportLine[] }) {
-  return (
-    <>
-      {lines.map((l) => (
-        <tr key={l.key} className={l.level === 0 ? styles.lvl0 : styles.lvl1}>
-          <td className={styles.label}>{l.label}</td>
-          <td className={styles.amt}>{cell(l.amount)}</td>
-        </tr>
-      ))}
-    </>
-  );
-}
-
-function Statement({
-  title,
-  meta,
-  headRight,
-  children,
-}: {
-  readonly title: string;
-  readonly meta: string;
-  readonly headRight: string;
-  readonly children: React.ReactNode;
-}) {
-  return (
-    <section className={styles.stmt}>
-      <h2 className={styles.stmtTitle}>{title}</h2>
-      <p className={styles.stmtMeta}>{meta}</p>
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            <th>项目</th>
-            <th>{headRight}</th>
-          </tr>
-        </thead>
-        <tbody>{children}</tbody>
-      </table>
-    </section>
-  );
-}
+const statutoryStatementClasses = {
+  root: styles.stmt,
+  title: styles.stmtTitle,
+  meta: styles.stmtMeta,
+  metaUnit: styles.stmtMetaUnit,
+  table: `${styles.table} ${styles.statutoryTable}`,
+  label: styles.label,
+  projectColumn: styles.projectColumn,
+  lineNoColumn: styles.lineNoColumn,
+  amountColumn: styles.amt,
+  sectionRow: styles.statutorySectionRow,
+  primaryRow: styles.statutoryPrimaryRow,
+  detailRow: styles.statutoryDetailRow,
+  subdetailRow: styles.statutorySubdetailRow,
+  subtotalRow: styles.statutorySubtotalRow,
+  grandTotalRow: styles.statutoryGrandTotalRow,
+  cashFlowDetailRow: styles.statutoryCashFlowDetailRow,
+  cashFlowSubtotalRow: styles.statutoryCashFlowSubtotalRow,
+};
 
 /**
  * Print/PDF view of the statutory statements (T-006 M3d) — the 打印归档 surface.
@@ -114,40 +105,21 @@ export default async function ReportsPrintPage({
       <h1 className={styles.docTitle}>财务报表</h1>
       <p className={styles.docMeta}>{label || `${from} 至 ${to}`}</p>
 
-      <Statement title="资产负债表" meta={`截至 ${bs.asOf}`} headRight="期末余额">
-        <LineRows lines={bs.lines} />
-      </Statement>
+      <BalanceSheetStatement bs={bs} classes={balanceSheetClasses} />
 
-      <Statement title="利润表" meta={`${income.from} 至 ${income.to}`} headRight="本期金额">
-        <LineRows lines={income.lines} />
-      </Statement>
+      <StatutoryStatement
+        title="利润表"
+        meta={`${income.from} 至 ${income.to}`}
+        rows={buildIncomeStatementRows(income)}
+        classes={statutoryStatementClasses}
+      />
 
-      <Statement
+      <StatutoryStatement
         title="现金流量表"
         meta={`${cashflow.from} 至 ${cashflow.to}`}
-        headRight="本期金额"
-      >
-        {cashflow.activities.map((act) => (
-          <Fragment key={act.activity ?? ''}>
-            <tr className={styles.lvl0}>
-              <td className={styles.label}>
-                {ACTIVITY_LABEL[act.activity ?? ''] ?? act.activity}
-              </td>
-              <td className={styles.amt}>{cell(act.subtotal ?? '0.00')}</td>
-            </tr>
-            {(act.lines ?? []).map((l) => (
-              <tr key={`${act.activity}-${l.code}`} className={styles.lvl1}>
-                <td className={styles.label}>{l.name}</td>
-                <td className={styles.amt}>{cell(l.amount ?? '0.00')}</td>
-              </tr>
-            ))}
-          </Fragment>
-        ))}
-        <tr className={styles.lvl0}>
-          <td className={styles.label}>现金及现金等价物净增加额</td>
-          <td className={styles.amt}>{formatMoney(cashflow.netCashFlow)}</td>
-        </tr>
-      </Statement>
+        rows={buildCashFlowStatementRows(cashflow)}
+        classes={statutoryStatementClasses}
+      />
     </div>
   );
 }

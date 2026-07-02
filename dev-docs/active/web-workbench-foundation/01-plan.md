@@ -53,7 +53,7 @@ W1 后 `(workbench)` 外壳与 data-source seam 已就绪；W2 按片填充财�
 
 ### W2c — 财务入口工作流化
 - `/finance/daily-accounting` 成为唯一日常工作流入口；`/finance/vouchers` redirect；凭证详情/录入保留为工作流内部深链。
-- sidebar 只保留「财务工作流 / 财务功能 / 财务设置」；期末结账显示待上线；科目与期初归入 `/finance/settings`。
+- sidebar 后续收敛为「工作流 / 查询 / 设置」；期末结账已作为 `/finance/period-close` 工作流入口上线；科目与期初归入 `/finance/settings`。
 
 ### W2d — 角色工作台 + 待办队列
 - 出纳/主管/管理员/查看者各自「待办/任务」工作台；跨角色任务流转（demo）。

@@ -1,16 +1,95 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Select, useToast } from '@my-erp/ui';
+import { useToast } from '@my-erp/ui/feedback';
 import type { Contract } from '@my-erp/api-client';
 import type { AccountVM } from '@/lib/finance/types';
 import { isCashAccountCode } from '@/lib/finance/account';
 import { PAYMENT_DIRECTION } from '@/lib/finance/payment-display';
-import { createPaymentAction } from './actions';
+import { AccountPicker } from '../_components/account-picker';
+import { ContractPicker } from '../_components/contract-picker';
+import { createAndSubmitPaymentAction, createPaymentAction } from './actions';
 import styles from './payments.module.css';
 
 const AMOUNT_RE = /^\d+(\.\d{1,2})?$/;
+type PersistMode = 'draft' | 'submit';
+
+function PaymentSummaryEditor({
+  value,
+  placeholder,
+  onChange,
+}: {
+  readonly value: string;
+  readonly placeholder: string;
+  readonly onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent): void => {
+      const target = e.target;
+      if (!(target instanceof Node)) return;
+      if (rootRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [open]);
+
+  return (
+    <div
+      ref={rootRef}
+      className={styles.summaryEditor}
+      onBlurCapture={(e) => {
+        const nextTarget = e.relatedTarget;
+        if (nextTarget instanceof Node && rootRef.current?.contains(nextTarget)) return;
+        setOpen(false);
+      }}
+    >
+      <label className={styles.headerLabel} htmlFor="payment-summary">
+        摘要
+      </label>
+      <div className={styles.summaryControl}>
+        <input
+          id="payment-summary"
+          className={`mt-input ${styles.headerInput}`}
+          value={value}
+          placeholder={placeholder}
+          onFocus={() => setOpen(true)}
+          onChange={(e) => {
+            onChange(e.target.value);
+            setOpen(true);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              e.preventDefault();
+              setOpen(false);
+            }
+          }}
+        />
+      </div>
+      {open ? (
+        <textarea
+          className={`mt-input ${styles.summaryPanel}`}
+          tabIndex={-1}
+          value={value}
+          aria-label="摘要详情"
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              e.preventDefault();
+              setOpen(false);
+            }
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}
 
 /** 新建收/付款单 — drafts a PaymentDoc, then routes to its detail for submit/approve/confirm. */
 export function PaymentCreateForm({
@@ -25,6 +104,8 @@ export function PaymentCreateForm({
   const router = useRouter();
   const toast = useToast();
   const [pending, start] = useTransition();
+  const [busyAction, setBusyAction] = useState<PersistMode | null>(null);
+  const dateInputRef = useRef<HTMLInputElement | null>(null);
   const [direction, setDirection] = useState<'receipt' | 'payment'>('receipt');
   const [date, setDate] = useState(initialDate);
   const [counterparty, setCounterparty] = useState('');
@@ -38,84 +119,130 @@ export function PaymentCreateForm({
   const postable = accounts.filter((a) => a.isLeaf && a.active);
   const cashAccounts = postable.filter((a) => isCashAccountCode(a.code));
   const contraAccounts = postable.filter((a) => !isCashAccountCode(a.code));
-  const cashAccountOptions = [
-    { value: '', label: '选择账户' },
-    ...cashAccounts.map((a) => ({ value: a.code, label: `${a.code} ${a.name}` })),
-  ];
-  const contraAccountOptions = [
-    { value: '', label: '选择科目' },
-    ...contraAccounts.map((a) => ({ value: a.code, label: `${a.code} ${a.name}` })),
-  ];
-  const contractOptions = [
-    { value: '', label: '不关联' },
-    ...openContracts.map((c) => ({ value: c.id, label: `${c.code} ${c.title}` })),
-  ];
+  const selectedCashAccount = cashAccounts.find((a) => a.code === cashAccountCode);
+  const selectedContraAccount = contraAccounts.find((a) => a.code === contraAccountCode);
 
   const amountOk = AMOUNT_RE.test(amount) && Number(amount) > 0;
+  const busy = pending || busyAction !== null;
   const canSubmit =
-    !pending &&
+    !busy &&
     amountOk &&
     counterparty.trim() !== '' &&
     summary.trim() !== '' &&
     cashAccountCode !== '' &&
     contraAccountCode !== '' &&
     cashAccountCode !== contraAccountCode;
+  const displayDate = date ? date.replaceAll('-', ' - ') : '选择日期';
 
-  function create(): void {
+  function openDatePicker(): void {
+    dateInputRef.current?.showPicker?.();
+  }
+
+  const summaryPlaceholder = direction === 'receipt' ? '如：收回货款' : '如：支付货款';
+
+  function persist(mode: PersistMode): void {
+    setBusyAction(mode);
     start(async () => {
-      const res = await createPaymentAction({
-        direction,
-        date,
-        counterparty: counterparty.trim(),
-        summary: summary.trim(),
-        amount,
-        cashAccountCode,
-        contraAccountCode,
-        ...(contractId ? { contractId } : {}),
-      });
-      if (res.ok && res.id) {
-        toast.notify('success', '已创建', res.no ?? '');
-        router.push(`/finance/payments/${res.id}`);
-      } else if (!res.ok && res.reason === 'unconfigured') {
-        toast.notify(
-          'info',
-          '演示模式',
-          '未连接后端（设置 API_BASE_URL / API_DEV_TOKEN 后可创建）',
-        );
-      } else if (!res.ok) {
-        toast.notify('error', '创建失败', res.message);
+      try {
+        const input = {
+          direction,
+          date,
+          counterparty: counterparty.trim(),
+          summary: summary.trim(),
+          amount,
+          cashAccountCode,
+          contraAccountCode,
+          ...(contractId ? { contractId } : {}),
+        };
+        const res =
+          mode === 'submit'
+            ? await createAndSubmitPaymentAction(input)
+            : await createPaymentAction(input);
+        if (res.ok && res.id) {
+          toast.notify('success', mode === 'submit' ? '已提交审批' : '已暂存', res.no ?? '');
+          router.push(`/finance/payments/${res.id}`);
+        } else if (!res.ok && res.reason === 'unconfigured') {
+          toast.notify(
+            'info',
+            '演示模式',
+            '未连接后端（设置 API_BASE_URL / API_DEV_TOKEN 后可创建）',
+          );
+        } else if (!res.ok) {
+          toast.notify('error', mode === 'submit' ? '提交失败' : '保存失败', res.message);
+        }
+      } finally {
+        setBusyAction(null);
       }
     });
   }
 
   return (
     <div className="mt-card wb-stack wb-stack--md">
-      <div className="wb-row wb-row--wrap">
-        <h2 className="wb-card__title">新建收付款单</h2>
-        <div className={styles.seg}>
-          {(['receipt', 'payment'] as const).map((d) => (
-            <button
-              key={d}
-              type="button"
-              className={`${styles.segBtn} ${direction === d ? styles.segActive : ''}`}
-              onClick={() => setDirection(d)}
-            >
-              {PAYMENT_DIRECTION[d]}
-            </button>
-          ))}
+      <div className={styles.paymentHeader}>
+        <div className={styles.headerField}>
+          <span className={styles.headerLabel}>类型</span>
+          <div className={styles.seg}>
+            {(['receipt', 'payment'] as const).map((d) => (
+              <button
+                key={d}
+                type="button"
+                className={`${styles.segBtn}${
+                  direction === d
+                    ? ` ${styles.segActive} ${
+                        d === 'receipt' ? styles.segActiveReceipt : styles.segActivePayment
+                      }`
+                    : ''
+                }`}
+                onClick={() => setDirection(d)}
+              >
+                {PAYMENT_DIRECTION[d]}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
-
-      <div className={styles.formGrid}>
-        <label className="mt-field">
-          <span className="mt-label">日期</span>
+        <span className={styles.fieldDot} aria-hidden="true" />
+        <label className={`${styles.headerField} ${styles.amountField}`}>
+          <span className={styles.headerLabel}>金额</span>
           <input
-            className="mt-input"
+            className={`mt-input ${styles.headerInput}${
+              amount !== '' && !amountOk ? ' mt-input--error' : ''
+            }`}
+            inputMode="decimal"
+            value={amount}
+            placeholder="0.00"
+            onChange={(e) => setAmount(e.target.value)}
+          />
+        </label>
+        <span className={styles.fieldDot} aria-hidden="true" />
+        <div className={styles.headerField}>
+          <span className={styles.headerLabel}>业务日期</span>
+          <button
+            type="button"
+            className={styles.dateButton}
+            aria-label={`业务日期 ${displayDate}`}
+            onClick={openDatePicker}
+          >
+            {displayDate}
+          </button>
+          <input
+            ref={dateInputRef}
+            className={styles.nativeDateInput}
+            aria-hidden="true"
+            tabIndex={-1}
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
           />
-        </label>
+        </div>
+        <span className={styles.fieldDot} aria-hidden="true" />
+        <PaymentSummaryEditor
+          value={summary}
+          placeholder={summaryPlaceholder}
+          onChange={setSummary}
+        />
+      </div>
+
+      <div className={styles.formGrid}>
         <label className="mt-field">
           <span className="mt-label">{direction === 'receipt' ? '付款方' : '收款方'}</span>
           <input
@@ -125,64 +252,67 @@ export function PaymentCreateForm({
             onChange={(e) => setCounterparty(e.target.value)}
           />
         </label>
-        <label className="mt-field">
-          <span className="mt-label">金额</span>
-          <input
-            className={`mt-input${amount !== '' && !amountOk ? ' mt-input--error' : ''}`}
-            inputMode="decimal"
-            value={amount}
-            placeholder="0.00"
-            onChange={(e) => setAmount(e.target.value)}
-          />
-        </label>
         <div className="mt-field">
           <span className="mt-label">
             {direction === 'receipt' ? '收款账户' : '付款账户'}（货币资金）
           </span>
-          <Select
+          <AccountPicker
+            accounts={cashAccounts}
             value={cashAccountCode}
-            options={cashAccountOptions}
-            onChange={setCashAccountCode}
+            displayName={selectedCashAccount?.name ?? ''}
+            onSelect={(account) => setCashAccountCode(account.code)}
+            onClear={() => setCashAccountCode('')}
             ariaLabel={direction === 'receipt' ? '收款账户' : '付款账户'}
+            name="cashAccountCode"
+            placeholder="编码或账户名"
+            emptyLabel="无匹配账户"
+            variant="compact"
           />
         </div>
         <div className="mt-field">
           <span className="mt-label">对方科目</span>
-          <Select
+          <AccountPicker
+            accounts={contraAccounts}
             value={contraAccountCode}
-            options={contraAccountOptions}
-            onChange={setContraAccountCode}
+            displayName={selectedContraAccount?.name ?? ''}
+            onSelect={(account) => setContraAccountCode(account.code)}
+            onClear={() => setContraAccountCode('')}
             ariaLabel="对方科目"
+            name="contraAccountCode"
           />
         </div>
-        <label className="mt-field">
-          <span className="mt-label">摘要</span>
-          <input
-            className="mt-input"
-            value={summary}
-            placeholder={direction === 'receipt' ? '如：收回货款' : '如：支付货款'}
-            onChange={(e) => setSummary(e.target.value)}
-          />
-        </label>
         <div className="mt-field">
           <span className="mt-label">关联合同（可选）</span>
-          <Select
+          <ContractPicker
+            contracts={openContracts}
             value={contractId}
-            options={contractOptions}
-            onChange={setContractId}
+            onSelect={(contract) => setContractId(contract.id)}
+            onClear={() => setContractId('')}
             ariaLabel="关联合同"
           />
         </div>
       </div>
 
-      <div className="wb-row">
+      <div className={styles.actionGroup}>
         <button
           type="button"
-          className={`mt-btn mt-btn--primary${canSubmit ? '' : ' mt-btn--disabled'}`}
+          className={`mt-btn mt-btn--secondary ${styles.primaryAction}${
+            canSubmit ? '' : ' mt-btn--disabled'
+          }`}
           disabled={!canSubmit}
-          onClick={create}
+          onClick={() => persist('draft')}
         >
-          {pending ? '创建中…' : '创建草稿'}
+          {busyAction === 'draft' ? '暂存中…' : '暂存'}
+        </button>
+        <button
+          type="button"
+          className={`mt-btn mt-btn--primary ${styles.primaryAction}${
+            canSubmit ? '' : ' mt-btn--disabled'
+          }`}
+          disabled={!canSubmit}
+          onClick={() => persist('submit')}
+        >
+          {busyAction === 'submit' ? '提交中…' : '提交'}
         </button>
       </div>
     </div>

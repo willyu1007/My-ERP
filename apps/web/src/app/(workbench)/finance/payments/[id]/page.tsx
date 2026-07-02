@@ -1,9 +1,13 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Breadcrumb, Section, StatusBadge } from '@my-erp/ui';
+import { Breadcrumb, Section, StatusBadge } from '@my-erp/ui/primitives';
 import { getPayment } from '@/lib/finance/data-source';
 import { formatMoney } from '@/lib/finance/format';
-import { PAYMENT_DIRECTION, PAYMENT_STATUS, paymentStatusTone } from '@/lib/finance/payment-display';
+import {
+  PAYMENT_DIRECTION,
+  PAYMENT_STATUS,
+  paymentStatusTone,
+} from '@/lib/finance/payment-display';
 import { PaymentDetailActions } from './payment-detail-actions';
 import styles from '../payments.module.css';
 
@@ -34,9 +38,7 @@ export default async function PaymentDetailPage({
 
   return (
     <div className="wb-scene wb-stack wb-stack--lg">
-      <Breadcrumb
-        items={[{ label: '出纳收付款', href: '/finance/payments' }, { label: p.no }]}
-      />
+      <Breadcrumb items={[{ label: '出纳收付款', href: '/finance/payments' }, { label: p.no }]} />
 
       <Section title={`${p.no} · ${PAYMENT_DIRECTION[p.direction] ?? ''}`}>
         <div className="wb-row wb-row--wrap">

@@ -1,8 +1,171 @@
+.navActions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.navActions :global(.wb-segmented) {
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.entryPanel {
+  position: relative;
+  display: grid;
+  grid-template-rows: 0fr;
+  margin-bottom: 0;
+  transition:
+    grid-template-rows 200ms var(--ease-out, ease),
+    margin-bottom 200ms var(--ease-out, ease);
+}
+
+.entryPanelOpen {
+  z-index: 20;
+  grid-template-rows: 1fr;
+  margin-bottom: var(--sp-5, 20px);
+}
+
+.entryPanelInner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.queueScope {
+  position: relative;
+  z-index: 1;
+}
+
+.drawerText {
+  margin: var(--sp-2) 0 0;
+  color: var(--fg-2);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.drawerFlow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+  color: var(--fg-2);
+  font-size: var(--small-size);
+  line-height: 1.5;
+}
+
+.paymentHeader {
+  --payment-header-control-block: 32px;
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.headerField {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--payment-header-control-block);
+  min-width: 0;
+}
+
+.headerLabel {
+  flex: 0 0 auto;
+  color: var(--fg-2);
+  font-size: var(--body-size);
+  font-weight: var(--body-weight);
+  white-space: nowrap;
+}
+
+.fieldDot {
+  width: 3px;
+  height: 3px;
+  margin: 0 var(--sp-1);
+  border-radius: 999px;
+  background: var(--fg-3);
+  opacity: 0.38;
+}
+
+.dateButton {
+  width: 138px;
+  height: var(--payment-header-control-block);
+  padding: 0 9px;
+  background: #fff;
+  border: 1px solid var(--border-1);
+  border-radius: 6px;
+  color: var(--fg-1);
+  cursor: pointer;
+  font-size: var(--body-size);
+  font-variant-numeric: tabular-nums;
+  line-height: calc(var(--payment-header-control-block) - 2px);
+  text-align: left;
+}
+
+.dateButton:hover {
+  background: var(--bg-hover);
+}
+
+.nativeDateInput {
+  position: absolute;
+  inset: auto auto 0 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.headerInput {
+  box-sizing: border-box;
+  width: 100%;
+  block-size: var(--payment-header-control-block);
+  min-block-size: var(--payment-header-control-block);
+  padding-block: 0;
+  font-size: var(--small-size);
+  line-height: calc(var(--payment-header-control-block) - 2px);
+}
+
+.summaryEditor {
+  position: relative;
+  display: inline-flex;
+  flex: 0 1 340px;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: min(100%, 280px);
+  max-width: 350px;
+}
+
+.summaryEditor:focus-within {
+  z-index: 70;
+}
+
+.summaryControl {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.summaryPanel {
+  position: absolute;
+  z-index: 70;
+  top: calc(100% + 4px);
+  right: 0;
+  width: min(520px, 48vw);
+  min-height: 112px;
+  background: var(--bg-float);
+  box-shadow: var(--shadow-md);
+  resize: vertical;
+}
+
+.amountField {
+  flex: 0 0 190px;
+}
+
 .seg {
   display: inline-flex;
   padding: 2px;
   gap: 2px;
-  background: var(--bg-sunken, var(--bg-hover));
+  background: var(--bg-float);
   border: 1px solid var(--border-1);
   border-radius: 8px;
 }
@@ -19,42 +182,44 @@
 }
 
 .segActive {
-  background: var(--bg-float);
-  color: var(--fg-1);
-  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.08));
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.segActiveReceipt {
+  background: var(--mt-navy);
+  color: var(--fg-on-navy);
+}
+
+.segActivePayment {
+  background: var(--mt-orange);
+  color: var(--fg-on-orange);
 }
 
 .formGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--sp-3);
+}
+
+.actionGroup {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+  align-self: flex-start;
+  width: fit-content;
+}
+
+.primaryAction {
+  min-height: 34px;
+  padding: 0 var(--sp-3);
 }
 
 @media (max-width: 720px) {
   .formGrid {
     grid-template-columns: 1fr;
   }
-}
-
-.tabs {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
-}
-
-.tab {
-  padding: var(--sp-1) var(--sp-3);
-  border-radius: 6px;
-  font-size: var(--small-size);
-  color: var(--fg-2);
-  text-decoration: none;
-  border: 1px solid var(--border-1);
-}
-
-.tabActive {
-  background: var(--bg-float);
-  color: var(--fg-1);
-  border-color: var(--fg-3);
 }
 
 .detailGrid {

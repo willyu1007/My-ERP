@@ -29,7 +29,11 @@ function sum(lines: readonly { debit?: string; credit?: string }[], k: 'debit' |
 
 describe('结转损益 (buildCloseLossesEntry)', () => {
   it('carries a profit: zeroes P&L into 本年利润 (credit), balanced', () => {
-    const { lines, netProfit } = buildCloseLossesEntry([revenue('1000.00'), expense('6601', '300.00'), asset]);
+    const { lines, netProfit } = buildCloseLossesEntry([
+      revenue('1000.00'),
+      expense('6601', '300.00'),
+      asset,
+    ]);
     expect(netProfit).toBe('700.00');
     expect(lines.find((l) => l.accountCode === '6001')).toMatchObject({ debit: '1000.00' });
     expect(lines.find((l) => l.accountCode === '6601')).toMatchObject({ credit: '300.00' });
@@ -39,7 +43,10 @@ describe('结转损益 (buildCloseLossesEntry)', () => {
   });
 
   it('carries a loss: 本年利润 on the debit side', () => {
-    const { lines, netProfit } = buildCloseLossesEntry([revenue('200.00'), expense('6602', '500.00')]);
+    const { lines, netProfit } = buildCloseLossesEntry([
+      revenue('200.00'),
+      expense('6602', '500.00'),
+    ]);
     expect(netProfit).toBe('-300.00');
     expect(lines.find((l) => l.accountCode === '4103')).toMatchObject({ debit: '300.00' });
     expect(sum(lines, 'debit')).toBeCloseTo(sum(lines, 'credit'));

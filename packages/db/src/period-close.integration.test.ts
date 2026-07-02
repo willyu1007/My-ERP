@@ -48,7 +48,12 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS — period close (ledger-scoped)', 
 
   it('closes a period, isolates it by ledger, and reopens', async () => {
     const closed = await withLedgerScope(LB_A, (tx) =>
-      closePeriodTx(tx, { ledgerBookId: LB_A, period: '2026-06', closeVoucherId: null, closedBy: 'u' }),
+      closePeriodTx(tx, {
+        ledgerBookId: LB_A,
+        period: '2026-06',
+        closeVoucherId: null,
+        closedBy: 'u',
+      }),
     );
     expect(closed.status).toBe('closed');
     expect(await withLedgerScope(LB_A, (tx) => isPeriodClosedTx(tx, '2026-06'))).toBe(true);
@@ -65,7 +70,11 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS — period close (ledger-scoped)', 
   });
 
   it('counts unposted vouchers for close-readiness', async () => {
-    expect(await withLedgerScope(LB_A, (tx) => countUnpostedVouchersInPeriodTx(tx, '2026-07'))).toBe(1);
-    expect(await withLedgerScope(LB_A, (tx) => countUnpostedVouchersInPeriodTx(tx, '2026-08'))).toBe(0);
+    expect(
+      await withLedgerScope(LB_A, (tx) => countUnpostedVouchersInPeriodTx(tx, '2026-07')),
+    ).toBe(1);
+    expect(
+      await withLedgerScope(LB_A, (tx) => countUnpostedVouchersInPeriodTx(tx, '2026-08')),
+    ).toBe(0);
   });
 });

@@ -51,18 +51,9 @@
   z-index: 1;
 }
 
-.actions {
+.navActions {
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-/* 演示数据 chip — quiet, signals fixtures mode (no backend). */
-.demoBadge {
-  font-size: var(--caption-size);
-  color: var(--fg-3);
-  background: var(--mt-sand);
-  padding: 3px 10px;
-  border-radius: 999px;
-  white-space: nowrap;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
 }

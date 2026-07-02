@@ -77,7 +77,9 @@ export class PeriodCloseService {
     const status = existing?.status ?? 'open';
     const unpostedCount = await countUnpostedVouchersInPeriodTx(tx, period);
     const allPosted = await getPostedEntriesTx(tx);
-    const priorActive = [...new Set(allPosted.map((e) => periodOf(e.date)).filter((p) => p < period))];
+    const priorActive = [
+      ...new Set(allPosted.map((e) => periodOf(e.date)).filter((p) => p < period)),
+    ];
     const closedSet = new Set(
       (await listPeriodClosesTx(tx)).filter((x) => x.status === 'closed').map((x) => x.period),
     );
@@ -85,7 +87,8 @@ export class PeriodCloseService {
     const untaggedCashFlowCount = listUntaggedCashFlows(
       allPosted.filter((e) => periodOf(e.date) === period),
     ).length;
-    const canClose = status !== 'closed' && unpostedCount === 0 && unclosedPriorPeriods.length === 0;
+    const canClose =
+      status !== 'closed' && unpostedCount === 0 && unclosedPriorPeriods.length === 0;
     return { period, status, unpostedCount, unclosedPriorPeriods, untaggedCashFlowCount, canClose };
   }
 
@@ -97,7 +100,9 @@ export class PeriodCloseService {
       if (r.unpostedCount > 0)
         throw new BadRequestException(`period has ${r.unpostedCount} unposted voucher(s)`);
       if (r.unclosedPriorPeriods.length > 0)
-        throw new BadRequestException(`close prior periods first: ${r.unclosedPriorPeriods.join(', ')}`);
+        throw new BadRequestException(
+          `close prior periods first: ${r.unclosedPriorPeriods.join(', ')}`,
+        );
 
       // 结转损益: zero the 损益类 accounts' closing-as-of-period-end into 本年利润.
       const entries = (await getPostedEntriesTx(tx)).filter((e) => periodOf(e.date) <= period);
@@ -191,7 +196,10 @@ export class PeriodCloseService {
             period: original.period,
             postedAt: new Date(),
           });
-          await setVoucherStatusTx(tx, original.id, { status: 'reversed', reversedBy: reversal.id });
+          await setVoucherStatusTx(tx, original.id, {
+            status: 'reversed',
+            reversedBy: reversal.id,
+          });
         }
       }
       const reopened = await reopenPeriodTx(tx, { period, reopenedBy: identity.userId });

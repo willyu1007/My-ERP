@@ -63,10 +63,18 @@ export function buildCloseLossesEntry(
     if (net.isZero()) continue;
     if (net.isNegative()) {
       const amount = net.neg();
-      lines.push({ accountCode: r.accountCode, accountName: r.accountName, debit: amount.toFixed(2) });
+      lines.push({
+        accountCode: r.accountCode,
+        accountName: r.accountName,
+        debit: amount.toFixed(2),
+      });
       revenueTotal = revenueTotal.plus(amount);
     } else {
-      lines.push({ accountCode: r.accountCode, accountName: r.accountName, credit: net.toFixed(2) });
+      lines.push({
+        accountCode: r.accountCode,
+        accountName: r.accountName,
+        credit: net.toFixed(2),
+      });
       expenseTotal = expenseTotal.plus(net);
     }
   }
@@ -75,8 +83,16 @@ export function buildCloseLossesEntry(
   if (lines.length > 0 && !netProfit.isZero()) {
     lines.push(
       netProfit.isPositive()
-        ? { accountCode: profitOfYear.code, accountName: profitOfYear.name, credit: netProfit.toFixed(2) }
-        : { accountCode: profitOfYear.code, accountName: profitOfYear.name, debit: netProfit.neg().toFixed(2) },
+        ? {
+            accountCode: profitOfYear.code,
+            accountName: profitOfYear.name,
+            credit: netProfit.toFixed(2),
+          }
+        : {
+            accountCode: profitOfYear.code,
+            accountName: profitOfYear.name,
+            debit: netProfit.neg().toFixed(2),
+          },
     );
   }
 

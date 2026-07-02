@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { IconCheck, IconCopy } from '@willyu1007/web-workbench';
+import { IconCheck, IconCopy } from '@willyu1007/web-workbench/primitives';
 
 export function CopyField({
   value,

@@ -14,7 +14,12 @@ export type CloseFailure = {
 };
 
 export type CloseResult =
-  | { readonly ok: true; readonly period: string; readonly status: string; readonly netProfit?: string }
+  | {
+      readonly ok: true;
+      readonly period: string;
+      readonly status: string;
+      readonly netProfit?: string;
+    }
   | CloseFailure;
 
 function toFailure(err: unknown): CloseFailure {
@@ -43,9 +48,7 @@ export async function reopenPeriodAction(period: string): Promise<CloseResult> {
   }
 }
 
-export type TagResult =
-  | { readonly ok: true; readonly tagged: number }
-  | CloseFailure;
+export type TagResult = { readonly ok: true; readonly tagged: number } | CloseFailure;
 
 /** Post-hoc 打标: set the 现金流量项目 on a posted voucher's non-cash line(s). */
 export async function tagCashFlowAction(input: {

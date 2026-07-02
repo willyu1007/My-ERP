@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Select } from '@my-erp/ui';
+import { Select } from '@my-erp/ui/primitives';
 import { quarterOf, type RangeMode, type ResolvedRange } from '@/lib/finance/report-range';
 import styles from './reports.module.css';
 

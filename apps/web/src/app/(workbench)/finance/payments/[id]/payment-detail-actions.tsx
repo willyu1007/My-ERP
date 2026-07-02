@@ -2,7 +2,7 @@
 
 import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { useToast } from '@my-erp/ui';
+import { useToast } from '@my-erp/ui/feedback';
 import {
   approvePaymentAction,
   confirmPaymentAction,
@@ -50,7 +50,11 @@ export function PaymentDetailActions({
   }
 
   if (status === 'confirmed' || status === 'void') {
-    return <span className="wb-muted">单据已{status === 'confirmed' ? '确认' : '作废'}，无可用操作。</span>;
+    return (
+      <span className="wb-muted">
+        单据已{status === 'confirmed' ? '确认' : '作废'}，无可用操作。
+      </span>
+    );
   }
 
   return (

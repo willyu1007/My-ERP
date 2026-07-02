@@ -4,7 +4,12 @@ import { reportsToCsv, toCsv } from './report-export';
 
 describe('report CSV export', () => {
   it('quotes cells with commas/quotes and joins with CRLF', () => {
-    expect(toCsv([['a', 'b,c'], ['d"e', 'f']])).toBe('a,"b,c"\r\n"d""e",f');
+    expect(
+      toCsv([
+        ['a', 'b,c'],
+        ['d"e', 'f'],
+      ]),
+    ).toBe('a,"b,c"\r\n"d""e",f');
   });
 
   it('leaves plain cells unquoted', () => {
@@ -30,6 +35,8 @@ describe('report CSV export', () => {
       from: '2026-03-01',
       to: '2026-03-31',
       netCashFlow: '50700.00',
+      beginningCash: '0.00',
+      endingCash: '50700.00',
       tied: true,
       activities: [
         {
@@ -43,8 +50,8 @@ describe('report CSV export', () => {
     const csv = reportsToCsv('2026 年 3 月', bs, is, cf);
     expect(csv).toContain('财务报表,2026 年 3 月');
     expect(csv).toContain('资产负债表（截至 2026-03-31）');
-    expect(csv).toContain('营业收入,1000.00');
-    expect(csv).toContain('一、经营活动产生的现金流量,700.00');
-    expect(csv).toContain('现金及现金等价物净增加额,50700.00');
+    expect(csv).toContain('一、营业收入,1,1000.00');
+    expect(csv).toContain('经营活动产生的现金流量净额,7,700.00');
+    expect(csv).toContain('五、期末现金余额,22,50700.00');
   });
 });

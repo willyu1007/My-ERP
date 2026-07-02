@@ -1,0 +1,33 @@
+/* Local guard for web-workbench primary action contrast until the template fix is released. */
+.wb-action--primary,
+.wb-action--primary:hover,
+.wb-action--primary:focus,
+.wb-action--primary:focus-visible,
+.wb-action--primary:active {
+  color: #fff;
+}
+
+/* Scene topbar primary controls share one action-control size.
+   This intentionally targets only action selects and primary scene actions, not form selects. */
+.mt-select--action,
+.wb-scene__bar .wb-action--primary {
+  --wb-action-control-font-size: 13.5px;
+
+  min-height: 36px;
+  padding: 6px 16px;
+  font-size: var(--wb-action-control-font-size);
+  font-weight: var(--h3-weight);
+  line-height: 1.4;
+}
+
+.mt-select--action {
+  width: auto;
+  gap: 6px;
+}
+
+/* Table headers describe the column, so keep them aligned to the column's left edge.
+   Body cells can still use numeric/action alignment classes such as wb-table__cell--end. */
+.wb-table th.wb-table__cell--end,
+.wb-table th.wb-table__cell--center {
+  text-align: left;
+}

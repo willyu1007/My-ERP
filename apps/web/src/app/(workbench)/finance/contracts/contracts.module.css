@@ -1,12 +1,396 @@
+.navActions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.navActions :global(.wb-segmented) {
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.entryPanel {
+  position: relative;
+  display: grid;
+  grid-template-rows: 0fr;
+  margin-bottom: 0;
+  transition:
+    grid-template-rows 200ms var(--ease-out, ease),
+    margin-bottom 200ms var(--ease-out, ease);
+}
+
+.entryPanelOpen {
+  z-index: 20;
+  grid-template-rows: 1fr;
+  margin-bottom: var(--sp-5, 20px);
+}
+
+.entryPanelInner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.queueScope {
+  position: relative;
+  z-index: 1;
+}
+
 .formGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--sp-3);
+}
+
+.sourceField {
+  min-width: 0;
+}
+
+.sourceField :global(.mt-btn) {
+  width: fit-content;
+  min-height: 34px;
+}
+
+.sourceControl {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: fit-content;
+}
+
+.sourceHelp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--border-2);
+  border-radius: 999px;
+  color: var(--fg-3);
+  cursor: help;
+  font-size: var(--caption-size);
+  font-weight: var(--h3-weight);
+  line-height: 1;
+}
+
+.datePickerButton {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 36px;
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-md);
+  padding: 0 var(--sp-3);
+  background: var(--bg-surface);
+  color: var(--fg-1);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--body-size);
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+}
+
+.datePickerButton:hover {
+  border-color: var(--border-3);
+  background: var(--bg-field-quiet);
+}
+
+.datePickerButton:focus-visible {
+  outline: 2px solid var(--mt-navy-300);
+  outline-offset: 2px;
+}
+
+.termsSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding-top: var(--sp-1);
+}
+
+.termTables {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid var(--border-1);
+}
+
+.termTableSection {
+  border-bottom: 1px solid var(--border-1);
+  background: transparent;
+}
+
+.termTableHeader {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--sp-3);
+  min-height: 36px;
+  padding: var(--sp-2) 0;
+}
+
+.termTableToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--fg-2);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--caption-size);
+  font-weight: var(--h3-weight);
+  text-align: left;
+}
+
+.termTableToggle:focus-visible,
+.termInlineAddButton:focus-visible,
+.termRemoveButton:focus-visible {
+  outline: 2px solid var(--mt-navy);
+  outline-offset: 2px;
+}
+
+.termChevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: var(--fg-3);
+  line-height: 1;
+}
+
+.termCount {
+  display: inline;
+  margin-left: auto;
+  color: var(--fg-3);
+  font-size: var(--caption-size);
+  font-weight: var(--body-weight);
+}
+
+.termInlineAddButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-height: 28px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--mt-navy);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--caption-size);
+  font-weight: var(--h3-weight);
+  white-space: nowrap;
+}
+
+.termInlineAddButton:hover {
+  color: var(--fg-1);
+}
+
+.termTableWrap {
+  padding: var(--sp-1) 0 var(--sp-2) calc(18px + var(--sp-2));
+  overflow: visible;
+}
+
+.termTable {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+  font-size: var(--caption-size);
+}
+
+.termTable :global(.wb-table__th) {
+  border-bottom-color: var(--border-1);
+  padding: 0 var(--sp-2) var(--sp-1);
+  color: var(--fg-3);
+  font-size: var(--caption-size);
+  font-weight: var(--body-weight);
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.termTable :global(.wb-table__row) {
+  border-bottom-color: var(--border-1);
+}
+
+.termTable .termCell {
+  padding: var(--sp-1) var(--sp-2);
+  vertical-align: middle;
+}
+
+.termCellInput {
+  width: 100%;
+  min-width: 0;
+  min-height: 28px;
+  border-color: transparent;
+  border-radius: var(--r-sm);
+  background: transparent;
+  box-shadow: none;
+  font-size: var(--small-size);
+  padding: var(--sp-1) var(--sp-2);
+}
+
+.termDateButton {
+  display: inline-flex;
+  align-items: center;
+  color: var(--fg-1);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--small-size);
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+}
+
+.termCellInput:hover {
+  border-color: var(--border-1);
+  background: var(--bg-field-quiet);
+}
+
+.termCellInput:focus {
+  border: 1px solid var(--mt-navy-300);
+  background: var(--bg-surface);
+  box-shadow: 0 0 0 2px var(--mt-navy-100);
+}
+
+.termTextPanelEnd {
+  right: 0;
+  left: auto;
+}
+
+.termMobileLabel {
+  display: none;
+}
+
+.termActionHeader,
+.termActionCell {
+  width: 56px;
+  text-align: center;
+}
+
+.termActionCell {
+  padding: var(--sp-1) var(--sp-2);
+  vertical-align: middle;
+}
+
+.termRemoveButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg-3);
+  cursor: pointer;
+  font-size: var(--body-size);
+  line-height: 1;
+}
+
+.termRemoveButton:hover {
+  border-color: var(--border-1);
+  background: var(--bg-2);
+  color: var(--fg-1);
+}
+
+.actionGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  align-self: flex-start;
+  width: fit-content;
+}
+
+.primaryAction {
+  min-height: 34px;
+  padding: 0 var(--sp-3);
+}
+
+.drawerText {
+  margin: var(--sp-2) 0 0;
+  color: var(--fg-2);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.drawerFlow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+  color: var(--fg-2);
+  font-size: var(--small-size);
+  line-height: 1.5;
 }
 
 @media (max-width: 720px) {
   .formGrid {
     grid-template-columns: 1fr;
+  }
+
+  .termTableHeader {
+    align-items: flex-start;
+  }
+
+  .termTableWrap {
+    padding: var(--sp-2) 0 var(--sp-3) calc(18px + var(--sp-2));
+  }
+
+  .termTable,
+  .termTable thead,
+  .termTable tbody,
+  .termTable tr,
+  .termTable td {
+    display: block;
+  }
+
+  .termTable thead {
+    display: none;
+  }
+
+  .termTable tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .termTable tr {
+    border-top: 1px solid var(--border-1);
+    padding: var(--sp-2) 0;
+    background: transparent;
+  }
+
+  .termTable tr:first-child {
+    border-top: 0;
+  }
+
+  .termCell {
+    display: grid;
+    grid-template-columns: minmax(72px, 0.34fr) minmax(0, 1fr);
+    align-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-1) 0;
+  }
+
+  .termTable .termCell {
+    padding: var(--sp-1) 0;
+  }
+
+  .termMobileLabel {
+    display: block;
+    color: var(--fg-3);
+    font-size: var(--caption-size);
+    line-height: 1.3;
+  }
+
+  .termActionCell {
+    display: flex;
+    justify-content: flex-end;
+    width: auto;
+    padding: var(--sp-1) 0 0;
   }
 }
 
@@ -29,6 +413,8 @@
 .detailVal {
   color: var(--fg-1);
   font-size: var(--small-size);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
 /* Timeline */

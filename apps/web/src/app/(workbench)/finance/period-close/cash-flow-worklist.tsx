@@ -2,7 +2,8 @@
 
 import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Section, Select, useToast } from '@my-erp/ui';
+import { useToast } from '@my-erp/ui/feedback';
+import { Section, Select } from '@my-erp/ui/primitives';
 import type { CashFlowItem, UntaggedCashLine } from '@my-erp/api-client';
 import { formatMoney } from '@/lib/finance/format';
 import { tagCashFlowAction } from './actions';
@@ -71,11 +72,7 @@ export function CashFlowWorklist({
         toast.notify('success', '已打标', `${l.voucherNo} · ${l.accountName}`);
         router.refresh();
       } else if (res.reason === 'unconfigured') {
-        toast.notify(
-          'info',
-          '演示模式',
-          '未连接后端（设置 API_BASE_URL / API_DEV_TOKEN 后可打标）',
-        );
+        toast.notify('info', '暂不可执行', '当前环境未开放打标操作');
       } else {
         toast.notify('error', '打标失败', res.message);
       }
@@ -83,10 +80,7 @@ export function CashFlowWorklist({
   }
 
   return (
-    <Section title={`现金流量打标 · 待处理 ${lines.length}`}>
-      <p className="wb-muted">
-        现金凭证的非现金（对方）分录需指定现金流量项目，否则现金流量表勾稽不平。已过账凭证可在此直接打标。
-      </p>
+    <Section title={`待处理事项 · 现金流量打标 ${lines.length}`}>
       <div className="wb-table-wrap">
         <table className="wb-table">
           <thead>

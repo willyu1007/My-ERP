@@ -1,139 +1,88 @@
-import { StatusBadge } from '@my-erp/ui';
-import type {
-  BalanceSheet,
-  CashFlowStatement,
-  IncomeStatement,
-  ReportLine,
-} from '@my-erp/api-client';
-import { formatMoney } from '@/lib/finance/format';
+import type { BalanceSheet, CashFlowStatement, IncomeStatement } from '@my-erp/api-client';
+import { BalanceSheetStatement } from '@/components/finance/balance-sheet-statement';
+import { StatutoryStatement } from '@/components/finance/statutory-statement';
+import {
+  buildCashFlowStatementRows,
+  buildIncomeStatementRows,
+} from '@/lib/finance/statutory-statements';
 import styles from './reports.module.css';
 
-/** Blank out a zero amount so the statements read like paper registers. */
-const cell = (amount: string): string => (amount === '0.00' ? '' : formatMoney(amount));
-
-const ACTIVITY_LABEL: Record<string, string> = {
-  operating: '一、经营活动产生的现金流量',
-  investing: '二、投资活动产生的现金流量',
-  financing: '三、筹资活动产生的现金流量',
+const balanceSheetClasses = {
+  root: styles.statement,
+  title: styles.statementTitle,
+  meta: styles.statementMeta,
+  metaUnit: styles.statementMetaUnit,
+  table: `wb-table ${styles.statementTable} ${styles.balanceSheetTable}`,
+  row: 'wb-table__row',
+  sideHeaderRow: styles.balanceSideHeaderRow,
+  sideHeader: styles.balanceSideHeader,
+  rightSideHeader: styles.balanceRightSideHeader,
+  headerCell: 'wb-table__th',
+  label: styles.label,
+  projectColumn: styles.projectColumn,
+  rightProjectColumn: styles.balanceRightProjectColumn,
+  amountHeaderColumn: `wb-table__cell--end ${styles.amountColumn}`,
+  amountColumn: `wb-table__cell--end wb-mono ${styles.amountColumn}`,
+  subsectionRow: styles.balanceSubsectionRow,
+  detailRow: styles.balanceDetailRow,
+  subtotalRow: styles.balanceSubtotalRow,
+  grandTotalRow: styles.balanceGrandTotalRow,
+  blankRow: styles.balanceBlankRow,
 };
 
-function LineRows({ lines }: { readonly lines: readonly ReportLine[] }) {
-  return (
-    <>
-      {lines.map((l) => (
-        <tr key={l.key} className={`wb-table__row ${l.level === 0 ? styles.lvl0 : styles.lvl1}`}>
-          <td className={styles.label}>{l.label}</td>
-          <td className="wb-table__cell--end wb-mono">{cell(l.amount)}</td>
-        </tr>
-      ))}
-    </>
-  );
-}
+const statutoryStatementClasses = {
+  root: styles.statement,
+  title: styles.statementTitle,
+  meta: styles.statementMeta,
+  metaUnit: styles.statementMetaUnit,
+  table: `wb-table ${styles.statementTable} ${styles.statutoryTable}`,
+  row: 'wb-table__row',
+  headerCell: 'wb-table__th',
+  label: styles.label,
+  projectColumn: styles.projectColumn,
+  lineNoColumn: styles.lineNoColumn,
+  amountHeaderColumn: `wb-table__cell--end ${styles.amountColumn}`,
+  amountColumn: `wb-table__cell--end wb-mono ${styles.amountColumn}`,
+  sectionRow: styles.statutorySectionRow,
+  primaryRow: styles.statutoryPrimaryRow,
+  detailRow: styles.statutoryDetailRow,
+  subdetailRow: styles.statutorySubdetailRow,
+  subtotalRow: styles.statutorySubtotalRow,
+  grandTotalRow: styles.statutoryGrandTotalRow,
+  cashFlowDetailRow: styles.statutoryCashFlowDetailRow,
+  cashFlowSubtotalRow: styles.statutoryCashFlowSubtotalRow,
+};
 
 export function BalanceSheetView({ bs }: { readonly bs: BalanceSheet }) {
   return (
-    <div className="wb-stack wb-stack--sm">
-      <div className="wb-row wb-row--wrap">
-        <StatusBadge
-          tone={bs.balanced ? 'success' : 'danger'}
-          dot
-          label={`资产 = 负债 + 所有者权益 ${bs.balanced ? '平衡' : '不平'}`}
-        />
-        <span className="wb-muted">截至 {bs.asOf}</span>
-      </div>
-      <div className="wb-table-wrap">
-        <table className="wb-table">
-          <thead>
-            <tr>
-              <th className="wb-table__th">项目</th>
-              <th className="wb-table__th wb-table__cell--end">期末余额</th>
-            </tr>
-          </thead>
-          <tbody>
-            <LineRows lines={bs.lines} />
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <BalanceSheetStatement
+      bs={bs}
+      classes={balanceSheetClasses}
+      tableWrapClassName="wb-table-wrap"
+    />
   );
 }
 
 export function IncomeStatementView({ is }: { readonly is: IncomeStatement }) {
   return (
-    <div className="wb-stack wb-stack--sm">
-      <div className="wb-row wb-row--wrap">
-        <StatusBadge tone="info" dot label={`净利润 ${formatMoney(is.netProfit)}`} />
-        <span className="wb-muted">
-          {is.from} 至 {is.to}
-        </span>
-      </div>
-      <div className="wb-table-wrap">
-        <table className="wb-table">
-          <thead>
-            <tr>
-              <th className="wb-table__th">项目</th>
-              <th className="wb-table__th wb-table__cell--end">本期金额</th>
-            </tr>
-          </thead>
-          <tbody>
-            <LineRows lines={is.lines} />
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <StatutoryStatement
+      title="利润表"
+      meta={`${is.from} 至 ${is.to}`}
+      rows={buildIncomeStatementRows(is)}
+      classes={statutoryStatementClasses}
+      tableWrapClassName="wb-table-wrap"
+    />
   );
 }
 
 export function CashFlowView({ cf }: { readonly cf: CashFlowStatement }) {
   return (
-    <div className="wb-stack wb-stack--sm">
-      <div className="wb-row wb-row--wrap">
-        <StatusBadge
-          tone={cf.tied ? 'success' : 'danger'}
-          dot
-          label={`勾稽 ${cf.tied ? '平衡' : '不平'}`}
-        />
-        <StatusBadge tone="info" dot label={`现金净增加额 ${formatMoney(cf.netCashFlow)}`} />
-        <span className="wb-muted">
-          {cf.from} 至 {cf.to}
-        </span>
-      </div>
-      <div className="wb-table-wrap">
-        <table className="wb-table">
-          <thead>
-            <tr>
-              <th className="wb-table__th">项目</th>
-              <th className="wb-table__th wb-table__cell--end">本期金额</th>
-            </tr>
-          </thead>
-          <tbody>
-            {cf.activities.map((act) => (
-              <ActivityRows key={act.activity ?? ''} act={act} />
-            ))}
-            <tr className={`wb-table__row ${styles.total}`}>
-              <td>现金及现金等价物净增加额</td>
-              <td className="wb-table__cell--end wb-mono">{formatMoney(cf.netCashFlow)}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function ActivityRows({ act }: { readonly act: CashFlowStatement['activities'][number] }) {
-  return (
-    <>
-      <tr className={`wb-table__row ${styles.lvl0}`}>
-        <td className={styles.label}>{ACTIVITY_LABEL[act.activity ?? ''] ?? act.activity}</td>
-        <td className="wb-table__cell--end wb-mono">{cell(act.subtotal ?? '0.00')}</td>
-      </tr>
-      {(act.lines ?? []).map((l) => (
-        <tr key={l.code} className={`wb-table__row ${styles.lvl1}`}>
-          <td className={styles.label}>{l.name}</td>
-          <td className="wb-table__cell--end wb-mono">{cell(l.amount ?? '0.00')}</td>
-        </tr>
-      ))}
-    </>
+    <StatutoryStatement
+      title="现金流量表"
+      meta={`${cf.from} 至 ${cf.to}`}
+      rows={buildCashFlowStatementRows(cf)}
+      classes={statutoryStatementClasses}
+      tableWrapClassName="wb-table-wrap"
+    />
   );
 }

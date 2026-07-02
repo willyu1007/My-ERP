@@ -9,7 +9,8 @@
  */
 'use client';
 
-import { SettingsFrame, useToast, type SettingsSchema, type SettingsValues } from '@my-erp/ui';
+import { useToast } from '@my-erp/ui/feedback';
+import { SettingsFrame, type SettingsSchema, type SettingsValues } from '@my-erp/ui/settings';
 
 const SCHEMA: SettingsSchema = {
   sections: [

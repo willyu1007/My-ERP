@@ -86,6 +86,7 @@ export function buildDraftFromExtraction(x: PostingExtraction): BuiltDraft | nul
   if (!template) return null;
   const draft = template.build(x);
   const complete =
-    draft.lines.length >= 2 && draft.lines.every((l) => l.accountCode != null && l.accountCode !== '');
+    draft.lines.length >= 2 &&
+    draft.lines.every((l) => l.accountCode != null && l.accountCode !== '');
   return { templateKey: template.key, draft, complete };
 }

@@ -98,7 +98,13 @@ export class PaymentsController {
     const confirmSinglePerson = Boolean(
       (body as Record<string, unknown> | null)?.confirmSinglePerson,
     );
-    return this.service.confirm(identity, ledgerBookId, id, expectedVersion(body), confirmSinglePerson);
+    return this.service.confirm(
+      identity,
+      ledgerBookId,
+      id,
+      expectedVersion(body),
+      confirmSinglePerson,
+    );
   }
 
   @Post(':id/void')

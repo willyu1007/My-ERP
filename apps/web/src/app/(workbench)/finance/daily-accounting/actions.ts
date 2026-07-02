@@ -10,7 +10,6 @@ import type { CaptureIntake, CreateVoucher } from '@my-erp/api-client';
 import {
   captureIntake,
   createVoucher,
-  extractIntake,
   submitVoucher,
   updateVoucher,
 } from '@/lib/finance/data-source';
@@ -82,16 +81,15 @@ export type CaptureResult =
     }
   | ActionFailure;
 
-/** Capture an attachment + run extraction (auto-drafts a voucher when high-confidence). */
+/** Capture an attachment for ticket processing. Recognition is an explicit follow-up action. */
 export async function captureAction(input: CaptureIntake): Promise<CaptureResult> {
   try {
     const received = await captureIntake(input);
-    const extracted = await extractIntake(received.id);
     return {
       ok: true,
-      intakeId: extracted.id,
-      status: extracted.status,
-      voucherId: extracted.targetId ?? null,
+      intakeId: received.id,
+      status: received.status,
+      voucherId: received.targetId ?? null,
     };
   } catch (err) {
     return toFailure(err);

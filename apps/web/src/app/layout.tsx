@@ -1,4 +1,5 @@
 import '@willyu1007/web-workbench/styles';
+import './workbench-overrides.css';
 import type { ReactNode } from 'react';
 
 export const metadata = {

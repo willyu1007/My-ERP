@@ -14,7 +14,7 @@ My-ERP 的 `apps/web` 从 P0a 骨架演进为可复用 web workbench。当前 IA
 - 架构修正（W1）：首页是 **ERP 整体**（模块化平台，财务是第一个模块），财务模块按 `/finance/` 命名空间；凭证二级导航按 **工作流动作**（制单/审核/过账/红冲）组织。
 - W2a：`/finance/accounts` 科目树（多级 + 辅助核算 + 启停）；`AccountVM` 扩展 parentCode/level/auxTypes/active；凭证分录挂末级；制单下拉仅末级且启用。
 - W2b：`/finance/ledger` 试算平衡表（期初/本期/期末三栏借贷平衡校验）+ `/finance/ledger/[code]` 科目明细账（运行余额、凭证号回链）；纯函数 `lib/finance/ledger.ts`（整数分、无浮点）经 data-source seam 暴露 `getTrialBalance`/`getAccountLedger`；加期初余额 fixture（借贷平衡）+ 5 项 `ledger.test.ts`。
-- W2c：sidebar 从资源入口改为「财务工作流 / 财务功能 / 财务设置」；`/finance/daily-accounting` 成为日常账务处理唯一入口，凭证/科目/账簿保留为内部深链或功能/设置视图；旧凭证列表组件已删除，金额排序继续走整数分。
+- W2c：sidebar 从资源入口改为后续收敛后的「工作流 / 查询 / 设置」；`/finance/daily-accounting` 成为日常账务处理唯一入口，`/finance/period-close` 已作为期末结账工作流入口上线，凭证/科目/账簿保留为内部深链或查询/设置视图；旧凭证列表组件已删除，金额排序继续走整数分。
 - Next：W2d —— 角色待办深化（出纳/主管/管理员/查看者）+ 随 M1 P1–P5 把 `data-source` 从 fixtures 切到真实 `/v1`。
 
 ## Goal

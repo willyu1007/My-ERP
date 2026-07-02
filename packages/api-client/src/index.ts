@@ -99,8 +99,8 @@ export interface ApiClient {
   submitVoucher(id: string): Promise<Voucher>;
   postVoucher(id: string, body?: { confirmSinglePerson?: boolean }): Promise<Voucher>;
   listAccounts(): Promise<Account[]>;
-  trialBalance(): Promise<TrialBalance>;
-  accountLedger(code: string): Promise<AccountLedger>;
+  trialBalance(params?: { period?: string }): Promise<TrialBalance>;
+  accountLedger(code: string, params?: { period?: string }): Promise<AccountLedger>;
   listIntakes(params?: { status?: string }): Promise<Intake[]>;
   getIntake(id: string): Promise<Intake>;
   captureIntake(body: CaptureIntake): Promise<Intake>;
@@ -138,7 +138,10 @@ export interface ApiClient {
     body: WorkItemActionRequest,
   ): Promise<WorkItemActionResult>;
   // Cashier payments (T-007).
-  listPayments(params?: { status?: PaymentStatus; direction?: PaymentDirection }): Promise<PaymentDoc[]>;
+  listPayments(params?: {
+    status?: PaymentStatus;
+    direction?: PaymentDirection;
+  }): Promise<PaymentDoc[]>;
   getPayment(id: string): Promise<PaymentDoc>;
   createPayment(body: CreatePayment): Promise<PaymentDoc>;
   submitPayment(id: string, expectedVersion: number): Promise<PaymentDoc>;
@@ -178,12 +181,18 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
     return (await res.json()) as T;
   }
 
+  function qs(params?: Record<string, string | undefined>): string {
+    const search = new URLSearchParams();
+    for (const [key, value] of Object.entries(params ?? {})) {
+      if (value) search.set(key, value);
+    }
+    const query = search.toString();
+    return query ? `?${query}` : '';
+  }
+
   return {
     listVouchers: (params) =>
-      request<Voucher[]>(
-        'GET',
-        `/v1/vouchers${params?.status ? `?status=${params.status}` : ''}`,
-      ),
+      request<Voucher[]>('GET', `/v1/vouchers${params?.status ? `?status=${params.status}` : ''}`),
     getVoucher: (id) => request<Voucher>('GET', `/v1/vouchers/${encodeURIComponent(id)}`),
     createVoucher: (body) => request<Voucher>('POST', '/v1/vouchers', body),
     updateVoucher: (id, body) =>
@@ -193,18 +202,16 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
     postVoucher: (id, body) =>
       request<Voucher>('POST', `/v1/vouchers/${encodeURIComponent(id)}/post`, body ?? {}),
     listAccounts: () => request<Account[]>('GET', '/v1/accounts'),
-    trialBalance: () => request<TrialBalance>('GET', '/v1/ledger/trial-balance'),
-    accountLedger: (code) =>
-      request<AccountLedger>('GET', `/v1/ledger/accounts/${encodeURIComponent(code)}`),
+    trialBalance: (params) => request<TrialBalance>('GET', `/v1/ledger/trial-balance${qs(params)}`),
+    accountLedger: (code, params) =>
+      request<AccountLedger>('GET', `/v1/ledger/accounts/${encodeURIComponent(code)}${qs(params)}`),
     listIntakes: (params) =>
       request<Intake[]>('GET', `/v1/intakes${params?.status ? `?status=${params.status}` : ''}`),
     getIntake: (id) => request<Intake>('GET', `/v1/intakes/${encodeURIComponent(id)}`),
     captureIntake: (body) => request<Intake>('POST', '/v1/intakes', body),
-    extractIntake: (id) =>
-      request<Intake>('POST', `/v1/intakes/${encodeURIComponent(id)}/extract`),
+    extractIntake: (id) => request<Intake>('POST', `/v1/intakes/${encodeURIComponent(id)}/extract`),
     draftIntake: (id) => request<Intake>('POST', `/v1/intakes/${encodeURIComponent(id)}/draft`),
-    discardIntake: (id) =>
-      request<Intake>('POST', `/v1/intakes/${encodeURIComponent(id)}/discard`),
+    discardIntake: (id) => request<Intake>('POST', `/v1/intakes/${encodeURIComponent(id)}/discard`),
     balanceSheet: (to) =>
       request<BalanceSheet>('GET', `/v1/reports/balance-sheet?to=${encodeURIComponent(to)}`),
     incomeStatement: (from, to) =>
@@ -268,9 +275,13 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
     getPayment: (id) => request<PaymentDoc>('GET', `/v1/payments/${encodeURIComponent(id)}`),
     createPayment: (body) => request<PaymentDoc>('POST', '/v1/payments', body),
     submitPayment: (id, expectedVersion) =>
-      request<PaymentDoc>('POST', `/v1/payments/${encodeURIComponent(id)}/submit`, { expectedVersion }),
+      request<PaymentDoc>('POST', `/v1/payments/${encodeURIComponent(id)}/submit`, {
+        expectedVersion,
+      }),
     approvePayment: (id, expectedVersion) =>
-      request<PaymentDoc>('POST', `/v1/payments/${encodeURIComponent(id)}/approve`, { expectedVersion }),
+      request<PaymentDoc>('POST', `/v1/payments/${encodeURIComponent(id)}/approve`, {
+        expectedVersion,
+      }),
     confirmPayment: (id, expectedVersion, confirmSinglePerson) =>
       request<PaymentConfirmResult>('POST', `/v1/payments/${encodeURIComponent(id)}/confirm`, {
         expectedVersion,

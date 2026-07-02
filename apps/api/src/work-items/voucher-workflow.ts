@@ -141,7 +141,10 @@ export async function createVoucherConfirmWorkItemTx(
     assignedRole: 'accountant',
     createdBy: input.actorId,
     titleKey: 'finance.voucher.confirm',
-    metadata: SafeWorkItemMetadataSchema.parse({ sourceEntity: 'JournalVoucher', origin: 'capture' }),
+    metadata: SafeWorkItemMetadataSchema.parse({
+      sourceEntity: 'JournalVoucher',
+      origin: 'capture',
+    }),
   });
   if (result.created) {
     await appendWorkItemOutboxEventTx(tx, result.item, 'work_item.created');

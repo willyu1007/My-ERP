@@ -88,7 +88,9 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS — capture intake (org + ledger sc
   });
 
   it('stores an attachment and links it to an intake, isolated by ledger', async () => {
-    const att = await withScope(ORG_A, LB_A1, (tx) => createAttachmentTx(tx, attInput(ORG_A, LB_A1)));
+    const att = await withScope(ORG_A, LB_A1, (tx) =>
+      createAttachmentTx(tx, attInput(ORG_A, LB_A1)),
+    );
     const intake = await withScope(ORG_A, LB_A1, (tx) =>
       createIntakeTx(tx, { ...intakeInput(ORG_A, LB_A1), attachmentId: att.id }),
     );
@@ -99,7 +101,9 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS — capture intake (org + ledger sc
   });
 
   it('version-guards the extracted→drafted transition (one-shot)', async () => {
-    const intake = await withScope(ORG_A, LB_A1, (tx) => createIntakeTx(tx, intakeInput(ORG_A, LB_A1)));
+    const intake = await withScope(ORG_A, LB_A1, (tx) =>
+      createIntakeTx(tx, intakeInput(ORG_A, LB_A1)),
+    );
     expect(intake.version).toBe(0);
 
     const first = await withScope(ORG_A, LB_A1, (tx) =>

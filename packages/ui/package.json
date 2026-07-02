@@ -7,6 +7,46 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./contracts": {
+      "types": "./src/contracts.ts",
+      "default": "./src/contracts.ts"
+    },
+    "./primitives": {
+      "types": "./src/primitives.ts",
+      "default": "./src/primitives.ts"
+    },
+    "./shell": {
+      "types": "./src/shell.ts",
+      "default": "./src/shell.ts"
+    },
+    "./feedback": {
+      "types": "./src/feedback.ts",
+      "default": "./src/feedback.ts"
+    },
+    "./list": {
+      "types": "./src/list.ts",
+      "default": "./src/list.ts"
+    },
+    "./insight": {
+      "types": "./src/insight.ts",
+      "default": "./src/insight.ts"
+    },
+    "./settings": {
+      "types": "./src/settings.ts",
+      "default": "./src/settings.ts"
+    },
+    "./hub": {
+      "types": "./src/hub.ts",
+      "default": "./src/hub.ts"
+    },
+    "./queue": {
+      "types": "./src/queue.ts",
+      "default": "./src/queue.ts"
+    },
+    "./record": {
+      "types": "./src/record.ts",
+      "default": "./src/record.ts"
     }
   },
   "main": "./src/index.ts",
@@ -16,7 +56,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@willyu1007/web-workbench": "^0.6.5"
+    "@willyu1007/web-workbench": "^0.6.10"
   },
   "peerDependencies": {
     "next": ">=15",

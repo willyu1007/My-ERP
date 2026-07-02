@@ -1,0 +1,261 @@
+.pageStack {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.objectField {
+  position: relative;
+  display: block;
+  width: auto;
+  flex: 0 0 auto;
+}
+
+.objectField :global(.mt-selectbox) {
+  display: inline-block;
+}
+
+.objectField :global(.mt-select__pop) {
+  min-width: 180px;
+}
+
+.processingPanel {
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-lg);
+  margin: var(--sp-2) 0;
+  padding: var(--sp-4);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.processingHeader {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-1);
+  padding-bottom: var(--sp-2);
+}
+
+.headerActionsLeft,
+.headerActionsRight {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: center;
+}
+
+.headerActionsRight {
+  justify-content: flex-end;
+}
+
+.processingBody {
+  --intake-field-label-height: 17px;
+  --intake-field-control-height: 40px;
+  --intake-field-inner-gap: var(--sp-1);
+  --intake-field-row-gap: var(--sp-3);
+  --intake-field-row-height: calc(
+    var(--intake-field-label-height) + var(--intake-field-inner-gap) +
+      var(--intake-field-control-height)
+  );
+  --intake-upload-height: calc(
+    var(--intake-field-row-height) + var(--intake-field-row-gap) + var(--intake-field-row-height) +
+      var(--intake-field-row-gap) + var(--intake-field-row-height)
+  );
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+  gap: var(--sp-4);
+  align-items: start;
+  padding-top: var(--sp-4);
+}
+
+.processingForm,
+.processingSide {
+  min-width: 0;
+}
+
+.processingSide {
+  display: grid;
+  align-content: start;
+}
+
+.uploadArea {
+  display: grid;
+  height: var(--intake-upload-height);
+  min-height: var(--intake-upload-height);
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: var(--sp-3);
+}
+
+.fieldGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-3);
+}
+
+.field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.fieldWide {
+  grid-column: 1 / -1;
+}
+
+.fieldLabel {
+  color: var(--fg-2);
+  font-size: var(--caption-size);
+  font-weight: var(--body-weight);
+  line-height: var(--caption-lh);
+}
+
+.field :global(.mt-date-button-control),
+.field :global(.mt-expandable-text-field) {
+  width: 100%;
+}
+
+.fieldInput {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-md);
+  padding: 0 var(--sp-3);
+  background: var(--bg-surface);
+  color: var(--fg-1);
+  font: inherit;
+  font-size: var(--body-size);
+}
+
+.fieldInput:hover {
+  border-color: var(--border-3);
+  background: var(--bg-field-quiet);
+}
+
+.fieldInput:focus {
+  border-color: var(--mt-orange);
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.previewPane {
+  display: grid;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-lg);
+  background: var(--bg-field-quiet);
+}
+
+.previewImage {
+  width: 100%;
+  height: 100%;
+  max-height: 260px;
+  object-fit: contain;
+  background: var(--bg-surface);
+}
+
+.previewPlaceholder {
+  display: grid;
+  place-content: center;
+  gap: var(--sp-1);
+  padding: var(--sp-4);
+  text-align: center;
+}
+
+.previewPlaceholder strong {
+  color: var(--fg-1);
+  font-size: var(--body-size);
+  font-weight: var(--h3-weight);
+}
+
+.previewPlaceholder span {
+  color: var(--fg-3);
+  font-size: var(--caption-size);
+}
+
+.sideActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.queueHeader {
+  display: flex;
+  max-width: 100%;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.queueHeader :global(.wb-segmented) {
+  flex: 0 1 auto;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.queueList {
+  margin-top: 0;
+}
+
+.queueEmpty,
+.queueEmptyCompact {
+  display: grid;
+  place-items: center;
+}
+
+.queueEmpty {
+  min-height: calc(100dvh - 60px - var(--sp-9) - var(--sp-8));
+}
+
+.queueEmptyCompact {
+  min-height: var(--sp-9);
+}
+
+@media (width <= 820px) {
+  .processingPanel,
+  .queueHeader,
+  .objectField,
+  .queueHeader :global(.wb-segmented),
+  .sideActions :global(.mt-btn) {
+    width: 100%;
+  }
+
+  .processingBody {
+    --intake-upload-height: auto;
+
+    grid-template-columns: 1fr;
+  }
+
+  .uploadArea {
+    height: auto;
+    min-height: 0;
+  }
+
+  .previewPane {
+    min-height: 180px;
+  }
+
+  .processingHeader {
+    align-items: stretch;
+  }
+
+  .headerActionsLeft,
+  .headerActionsRight {
+    width: 100%;
+  }
+
+  .headerActionsRight {
+    justify-content: flex-start;
+  }
+
+  .fieldGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .queueEmpty {
+    min-height: 42dvh;
+  }
+}

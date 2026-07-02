@@ -1,7 +1,7 @@
 # API Index
 
-> Auto-generated at 2026-06-17T22:50:40.658Z — do NOT hand-edit.
-> Source: `docs/context/api/openapi.yaml` (SHA-256: `d160da9e4be1...`)
+> Auto-generated at 2026-07-01T23:51:22.778Z — do NOT hand-edit.
+> Source: `docs/context/api/openapi.yaml` (SHA-256: `974513925e8b...`)
 
 Total endpoints: **58**
 
@@ -25,11 +25,11 @@ Total endpoints: **58**
 | PATCH | /v1/accounts/{code} | Update an account's name / aux types (accountant/admin) | bearer | code | id, ledgerBookId, code, name, category, direction, level, isLeaf, auxTypes, active, createdAt, parentCode, defaultCashFlowItem | 400, 404 |
 | POST | /v1/accounts/{code}/deactivate | Deactivate an account (blocked if it has active children) | bearer | code | id, ledgerBookId, code, name, category, direction, level, isLeaf, auxTypes, active, createdAt, parentCode, defaultCashFlowItem | 400, 404 |
 | GET | /v1/vouchers | List journal vouchers (ledger-scoped; optional status filter) | bearer | — | — | 401, 403 |
-| POST | /v1/vouchers | Create a draft voucher (accountant/cashier) | bearer | date, summary, lines | id, ledgerBookId, no, date, period, status, summary, totalDebit, totalCredit, maker, lines, checker, postedAt, reversalOf, reversedBy, attachments, contractId | 400, 401, 403 |
-| GET | /v1/vouchers/{id} | Voucher detail (with lines) | bearer | id | id, ledgerBookId, no, date, period, status, summary, totalDebit, totalCredit, maker, lines, checker, postedAt, reversalOf, reversedBy, attachments, contractId | 404 |
-| PATCH | /v1/vouchers/{id} | Replace a draft voucher's header + lines (only while draft) | bearer | date, summary, lines | id, ledgerBookId, no, date, period, status, summary, totalDebit, totalCredit, maker, lines, checker, postedAt, reversalOf, reversedBy, attachments, contractId | 400, 404 |
-| POST | /v1/vouchers/{id}/submit | Submit a draft for review (draft → pending); enforces 借贷必平 | bearer | id | id, ledgerBookId, no, date, period, status, summary, totalDebit, totalCredit, maker, lines, checker, postedAt, reversalOf, reversedBy, attachments, contractId | 400, 404 |
-| POST | /v1/vouchers/{id}/post | Post a pending voucher (pending → posted; SoD — maker ≠ poster) | bearer | id | id, ledgerBookId, no, date, period, status, summary, totalDebit, totalCredit, maker, lines, checker, postedAt, reversalOf, reversedBy, attachments, contractId | 400, 403, 404 |
+| POST | /v1/vouchers | Create a draft voucher (accountant/cashier) | bearer | date | id, ledgerBookId, no, date, period, status, summary, totalDebit, totalCredit, maker, lines, checker, postedAt, reversalOf, reversedBy, attachments, contractId, draftPayload | 400, 401, 403 |
+| GET | /v1/vouchers/{id} | Voucher detail (with lines) | bearer | id | id, ledgerBookId, no, date, period, status, summary, totalDebit, totalCredit, maker, lines, checker, postedAt, reversalOf, reversedBy, attachments, contractId, draftPayload | 404 |
+| PATCH | /v1/vouchers/{id} | Replace a draft voucher's header + lines (only while draft) | bearer | date | id, ledgerBookId, no, date, period, status, summary, totalDebit, totalCredit, maker, lines, checker, postedAt, reversalOf, reversedBy, attachments, contractId, draftPayload | 400, 404 |
+| POST | /v1/vouchers/{id}/submit | Submit a draft for review (draft → pending); enforces 借贷必平 | bearer | id | id, ledgerBookId, no, date, period, status, summary, totalDebit, totalCredit, maker, lines, checker, postedAt, reversalOf, reversedBy, attachments, contractId, draftPayload | 400, 404 |
+| POST | /v1/vouchers/{id}/post | Post a pending voucher (pending → posted; SoD — maker ≠ poster) | bearer | id | id, ledgerBookId, no, date, period, status, summary, totalDebit, totalCredit, maker, lines, checker, postedAt, reversalOf, reversedBy, attachments, contractId, draftPayload | 400, 403, 404 |
 | POST | /v1/vouchers/{id}/reverse | Reverse a posted voucher (红冲) — creates a posted reversal voucher | bearer | id | original, reversal | 400, 403, 404 |
 | GET | /v1/intakes | List capture intakes (ledger-scoped; optional status filter) | bearer | — | — | 401, 403 |
 | POST | /v1/intakes | Capture an economic event (photo/pdf/text) for extraction → voucher draft | bearer | kind, contentType, contentBase64 | id, orgId, ledgerBookId, source, kind, status, needsReview, createdBy, version, createdAt, updatedAt, attachmentId, extraction, confidence, targetType, targetId | 400, 401, 403 |
@@ -50,7 +50,7 @@ Total endpoints: **58**
 | POST | /v1/cash-flow/tag | Post-hoc 打标 — set 现金流量项目 on a voucher's non-cash line(s) (pre-close worklist) | bearer | voucherId, accountCode | tagged | 400, 404 |
 | GET | /v1/reports/balance-sheet | 资产负债表 (as-of date) | bearer | — | asOf, lines, balanced | 400 |
 | GET | /v1/reports/income-statement | 利润表 (range — 月/季/年/自定义) | bearer | — | from, to, lines, netProfit | 400 |
-| GET | /v1/reports/cash-flow | 现金流量表 (direct method, range) | bearer | — | from, to, activities, netCashFlow, tied | 400 |
+| GET | /v1/reports/cash-flow | 现金流量表 (direct method, range) | bearer | — | from, to, activities, netCashFlow, beginningCash, endingCash, tied | 400 |
 | GET | /v1/payments | List 出纳收付款单 (PaymentDoc) | bearer | — | — | — |
 | POST | /v1/payments | Create a 收/付款单 draft | bearer | direction, date, counterparty, summary, amount, cashAccountCode, contraAccountCode | id, no, direction, date, period, counterparty, summary, amount, cashAccountCode, contraAccountCode, status, maker, version, createdAt, updatedAt, settlementVoucherId, contractId, approver, confirmer | 400 |
 | GET | /v1/payments/{id} | Get a payment doc | bearer | id | id, no, direction, date, period, counterparty, summary, amount, cashAccountCode, contraAccountCode, status, maker, version, createdAt, updatedAt, settlementVoucherId, contractId, approver, confirmer | 404 |

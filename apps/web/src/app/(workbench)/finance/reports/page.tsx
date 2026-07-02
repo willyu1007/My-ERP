@@ -1,4 +1,4 @@
-import { EmptyState, Section, Tabs } from '@my-erp/ui';
+import { EmptyState } from '@my-erp/ui/primitives';
 import {
   getBalanceSheet,
   getCashFlowStatement,
@@ -6,8 +6,7 @@ import {
 } from '@/lib/finance/data-source';
 import { resolveRange } from '@/lib/finance/report-range';
 import { ReportRangePicker } from './report-range-picker';
-import { ReportToolbar } from './report-toolbar';
-import { BalanceSheetView, CashFlowView, IncomeStatementView } from './statement-views';
+import { ReportTabs } from './report-tabs';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,20 +49,13 @@ export default async function ReportsPage({
       <ReportRangePicker range={range} />
 
       {configured ? (
-        <Section title={range.label}>
-          <ReportToolbar range={range} bs={bs} income={income} cashflow={cashflow} />
-          <Tabs
-            items={[
-              { key: 'bs', label: '资产负债表', content: <BalanceSheetView bs={bs} /> },
-              { key: 'is', label: '利润表', content: <IncomeStatementView is={income} /> },
-              { key: 'cf', label: '现金流量表', content: <CashFlowView cf={cashflow} /> },
-            ]}
-          />
-        </Section>
+        <section className="wb-section" aria-label="财务报表">
+          <ReportTabs range={range} bs={bs} income={income} cashflow={cashflow} />
+        </section>
       ) : (
         <EmptyState
           title="未连接后端"
-          desc="设置 API_BASE_URL / API_DEV_TOKEN 后查看真实报表（三表由后端从账务派生，不走演示数据）。"
+          desc="设置 API_BASE_URL / API_DEV_TOKEN 后查看报表；三表由后端从账务派生。"
         />
       )}
     </div>

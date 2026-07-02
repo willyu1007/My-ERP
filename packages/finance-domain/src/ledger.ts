@@ -16,6 +16,8 @@ export interface PostedLine {
   readonly voucherId: string;
   readonly voucherNo: string;
   readonly date: string;
+  /** Accounting period in YYYY-MM. Falls back to `date.slice(0, 7)` when omitted by old callers. */
+  readonly period?: string;
   readonly summary: string;
   /** 现金流量项目 code (T-006 M3b) — tagged on the non-cash lines of cash vouchers. */
   readonly cashFlowItem?: string | null;
@@ -151,6 +153,46 @@ export function computeTrialBalance(
       closingCredit: tClC.toFixed(2),
     },
     balanced: { opening: tOpD.equals(tOpC), period: tPeD.equals(tPeC), closing: tClD.equals(tClC) },
+  };
+}
+
+export interface PeriodLedgerSource {
+  readonly entries: readonly PostedLine[];
+  readonly openings: readonly OpeningLine[];
+}
+
+const linePeriod = (line: PostedLine): string => line.period ?? line.date.slice(0, 7);
+const zeroAsNull = (amount: string): string | null =>
+  amount === '' || amount === '0.00' ? null : amount;
+
+/**
+ * Prepare ledger derivation inputs for one accounting period.
+ *
+ * For a selected period, prior posted movement becomes this period's opening
+ * balance; only selected-period lines remain as period activity. Without a
+ * period argument the legacy behavior is preserved: all posted movement is
+ * treated as period activity.
+ */
+export function ledgerSourceForPeriod(
+  entries: readonly PostedLine[],
+  openings: readonly OpeningLine[],
+  period?: string,
+): PeriodLedgerSource {
+  if (!period) return { entries, openings };
+
+  const priorEntries = entries.filter((entry) => linePeriod(entry) < period);
+  const periodEntries = entries.filter((entry) => linePeriod(entry) === period);
+  if (priorEntries.length === 0) return { entries: periodEntries, openings };
+
+  const priorBalance = computeTrialBalance(priorEntries, openings);
+  return {
+    entries: periodEntries,
+    openings: priorBalance.rows.map((row) => ({
+      accountCode: row.accountCode,
+      accountName: row.accountName,
+      debit: zeroAsNull(row.closingDebit),
+      credit: zeroAsNull(row.closingCredit),
+    })),
   };
 }
 

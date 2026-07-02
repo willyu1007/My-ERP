@@ -3,7 +3,7 @@
  * T-003 R2-UI). Pure (no React): the platform/contracts layer stays domain-agnostic,
  * so the host maps work-item vocabulary → Chinese labels + Badge tones here.
  */
-import type { CardTone } from '@my-erp/ui';
+import type { CardTone } from '@my-erp/ui/contracts';
 import type { WorkItemView } from '@my-erp/api-client';
 
 /** workItem.titleKey → display title (workflow-defined keys live module-side). */
@@ -63,7 +63,10 @@ export function workItemStatusTone(status: string): CardTone {
 }
 
 /** The three personal-workbench views surfaced as tabs (待我处理 / 监督 / 我处理过). */
-export const WORK_ITEM_VIEW_TABS: readonly { readonly key: WorkItemView; readonly label: string }[] = [
+export const WORK_ITEM_VIEW_TABS: readonly {
+  readonly key: WorkItemView;
+  readonly label: string;
+}[] = [
   { key: 'my_tasks', label: '待我处理' },
   { key: 'supervision', label: '监督' },
   { key: 'handled_by_me', label: '我处理过' },

@@ -46,7 +46,7 @@ import {
   type TrialBalance,
 } from './ledger';
 import { getFinanceApi, requireFinanceApi } from './request-scope';
-import type { AccountVM, VoucherVM } from './types';
+import type { AccountVM, OpeningBalance, VoucherVM } from './types';
 import { accountLedgerToVM, accountToVM, trialBalanceToVM, voucherToVM } from './vm-map';
 
 export async function listVouchers(): Promise<readonly VoucherVM[]> {
@@ -72,6 +72,26 @@ export async function listAccounts(): Promise<readonly AccountVM[]> {
   return (await api.listAccounts()).map(accountToVM);
 }
 
+const zeroToNull = (amount: string): string | null =>
+  amount === '' || amount === '0.00' ? null : amount;
+
+function vouchersInPeriod(period?: string): readonly VoucherVM[] {
+  if (!period) return VOUCHERS;
+  return VOUCHERS.filter((voucher) => voucher.period === period);
+}
+
+function openingBalancesForPeriod(period?: string): readonly OpeningBalance[] {
+  if (!period) return OPENING_BALANCES;
+  const priorVouchers = VOUCHERS.filter((voucher) => voucher.period < period);
+  if (priorVouchers.length === 0) return OPENING_BALANCES;
+  const prior = computeTrialBalance(ACCOUNTS, priorVouchers, OPENING_BALANCES);
+  return prior.rows.map((row) => ({
+    accountCode: row.code,
+    debit: zeroToNull(row.closingDebit),
+    credit: zeroToNull(row.closingCredit),
+  }));
+}
+
 /** Create a draft voucher. Requires the backend (mutations cannot demo). */
 export async function createVoucher(input: CreateVoucher): Promise<VoucherVM> {
   return voucherToVM(await requireFinanceApi().createVoucher(input));
@@ -92,25 +112,58 @@ export async function captureIntake(input: CaptureIntake): Promise<Intake> {
   return requireFinanceApi().captureIntake(input);
 }
 
+/** Captured source documents for the intake workbench (empty in demo mode). */
+export async function listIntakes(filters?: { status?: string }): Promise<readonly Intake[]> {
+  const api = getFinanceApi();
+  if (!api) return [];
+  return api.listIntakes(filters);
+}
+
 /** Run extraction on an intake (auto-drafts when high-confidence). Requires the backend. */
 export async function extractIntake(id: string): Promise<Intake> {
   return requireFinanceApi().extractIntake(id);
 }
 
+/** Create a voucher draft from an extracted intake. Requires the backend. */
+export async function draftIntake(id: string): Promise<Intake> {
+  return requireFinanceApi().draftIntake(id);
+}
+
+/** Discard an intake that should not enter accounting. Requires the backend. */
+export async function discardIntake(id: string): Promise<Intake> {
+  return requireFinanceApi().discardIntake(id);
+}
+
 // Trial balance / account ledger: the backend derives them server-side (post →
 // balances); the data-source maps the `/v1` shape to the same VM. Demo mode falls
 // back to the fixture-derived computation.
-export async function getTrialBalance(): Promise<TrialBalance> {
+export async function getTrialBalance(period?: string): Promise<TrialBalance> {
   const api = getFinanceApi();
-  if (!api) return computeTrialBalance(ACCOUNTS, VOUCHERS, OPENING_BALANCES);
-  return trialBalanceToVM(await api.trialBalance());
+  if (!api) {
+    return computeTrialBalance(
+      ACCOUNTS,
+      vouchersInPeriod(period),
+      openingBalancesForPeriod(period),
+    );
+  }
+  return trialBalanceToVM(await api.trialBalance({ period }));
 }
 
-export async function getAccountLedger(code: string): Promise<AccountLedger | null> {
+export async function getAccountLedger(
+  code: string,
+  period?: string,
+): Promise<AccountLedger | null> {
   const api = getFinanceApi();
-  if (!api) return computeAccountLedger(code, ACCOUNTS, VOUCHERS, OPENING_BALANCES);
+  if (!api) {
+    return computeAccountLedger(
+      code,
+      ACCOUNTS,
+      vouchersInPeriod(period),
+      openingBalancesForPeriod(period),
+    );
+  }
   try {
-    return accountLedgerToVM(await api.accountLedger(code));
+    return accountLedgerToVM(await api.accountLedger(code, { period }));
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) return null;
     throw err;
@@ -130,7 +183,10 @@ export async function getBalanceSheet(to: string): Promise<BalanceSheet | null> 
 }
 
 /** 利润表 over `[from, to]`. `null` when the backend is not configured. */
-export async function getIncomeStatement(from: string, to: string): Promise<IncomeStatement | null> {
+export async function getIncomeStatement(
+  from: string,
+  to: string,
+): Promise<IncomeStatement | null> {
   const api = getFinanceApi();
   if (!api) return null;
   return api.incomeStatement(from, to);

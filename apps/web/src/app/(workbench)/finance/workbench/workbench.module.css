@@ -1,30 +1,48 @@
-/* Structural-only feature CSS (token-driven), mirroring payments.module.css.
-   View tabs + the trailing action cluster; all color/spacing/radius come from
-   kit tokens so the B1 boundary + ui:guard stay clean. */
+/* Structural-only feature CSS for the dashboard work-item rows. */
 
-.tabs {
+.workflowSingle {
   display: inline-flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: var(--sp-2);
-}
-
-.tab {
-  padding: var(--sp-1) var(--sp-3);
-  border-radius: 6px;
-  font-size: var(--small-size);
   color: var(--fg-2);
-  text-decoration: none;
-  border: 1px solid var(--border-1);
+  font-size: var(--small-size);
 }
 
-.tabActive {
-  background: var(--bg-float);
-  color: var(--fg-1);
-  border-color: var(--fg-3);
+.workflowDot {
+  display: inline-flex;
+  width: 0.56em;
+  height: 0.56em;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--fg-3);
 }
 
-.taskTitle {
-  font-weight: var(--h3-weight);
+.workflowDotVoucher {
+  background: var(--mt-navy);
+}
+
+.workflowDotIntake {
+  background: var(--mt-orange);
+}
+
+.workflowDotCashier {
+  background: var(--mt-success);
+}
+
+.workflowDotContract {
+  background: var(--mt-warning);
+}
+
+.workflowDotClose {
+  background: var(--mt-danger);
+}
+
+.workflowDotOther {
+  background: var(--fg-3);
+}
+
+.queueList {
+  margin-top: var(--sp-3);
 }
 
 .actions {
@@ -32,4 +50,27 @@
   flex-wrap: wrap;
   gap: var(--sp-2);
   justify-content: flex-end;
+}
+
+@media (max-width: 720px) {
+  .queueList :global(.wb-list__row) {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .queueList :global(.wb-list__main) {
+    flex: 1 1 calc(100% - 28px);
+  }
+
+  .queueList :global(.wb-list__aside) {
+    width: 100%;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    padding-left: calc(0.56em + 14px);
+  }
+
+  .actions {
+    justify-content: flex-start;
+  }
 }

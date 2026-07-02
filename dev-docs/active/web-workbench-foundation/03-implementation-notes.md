@@ -37,12 +37,12 @@
   - `money.ts` + `money.test.ts` — 前端借贷平衡用**整数分**精确计算（`toCents`/`centsToString`/`sumCents`/`isBalanced`），零浮点；镜像 `@my-erp/finance-domain` 不变式（未引该包以保持零侵入：它是 commonjs+dist，不在 web 依赖/transpile 链）。5 项单测（含 0.1+0.2 漂移）。
   - `format.ts` — `formatMoney`（千分位 2dp）/`formatPeriod`。
   - `fixtures.ts` — 12 个《小企业准则》常用科目 + 6 张凭证（各状态全覆盖；总额与 `balanced` 由分录**派生**，fixtures 永不失衡）。
-  - `data-source.ts` — `listVouchers`/`getVoucher`/`listAccounts`，**唯一 demo→真切换点**（`TODO(P1–P5)` 注释 + 形状不变即可换 `@my-erp/api-client`）。
+  - `data-source.ts` — API 优先的数据访问层；未配置 `API_BASE_URL`/`API_DEV_TOKEN` 时保留 fixture fallback 便于本地只读预览。
   - `scene-config.tsx` — 财务 `ShellNav` 初版（`home`=ERP 总览；后续 W2c 已调整为工作流/功能/设置）。
 - **路由组 `app/(workbench)/`**（薄页面）：
   - `layout.tsx` — `AppShell` 外壳（注入 financeNav + 日常待处理 badge，mock 身份）。
   - `page.tsx`（`/`）— **ERP 总览**：财务本期 StatStrip + 模块卡（财务「已上线」/采购·库存·销售·人力「敬请期待」），落实「模块化平台、财务是首个模块」。
-  - `finance/vouchers/` — W1 初版为凭证列表；W2c 后已并入 `/finance/daily-accounting`，`/finance/vouchers` 仅保留 redirect。`[id]/` 详情（detail 模板 `wb-grid--sidebar`：分录表 + 摘要/状态/合计 card；审核/过账/红冲 演示动作 toast）与 `new/` 制单（form 模板：多分录 + 科目下拉 + **前端借贷平衡校验**，不平/分录错禁止提交 + field 级错误）保留为工作流内部深链。
+  - `finance/vouchers/` — W1 初版为凭证列表；W2c 后已并入 `/finance/daily-accounting`，`/finance/vouchers` 仅保留 redirect。`[id]/` 详情只渲染非草稿凭证的只读分录与元信息；草稿凭证进入快录编辑器，避免非持久化动作。`new/` 制单保留为工作流内部深链。
   - `finance/accounts`·`finance/ledger` — 可点空状态页（W2 占位）；`system/health` — P0a 探活页迁入（带 force-dynamic）。
 
 **决策（实现期落定）**
@@ -120,11 +120,11 @@
 ## W2c — 财务入口工作流化（完成）
 
 **改了什么**
-- `ShellNav` 增加 `soon` 支持；sidebar 对待上线工作流渲染为禁用项并显示 `待上线`，不改变 token/contract。
-- 财务 sidebar 从资源入口改为：
-  - 财务工作流：`日常账务处理`（可用，聚合待补全/待审核）+ `期末结账`（待上线）。
-  - 财务功能：`账簿查询`。
-  - 财务设置：`账务设置`（包含科目与期初等设置类操作）。
+- `ShellNav` 早期增加 `soon` 支持；后续导航已收敛为工作流/查询/设置，`期末结账` 已上线为可进入工作流。
+- 财务 sidebar 从资源入口改为后续收敛后的「工作流 / 查询 / 设置」：
+  - 工作流：`凭证处理` / `出纳收付` / `期末结账`。
+  - 查询：`账簿查询` / `财务报表` / `合同台账`。
+  - 设置：`账务设置`（包含科目与期初等设置类操作）。
 - 新增 `/finance/daily-accounting` 作为唯一日常工作流入口；`/finance/vouchers` redirect 到该入口，凭证详情/录入保留为内部深链。
 - 新增 `/finance/settings` 聚合设置页；`/finance/accounts` 保留为设置内部页面，不再作为 sidebar 一级入口。
 - 首页财务入口、凭证录入取消按钮、凭证/账簿 breadcrumb 改到工作流/功能语义。

@@ -155,14 +155,18 @@ export class IntakeService {
     return withScope(identity.orgId, ledgerBookId, async (tx) => {
       const intake = await getIntakeTx(tx, id);
       if (!intake) throw new NotFoundException('intake not found');
-      if (!intake.attachmentId) throw new BadRequestException('intake has no attachment to extract');
+      if (!intake.attachmentId)
+        throw new BadRequestException('intake has no attachment to extract');
       if (intake.status !== 'received' && intake.status !== 'failed') {
         throw new BadRequestException(`cannot extract a ${intake.status} intake`);
       }
       const attachment = await getAttachmentTx(tx, intake.attachmentId);
       if (!attachment) throw new NotFoundException('attachment not found');
 
-      const raw = await this.extractor.extract({ storageKey: attachment.storageKey, kind: intake.kind });
+      const raw = await this.extractor.extract({
+        storageKey: attachment.storageKey,
+        kind: intake.kind,
+      });
       const parsed = ExtractionResultSchema.safeParse(raw);
       if (!parsed.success) {
         await updateIntakeTx(tx, id, { status: 'failed', expectedVersion: intake.version });

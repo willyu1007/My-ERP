@@ -68,7 +68,10 @@ describe.skipIf(!PG_AVAILABLE)('T-005 contracts (service integration)', () => {
     expect(c.status).toBe('draft');
     expect(c.amount).toBe('50000.00');
 
-    const active = await contracts.update(u1, LB, c.id, { expectedVersion: c.version, status: 'active' });
+    const active = await contracts.update(u1, LB, c.id, {
+      expectedVersion: c.version,
+      status: 'active',
+    });
     expect(active.status).toBe('active');
     expect(active.version).toBe(1);
 
@@ -77,7 +80,10 @@ describe.skipIf(!PG_AVAILABLE)('T-005 contracts (service integration)', () => {
       contracts.update(u1, LB, c.id, { expectedVersion: c.version, status: 'closed' }),
     ).rejects.toThrow();
 
-    const closed = await contracts.update(u1, LB, c.id, { expectedVersion: active.version, status: 'closed' });
+    const closed = await contracts.update(u1, LB, c.id, {
+      expectedVersion: active.version,
+      status: 'closed',
+    });
     expect(closed.status).toBe('closed');
     // closed is terminal
     await expect(
@@ -92,7 +98,11 @@ describe.skipIf(!PG_AVAILABLE)('T-005 contracts (service integration)', () => {
   });
 
   it('builds the timeline: contract anchored first, then linked vouchers + payments by date', async () => {
-    const c = await contracts.create(u1, LB, { title: '时间线合同', type: 'sales', counterparty: 'X' });
+    const c = await contracts.create(u1, LB, {
+      title: '时间线合同',
+      type: 'sales',
+      counterparty: 'X',
+    });
 
     await withLedgerScope(LB, async (tx) => {
       await createVoucherTx(tx, {
@@ -106,7 +116,13 @@ describe.skipIf(!PG_AVAILABLE)('T-005 contracts (service integration)', () => {
         totalCredit: '500.00',
         contractId: c.id,
         lines: [
-          { accountCode: '1002', accountName: '银行存款', summary: 'x', debit: '500.00', credit: null },
+          {
+            accountCode: '1002',
+            accountName: '银行存款',
+            summary: 'x',
+            debit: '500.00',
+            credit: null,
+          },
           { accountCode: '6001', accountName: '收入', summary: 'x', debit: null, credit: '500.00' },
         ],
       });

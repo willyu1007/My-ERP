@@ -11,7 +11,12 @@ const intake = {
   kind: 'image',
   status: 'received',
   attachmentId: '00000000-0000-0000-0000-0000000000d1',
-  extraction: { fields: { amount: { value: '1234.56', confidence: 1 }, counterparty: { value: 'ACME', confidence: 1 } } },
+  extraction: {
+    fields: {
+      amount: { value: '1234.56', confidence: 1 },
+      counterparty: { value: 'ACME', confidence: 1 },
+    },
+  },
   confidence: 0.9,
   needsReview: false,
   targetType: null,

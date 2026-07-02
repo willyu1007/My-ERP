@@ -76,7 +76,13 @@ describe.skipIf(!PG_AVAILABLE)('T-004 capture → draft persistence chain', () =
         totalDebit: '1234.56',
         totalCredit: '0.00',
         lines: [
-          { accountCode: '1002', accountName: '银行存款', summary: '银行收款', debit: '1234.56', credit: null },
+          {
+            accountCode: '1002',
+            accountName: '银行存款',
+            summary: '银行收款',
+            debit: '1234.56',
+            credit: null,
+          },
         ],
       });
       const drafted = await updateIntakeTx(tx, received.id, {

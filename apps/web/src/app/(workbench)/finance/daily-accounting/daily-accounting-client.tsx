@@ -2,7 +2,10 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { ActionButton, ListView, Queue, StatusBadge, type RowModel } from '@my-erp/ui';
+import type { RowModel } from '@my-erp/ui/contracts';
+import { ListView } from '@my-erp/ui/list';
+import { ActionButton, StatusBadge } from '@my-erp/ui/primitives';
+import { Queue } from '@my-erp/ui/queue';
 import type { CashFlowItem, Contract } from '@my-erp/api-client';
 import { formatDate, formatMoney } from '@/lib/finance/format';
 import { VOUCHER_STATUS_LABELS, voucherStatusTone } from '@/lib/finance/types';
@@ -119,46 +122,37 @@ export function DailyAccountingClient({
   cashFlowItems,
   contracts,
   initialDate,
-  demo = false,
 }: {
   readonly vouchers: readonly VoucherVM[];
   readonly accounts: readonly AccountVM[];
   readonly cashFlowItems: readonly CashFlowItem[];
   readonly contracts: readonly Contract[];
   readonly initialDate: string;
-  /** Fixtures/demo mode (no backend) — shows a "演示数据" badge. */
-  readonly demo?: boolean;
 }) {
   const [queue, setQueue] = useState<QueueKey>('open');
   const [entryOpen, setEntryOpen] = useState(false);
   const filtered = vouchers.filter((v) => matchesQueue(v, queue));
 
   const nav = (
-    <div className="wb-segmented" role="tablist" aria-label="日常账务处理队列">
-      {QUEUES.map((q) => (
-        <button
-          key={q.key}
-          type="button"
-          role="tab"
-          aria-selected={queue === q.key}
-          className={`wb-segmented__item${queue === q.key ? ' wb-segmented__item--active' : ''}`}
-          onClick={() => setQueue(q.key)}
-        >
-          {q.label}
-          <span className="wb-segmented__count">{countOf(vouchers, q.key)}</span>
-        </button>
-      ))}
-    </div>
-  );
-
-  // 制单 slides a fast-entry panel down from this action; the form stays
-  // mounted (collapsed) so in-progress input survives queue switches.
-  const actions = (
-    <div className={styles.actions}>
-      {demo && <span className={styles.demoBadge}>演示数据</span>}
+    <div className={styles.navActions}>
       <ActionButton kind="primary" onClick={() => setEntryOpen((v) => !v)}>
         {entryOpen ? '收起录入' : '制单'}
       </ActionButton>
+      <div className="wb-segmented" role="tablist" aria-label="日常账务处理队列">
+        {QUEUES.map((q) => (
+          <button
+            key={q.key}
+            type="button"
+            role="tab"
+            aria-selected={queue === q.key}
+            className={`wb-segmented__item${queue === q.key ? ' wb-segmented__item--active' : ''}`}
+            onClick={() => setQueue(q.key)}
+          >
+            {q.label}
+            <span className="wb-segmented__count">{countOf(vouchers, q.key)}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 
@@ -167,7 +161,6 @@ export function DailyAccountingClient({
       <ListView<VoucherVM>
         items={filtered}
         nav={nav}
-        actions={actions}
         empty={{ title: '暂无待处理事项', desc: '当前队列没有需要处理的凭证。' }}
         present={(items) => (
           <div>

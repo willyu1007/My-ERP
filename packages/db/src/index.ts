@@ -912,6 +912,7 @@ export interface PostedLineRow {
   voucherId: string;
   voucherNo: string;
   date: string;
+  period: string;
   summary: string;
   cashFlowItem: string | null;
 }
@@ -928,7 +929,7 @@ export interface PostedLineRow {
 export async function getPostedEntriesTx(tx: TxClient): Promise<PostedLineRow[]> {
   const lines = await tx.journalEntryLine.findMany({
     where: { voucher: { status: { in: ['posted', 'reversed'] } } },
-    include: { voucher: { select: { no: true, date: true } } },
+    include: { voucher: { select: { no: true, date: true, period: true } } },
     orderBy: [{ voucher: { date: 'asc' } }, { voucherId: 'asc' }, { lineNo: 'asc' }],
   });
   return lines.map((l) => ({
@@ -939,6 +940,7 @@ export async function getPostedEntriesTx(tx: TxClient): Promise<PostedLineRow[]>
     voucherId: l.voucherId,
     voucherNo: l.voucher.no,
     date: l.voucher.date.toISOString().slice(0, 10),
+    period: l.voucher.period,
     summary: l.summary,
     cashFlowItem: l.cashFlowItem,
   }));

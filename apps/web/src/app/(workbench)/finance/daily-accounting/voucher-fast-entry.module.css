@@ -2,7 +2,7 @@
   position: relative;
   z-index: 100;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--sp-3);
 }
@@ -10,7 +10,9 @@
 .titleGroup {
   display: flex;
   align-items: center;
-  gap: var(--sp-3);
+  gap: var(--sp-2);
+  flex: 1 1 auto;
+  flex-wrap: wrap;
   min-width: 0;
 }
 
@@ -65,6 +67,24 @@
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
+  flex: 0 0 auto;
+}
+
+.metaLabel {
+  flex: 0 0 auto;
+  color: var(--fg-2);
+  font-size: var(--body-size);
+  font-weight: var(--body-weight);
+  white-space: nowrap;
+}
+
+.fieldDot {
+  width: 3px;
+  height: 3px;
+  margin: 0 var(--sp-1);
+  border-radius: 999px;
+  background: var(--fg-3);
+  opacity: 0.38;
 }
 
 .dateButton {
@@ -94,16 +114,23 @@
   pointer-events: none;
 }
 
-.periodText {
+.periodField {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.periodValue {
   color: var(--fg-2);
   font-size: var(--body-size);
-  white-space: nowrap;
 }
 
 .entryMetaRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: var(--sp-4);
 }
 
@@ -154,9 +181,11 @@
 .summaryEditor {
   position: relative;
   display: flex;
-  flex: 0 0 320px;
+  flex: 0 1 340px;
   align-items: center;
   gap: var(--sp-2);
+  min-width: min(100%, 280px);
+  max-width: 350px;
 }
 
 .summaryEditor:focus-within {
@@ -166,7 +195,7 @@
 .summaryLabel {
   flex: 0 0 auto;
   color: var(--fg-2);
-  font-size: var(--small-size);
+  font-size: var(--body-size);
   font-weight: var(--body-weight);
   white-space: nowrap;
 }
@@ -248,89 +277,6 @@
 
 .cell {
   min-width: 0;
-}
-
-.combo {
-  position: relative;
-}
-
-.accountPicker {
-  z-index: 80;
-  overflow-y: auto;
-  padding: var(--sp-2);
-  background: var(--bg-float);
-  border: 1px solid var(--border-1);
-  border-radius: 12px;
-  box-shadow: var(--shadow-md);
-}
-
-.accountSections {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-1);
-}
-
-.accountOptions {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: var(--sp-2);
-}
-
-.accountSection {
-  display: grid;
-  grid-template-columns: 52px minmax(0, 1fr);
-  gap: var(--sp-2);
-  align-items: start;
-  padding-top: var(--sp-2);
-  border-top: 1px solid var(--border-1);
-}
-
-.accountSection:first-child {
-  padding-top: 0;
-  border-top: 0;
-}
-
-.accountSectionTitle {
-  margin: 0;
-  padding-top: 4px;
-  color: var(--mt-navy);
-  font-size: var(--small-size);
-  font-weight: var(--body-weight);
-  white-space: nowrap;
-}
-
-.accountOption {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: var(--sp-2);
-  align-items: baseline;
-  min-height: 32px;
-  padding: 4px var(--sp-2);
-  background: var(--bg-float);
-  border: 1px solid var(--border-1);
-  border-radius: 8px;
-  cursor: pointer;
-  color: var(--fg-2);
-  font-size: var(--small-size);
-  font-weight: var(--body-weight);
-  text-align: left;
-}
-
-.accountOption:hover,
-.accountOptionActive {
-  background: var(--bg-hover);
-  color: var(--fg-1);
-}
-
-.optionCode {
-  font-family: var(--font-mono);
-  color: var(--fg-3);
-}
-
-.menuEmpty {
-  padding: var(--sp-2);
-  color: var(--fg-3);
-  font-size: var(--small-size);
 }
 
 .del {

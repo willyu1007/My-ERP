@@ -14,7 +14,12 @@ import {
   dropTestDb,
   psql,
 } from '../../../../packages/db/src/test-pg';
-import { disconnectDatabase, seedAccountsTx, withLedgerScope, type SeedAccountInput } from '@my-erp/db';
+import {
+  disconnectDatabase,
+  seedAccountsTx,
+  withLedgerScope,
+  type SeedAccountInput,
+} from '@my-erp/db';
 import type { Identity } from '@my-erp/platform';
 import { PaymentsService } from './payments.service';
 
@@ -27,9 +32,33 @@ const u1: Identity = { userId: 'u1', orgId: ORG, ledgerBookId: LB_SP, roles: [] 
 const u2: Identity = { userId: 'u2', orgId: ORG, ledgerBookId: LB_MP, roles: [] };
 
 const CHART: readonly SeedAccountInput[] = [
-  { code: '1002', name: '银行存款', category: 'asset', direction: 'debit', parentCode: null, level: 1, isLeaf: true },
-  { code: '1122', name: '应收账款', category: 'asset', direction: 'debit', parentCode: null, level: 1, isLeaf: true },
-  { code: '2202', name: '应付账款', category: 'liability', direction: 'credit', parentCode: null, level: 1, isLeaf: true },
+  {
+    code: '1002',
+    name: '银行存款',
+    category: 'asset',
+    direction: 'debit',
+    parentCode: null,
+    level: 1,
+    isLeaf: true,
+  },
+  {
+    code: '1122',
+    name: '应收账款',
+    category: 'asset',
+    direction: 'debit',
+    parentCode: null,
+    level: 1,
+    isLeaf: true,
+  },
+  {
+    code: '2202',
+    name: '应付账款',
+    category: 'liability',
+    direction: 'credit',
+    parentCode: null,
+    level: 1,
+    isLeaf: true,
+  },
 ];
 
 const receipt = {
@@ -106,7 +135,9 @@ describe.skipIf(!PG_AVAILABLE)('T-007 cashier payments (service integration)', (
     const created = await payments.create(u1, LB_SP, receipt);
     const submitted = await payments.submit(u1, LB_SP, created.id, created.version);
     const approved = await payments.approve(u1, LB_SP, submitted.id, submitted.version);
-    await expect(payments.confirm(u1, LB_SP, approved.id, approved.version, false)).rejects.toThrow();
+    await expect(
+      payments.confirm(u1, LB_SP, approved.id, approved.version, false),
+    ).rejects.toThrow();
   });
 
   it('multi-person SoD: maker cannot approve/confirm own; another user can', async () => {
@@ -128,7 +159,11 @@ describe.skipIf(!PG_AVAILABLE)('T-007 cashier payments (service integration)', (
 
   it('rejects a non-cash account as the cash side, and a stale version', async () => {
     await expect(
-      payments.create(u1, LB_SP, { ...receipt, cashAccountCode: '1122', contraAccountCode: '1002' }),
+      payments.create(u1, LB_SP, {
+        ...receipt,
+        cashAccountCode: '1122',
+        contraAccountCode: '1002',
+      }),
     ).rejects.toThrow(); // 1122 is not a 货币资金 account
 
     const created = await payments.create(u1, LB_SP, receipt);

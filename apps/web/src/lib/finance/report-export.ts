@@ -4,6 +4,7 @@
  * renders. PDF/print is handled by the dedicated print route, not here.
  */
 import type { BalanceSheet, CashFlowStatement, IncomeStatement } from '@my-erp/api-client';
+import { buildCashFlowStatementRows, buildIncomeStatementRows } from './statutory-statements';
 
 /** RFC-4180-ish quoting; CRLF line ends so Excel parses cleanly. */
 function csvCell(s: string): string {
@@ -13,12 +14,6 @@ function csvCell(s: string): string {
 export function toCsv(rows: readonly (readonly string[])[]): string {
   return rows.map((r) => r.map(csvCell).join(',')).join('\r\n');
 }
-
-const ACTIVITY_LABEL: Record<string, string> = {
-  operating: '一、经营活动产生的现金流量',
-  investing: '二、投资活动产生的现金流量',
-  financing: '三、筹资活动产生的现金流量',
-};
 
 /** Combined CSV of the three statements as labelled sections (one file, Excel-friendly). */
 export function reportsToCsv(
@@ -33,16 +28,14 @@ export function reportsToCsv(
   for (const l of bs.lines) rows.push([l.label, l.amount]);
   rows.push([]);
 
-  rows.push([`利润表（${is.from} 至 ${is.to}）`], ['项目', '本期金额']);
-  for (const l of is.lines) rows.push([l.label, l.amount]);
+  rows.push([`利润表（${is.from} 至 ${is.to}）`], ['项目', '行次', '本期金额']);
+  for (const l of buildIncomeStatementRows(is))
+    rows.push([l.label, l.lineNo ?? '', l.amount ?? '']);
   rows.push([]);
 
-  rows.push([`现金流量表（${cf.from} 至 ${cf.to}）`], ['项目', '本期金额']);
-  for (const act of cf.activities) {
-    rows.push([ACTIVITY_LABEL[act.activity ?? ''] ?? act.activity ?? '', act.subtotal ?? '0.00']);
-    for (const l of act.lines ?? []) rows.push([l.name ?? '', l.amount ?? '0.00']);
-  }
-  rows.push(['现金及现金等价物净增加额', cf.netCashFlow]);
+  rows.push([`现金流量表（${cf.from} 至 ${cf.to}）`], ['项目', '行次', '本期金额']);
+  for (const l of buildCashFlowStatementRows(cf))
+    rows.push([l.label, l.lineNo ?? '', l.amount ?? '']);
 
   return toCsv(rows);
 }

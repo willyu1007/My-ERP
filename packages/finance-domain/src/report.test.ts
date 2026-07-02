@@ -53,7 +53,10 @@ describe('statutory reports (worked fixture)', () => {
     expect(amt(bs.lines, 'cash')).toBe('50700.00'); // 50000 + 1000 − 300
     expect(amt(bs.lines, 'total_assets')).toBe('50700.00');
     expect(amt(bs.lines, 'paid_in_capital')).toBe('50000.00');
+    expect(amt(bs.lines, 'capital_reserve')).toBe('0.00');
+    expect(amt(bs.lines, 'surplus_reserve')).toBe('0.00');
     expect(amt(bs.lines, 'retained_earnings')).toBe('700.00'); // 净利润, not yet 结转
+    expect(amt(bs.lines, 'total_equity')).toBe('50700.00');
     expect(amt(bs.lines, 'total_liabilities_equity')).toBe('50700.00');
     expect(bs.balanced).toBe(true);
   });
@@ -62,7 +65,9 @@ describe('statutory reports (worked fixture)', () => {
     const is = incomeStatement(entries, categoryOf, '2026-01-01', '2026-12-31');
     expect(amt(is.lines, 'revenue')).toBe('1000.00');
     expect(amt(is.lines, 'selling')).toBe('300.00');
+    expect(amt(is.lines, 'operating_profit')).toBe('700.00');
     expect(is.netProfit).toBe('700.00');
+    expect(is.lines).toHaveLength(32);
   });
 
   it('income statement excludes the 结转损益 closing voucher (regression)', () => {
@@ -75,18 +80,35 @@ describe('statutory reports (worked fixture)', () => {
     const all = [...entries, ...closing];
     const polluted = incomeStatement(all, categoryOf, '2026-01-01', '2026-12-31');
     expect(amt(polluted.lines, 'revenue')).toBe('0.00'); // the bug, without exclusion
-    const correct = incomeStatement(all, categoryOf, '2026-01-01', '2026-12-31', new Set(['close']));
+    const correct = incomeStatement(
+      all,
+      categoryOf,
+      '2026-01-01',
+      '2026-12-31',
+      new Set(['close']),
+    );
     expect(amt(correct.lines, 'revenue')).toBe('1000.00');
     expect(correct.netProfit).toBe('700.00');
   });
 
   it('cash flow statement ties out to the net cash change', () => {
-    const cf = cashFlowStatement(entries, items, '2026-01-01', '2026-12-31');
+    const cf = cashFlowStatement(entries, [], items, '2026-01-01', '2026-12-31');
     const op = cf.activities.find((a) => a.activity === 'operating');
     const fn = cf.activities.find((a) => a.activity === 'financing');
     expect(op?.subtotal).toBe('700.00'); // 1000 − 300
     expect(fn?.subtotal).toBe('50000.00');
     expect(cf.netCashFlow).toBe('50700.00');
+    expect(cf.beginningCash).toBe('0.00');
+    expect(cf.endingCash).toBe('50700.00');
+    expect(op?.lines.map((line) => line.name)).toEqual([
+      '销售产成品、商品、提供劳务收到的现金',
+      '收到其他与经营活动有关的现金',
+      '购买原材料、商品、接受劳务支付的现金',
+      '支付的职工薪酬',
+      '支付的税费',
+      '支付其他与经营活动有关的现金',
+    ]);
+    expect(op?.lines.find((line) => line.code === 'OP-OUT-4')?.amount).toBe('300.00');
     expect(cf.tied).toBe(true);
   });
 });

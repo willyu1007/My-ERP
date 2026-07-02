@@ -31,8 +31,12 @@ describe('buildSettlementEntry', () => {
   });
 
   it('rejects non-positive amounts and same-account settlements', () => {
-    expect(() => buildSettlementEntry({ direction: 'receipt', amount: '0', cash, contra: ar })).toThrow();
-    expect(() => buildSettlementEntry({ direction: 'receipt', amount: '-5', cash, contra: ar })).toThrow();
+    expect(() =>
+      buildSettlementEntry({ direction: 'receipt', amount: '0', cash, contra: ar }),
+    ).toThrow();
+    expect(() =>
+      buildSettlementEntry({ direction: 'receipt', amount: '-5', cash, contra: ar }),
+    ).toThrow();
     expect(() =>
       buildSettlementEntry({ direction: 'receipt', amount: '10', cash, contra: cash }),
     ).toThrow();

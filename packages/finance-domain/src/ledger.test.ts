@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { computeAccountLedger, computeTrialBalance, type PostedLine } from './ledger';
+import {
+  computeAccountLedger,
+  computeTrialBalance,
+  ledgerSourceForPeriod,
+  type PostedLine,
+} from './ledger';
 
 // Posted: 收到投资 (借 1002 500000 / 贷 4001 500000), 采购 (借 6602 1200 / 贷 1002 1200).
 const entries: PostedLine[] = [
@@ -11,6 +16,7 @@ const entries: PostedLine[] = [
     voucherId: 'v1',
     voucherNo: '记-001',
     date: '2026-06-01',
+    period: '2026-06',
     summary: '收到投资',
   },
   {
@@ -21,6 +27,7 @@ const entries: PostedLine[] = [
     voucherId: 'v1',
     voucherNo: '记-001',
     date: '2026-06-01',
+    period: '2026-06',
     summary: '收到投资',
   },
   {
@@ -31,6 +38,7 @@ const entries: PostedLine[] = [
     voucherId: 'v2',
     voucherNo: '记-002',
     date: '2026-06-03',
+    period: '2026-06',
     summary: '采购',
   },
   {
@@ -41,6 +49,7 @@ const entries: PostedLine[] = [
     voucherId: 'v2',
     voucherNo: '记-002',
     date: '2026-06-03',
+    period: '2026-06',
     summary: '采购',
   },
 ];
@@ -61,6 +70,46 @@ describe('computeTrialBalance', () => {
     expect(bank?.closingCredit).toBe('0.00');
     const capital = tb.rows.find((r) => r.accountCode === '4001');
     expect(capital?.closingCredit).toBe('500000.00');
+  });
+});
+
+describe('ledgerSourceForPeriod', () => {
+  it('rolls prior-period movement into the selected period opening balance', () => {
+    const julyEntries: PostedLine[] = [
+      ...entries,
+      {
+        accountCode: '1002',
+        accountName: '银行存款',
+        debit: '100.00',
+        credit: null,
+        voucherId: 'v3',
+        voucherNo: '记-003',
+        date: '2026-07-01',
+        period: '2026-07',
+        summary: '7月收款',
+      },
+      {
+        accountCode: '6001',
+        accountName: '主营业务收入',
+        debit: null,
+        credit: '100.00',
+        voucherId: 'v3',
+        voucherNo: '记-003',
+        date: '2026-07-01',
+        period: '2026-07',
+        summary: '7月收款',
+      },
+    ];
+
+    const source = ledgerSourceForPeriod(julyEntries, [], '2026-07');
+    const tb = computeTrialBalance(source.entries, source.openings);
+
+    expect(tb.totals.openingDebit).toBe('500000.00');
+    expect(tb.totals.openingCredit).toBe('500000.00');
+    expect(tb.totals.periodDebit).toBe('100.00');
+    expect(tb.totals.periodCredit).toBe('100.00');
+    expect(tb.rows.find((r) => r.accountCode === '1002')?.openingDebit).toBe('498800.00');
+    expect(tb.rows.find((r) => r.accountCode === '6001')?.periodCredit).toBe('100.00');
   });
 });
 

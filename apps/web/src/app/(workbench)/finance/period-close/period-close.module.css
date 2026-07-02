@@ -1,22 +1,456 @@
-.bar {
+.scene {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-3);
-  align-items: center;
+  flex-direction: column;
+  gap: var(--sp-5);
 }
 
-.field {
+.summaryStats {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.summaryStats :global(.wb-stats) {
+  margin-bottom: 0;
+}
+
+.summaryStats :global(.wb-stat) {
+  min-width: 0;
+}
+
+.periodControl {
   display: inline-flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
   gap: var(--sp-2);
   align-items: center;
 }
 
-.input {
-  height: 32px;
-  padding: 0 var(--sp-2);
-  background: var(--bg-float);
-  border: 1px solid var(--border-1);
-  border-radius: 6px;
-  color: var(--fg-1);
+.periodLabel {
+  color: var(--fg-2);
   font-size: var(--small-size);
+  font-weight: var(--body-weight);
+  line-height: var(--small-lh);
+}
+
+.periodButton {
+  width: 164px;
+  min-width: 0;
+  background: var(--bg-field-quiet);
+}
+
+.periodBoard,
+.overviewPage,
+.workflowPage,
+.workflowCard {
+  min-width: 0;
+}
+
+.periodBoard {
+  display: flex;
+  flex-direction: column;
+}
+
+.periodGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--sp-3);
+}
+
+.workflowPage {
+  width: 100%;
+  max-width: 920px;
+}
+
+.overviewPage {
+  display: flex;
+  width: 100%;
+  max-width: 920px;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.workflowCard {
+  border-radius: var(--r-xl);
+  padding: var(--sp-5);
+  background: var(--bg-surface);
+  box-shadow: inset 0 0 0 1px var(--border-1);
+}
+
+.panelHead {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--sp-3);
+}
+
+.panelTitle,
+.workflowTitle {
+  margin: 0;
+  color: var(--fg-1);
+  font-family: var(--font-display);
+  font-size: var(--h3-size);
+  font-weight: var(--h3-weight);
+  line-height: var(--h3-lh);
+}
+
+.panelCount,
+.workflowMeta,
+.periodRowMeta,
+.checkDetail,
+.historyMeta,
+.noExtraWork {
+  color: var(--fg-3);
+  font-size: var(--small-size);
+  line-height: var(--small-lh);
+}
+
+.periodRow {
+  display: flex;
+  min-height: 76px;
+  gap: var(--sp-3);
+  align-items: center;
+  justify-content: space-between;
+  border-radius: var(--r-lg);
+  padding: var(--sp-3);
+  background: var(--bg-surface);
+  color: inherit;
+  box-shadow: inset 0 0 0 1px var(--border-1);
+  text-decoration: none;
+  transition:
+    background var(--t-fast) var(--ease-out),
+    box-shadow var(--t-fast) var(--ease-out);
+}
+
+.periodRow:hover {
+  background: color-mix(in oklab, var(--mt-navy) 5%, transparent);
+  box-shadow: inset 0 0 0 1px var(--border-2);
+}
+
+.periodRowMain {
+  min-width: 0;
+}
+
+.periodRowTitle,
+.checkTitle,
+.executionTitle {
+  color: var(--fg-1);
+  font-size: var(--body-size);
+  font-weight: var(--h4-weight);
+  line-height: var(--body-lh);
+}
+
+.periodRowTitle,
+.periodRowMeta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.periodRowAside {
+  display: inline-flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  gap: var(--sp-1);
+  align-items: flex-end;
+}
+
+.periodRowCount {
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+  font-size: var(--small-size);
+  line-height: var(--small-lh);
+}
+
+.overviewHeader,
+.workflowCardHeader {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.overviewHeaderActions,
+.workflowCardHeaderActions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.actionCardGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-3);
+}
+
+.actionCard {
+  display: flex;
+  min-height: 148px;
+  flex-direction: column;
+  gap: var(--sp-2);
+  border-radius: var(--r-lg);
+  padding: var(--sp-4);
+  background: var(--bg-surface);
+  color: inherit;
+  box-shadow: inset 0 0 0 1px var(--border-1);
+  text-decoration: none;
+  transition:
+    background var(--t-fast) var(--ease-out),
+    box-shadow var(--t-fast) var(--ease-out),
+    transform var(--t-fast) var(--ease-out);
+}
+
+.actionCard:hover {
+  background: color-mix(in oklab, var(--mt-navy) 4%, transparent);
+  box-shadow: inset 0 0 0 1px var(--border-2);
+  transform: translateY(-1px);
+}
+
+.actionCard:focus-visible,
+.periodRow:focus-visible {
+  outline: 2px solid var(--mt-navy-300);
+  outline-offset: 3px;
+}
+
+.actionCardHead {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.actionCardTitle {
+  margin: 0;
+  color: var(--fg-1);
+  font-size: var(--body-size);
+  font-weight: var(--h4-weight);
+  line-height: var(--body-lh);
+}
+
+.actionCardMetric {
+  color: var(--fg-1);
+  font-family: var(--font-display);
+  font-size: var(--h3-size);
+  font-weight: var(--h3-weight);
+  line-height: var(--h3-lh);
+}
+
+.actionCardDetail {
+  flex: 1 1 auto;
+  color: var(--fg-3);
+  font-size: var(--small-size);
+  line-height: var(--small-lh);
+}
+
+.actionCardAction {
+  color: var(--mt-navy);
+  font-size: var(--small-size);
+  font-weight: var(--h4-weight);
+  line-height: var(--small-lh);
+}
+
+.workflowCardHeader {
+  padding-bottom: var(--sp-4);
+}
+
+.workflowCardSummary {
+  padding: var(--sp-4) 0;
+  border-top: 1px solid var(--border-1);
+}
+
+.workflowSteps {
+  display: flex;
+  flex-direction: column;
+}
+
+.workflowStep {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: var(--sp-3);
+  padding: var(--sp-4) 0;
+  border-top: 1px solid var(--border-1);
+}
+
+.workflowStep:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.stepMarker {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-pill);
+  background: var(--bg-sunken);
+  color: var(--fg-2);
+  font-family: var(--font-mono);
+  font-size: var(--small-size);
+  font-weight: var(--h4-weight);
+  line-height: 1;
+}
+
+.stepContent {
+  min-width: 0;
+}
+
+.stepHead {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-3);
+}
+
+.stepTitle {
+  margin: 0;
+  color: var(--fg-1);
+  font-size: var(--body-size);
+  font-weight: var(--h4-weight);
+  line-height: var(--body-lh);
+}
+
+.stepStatus {
+  flex-shrink: 0;
+}
+
+.stepBody {
+  min-width: 0;
+}
+
+.checkList {
+  display: flex;
+  flex-direction: column;
+}
+
+.checkRow {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) 0;
+  border-top: 1px solid var(--border-1);
+}
+
+.checkRow:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.checkMain {
+  display: flex;
+  min-width: 0;
+  gap: var(--sp-3);
+  align-items: flex-start;
+}
+
+.embeddedWorklist {
+  margin-top: var(--sp-5);
+}
+
+.embeddedWorklist :global(.wb-section__head) {
+  margin-bottom: var(--sp-3);
+}
+
+.embeddedWorklist :global(.wb-section__title) {
+  font-size: var(--body-size);
+  font-weight: var(--h4-weight);
+}
+
+.workflowFooter {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--sp-4);
+}
+
+.noExtraWork {
+  margin: var(--sp-2) 0 0;
+}
+
+.execution {
+  display: flex;
+  gap: var(--sp-4);
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.effectList {
+  margin: var(--sp-2) 0 0;
+  padding-left: 18px;
+  color: var(--fg-2);
+  font-size: var(--small-size);
+  line-height: var(--small-lh);
+}
+
+.effectItem + .effectItem {
+  margin-top: var(--sp-1);
+}
+
+@media (width <= 920px) {
+  .overviewPage,
+  .workflowPage {
+    max-width: none;
+  }
+}
+
+@media (width <= 720px) {
+  .workflowCard {
+    padding: var(--sp-4);
+  }
+
+  .periodControl,
+  .periodButton {
+    width: 100%;
+  }
+
+  .overviewHeaderActions,
+  .workflowCardHeaderActions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .overviewHeaderActions :global(.mt-badge),
+  .workflowCardHeaderActions :global(.mt-badge) {
+    align-self: flex-start;
+  }
+
+  .actionCardGrid,
+  .periodGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .overviewHeader,
+  .workflowCardHeader,
+  .stepHead,
+  .checkRow,
+  .execution {
+    align-items: stretch;
+  }
+
+  .overviewHeader,
+  .workflowCardHeader,
+  .stepHead {
+    align-items: flex-start;
+  }
+
+  .periodRow {
+    align-items: stretch;
+  }
+
+  .overviewHeader,
+  .workflowCardHeader,
+  .periodRow,
+  .checkRow,
+  .execution {
+    flex-direction: column;
+  }
+
+  .periodRowAside {
+    align-items: flex-start;
+  }
 }

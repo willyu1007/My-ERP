@@ -11,7 +11,11 @@ import { appendWorkItemOutboxEventTx } from '../work-items/voucher-workflow';
 export const PAYMENT_APPROVE_WORK_ITEM_TYPE = 'payment.approve';
 export const PAYMENT_CONFIRM_WORK_ITEM_TYPE = 'payment.confirm';
 
-const CASHIER_WORKFLOW = { moduleKey: 'finance', workflowKey: 'cashier', workflowVersion: 'v1' } as const;
+const CASHIER_WORKFLOW = {
+  moduleKey: 'finance',
+  workflowKey: 'cashier',
+  workflowVersion: 'v1',
+} as const;
 
 async function createPaymentWorkItemTx(
   tx: TxClient,

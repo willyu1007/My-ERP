@@ -26,7 +26,10 @@ function toFailure(err: unknown): TaskActionResult {
   return { ok: false, reason, message };
 }
 
-export async function claimTaskAction(id: string, expectedVersion: number): Promise<TaskActionResult> {
+export async function claimTaskAction(
+  id: string,
+  expectedVersion: number,
+): Promise<TaskActionResult> {
   try {
     const r = await actOnWorkItem(id, 'claim', { expectedVersion });
     return { ok: true, status: r.workItem.status };

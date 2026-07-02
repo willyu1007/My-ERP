@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-17T22:50:40.658Z",
+  "generatedAt": "2026-07-01T23:51:22.778Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "d160da9e4be1b8843e3980a697a41379eda18783e884776b4c16c50c0a123bda",
+  "sourceChecksumSha256": "974513925e8b69f39c9b790f145d0861aa1ae708f7a10e64a989b825f4a81fec",
   "stats": {
     "totalEndpoints": 58,
     "byTag": {
@@ -655,12 +655,13 @@
         "query": [],
         "body": {
           "required": [
-            "date",
-            "summary",
-            "lines"
+            "date"
           ],
           "optional": [
-            "contractId"
+            "summary",
+            "contractId",
+            "draftPayload",
+            "lines"
           ]
         }
       },
@@ -683,7 +684,8 @@
           "reversalOf",
           "reversedBy",
           "attachments",
-          "contractId"
+          "contractId",
+          "draftPayload"
         ]
       },
       "errors": [
@@ -692,7 +694,7 @@
         403
       ],
       "example": {
-        "curl": "curl -X POST '/v1/vouchers' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"date\":\"<date>\",\"summary\":\"<summary>\",\"lines\":\"<lines>\"}'"
+        "curl": "curl -X POST '/v1/vouchers' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"date\":\"<date>\"}'"
       }
     },
     {
@@ -728,7 +730,8 @@
           "reversalOf",
           "reversedBy",
           "attachments",
-          "contractId"
+          "contractId",
+          "draftPayload"
         ]
       },
       "errors": [
@@ -752,12 +755,13 @@
         "query": [],
         "body": {
           "required": [
-            "date",
-            "summary",
-            "lines"
+            "date"
           ],
           "optional": [
-            "contractId"
+            "summary",
+            "contractId",
+            "draftPayload",
+            "lines"
           ]
         }
       },
@@ -780,7 +784,8 @@
           "reversalOf",
           "reversedBy",
           "attachments",
-          "contractId"
+          "contractId",
+          "draftPayload"
         ]
       },
       "errors": [
@@ -788,7 +793,7 @@
         404
       ],
       "example": {
-        "curl": "curl -X PATCH '/v1/vouchers/{id}' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"date\":\"<date>\",\"summary\":\"<summary>\",\"lines\":\"<lines>\"}'"
+        "curl": "curl -X PATCH '/v1/vouchers/{id}' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"date\":\"<date>\"}'"
       }
     },
     {
@@ -824,7 +829,8 @@
           "reversalOf",
           "reversedBy",
           "attachments",
-          "contractId"
+          "contractId",
+          "draftPayload"
         ]
       },
       "errors": [
@@ -873,7 +879,8 @@
           "reversalOf",
           "reversedBy",
           "attachments",
-          "contractId"
+          "contractId",
+          "draftPayload"
         ]
       },
       "errors": [
@@ -1173,7 +1180,9 @@
       "auth": "bearer",
       "input": {
         "params": [],
-        "query": [],
+        "query": [
+          "period"
+        ],
         "body": null
       },
       "output": {
@@ -1203,7 +1212,9 @@
         "params": [
           "code"
         ],
-        "query": [],
+        "query": [
+          "period"
+        ],
         "body": null
       },
       "output": {
@@ -1555,6 +1566,8 @@
           "to",
           "activities",
           "netCashFlow",
+          "beginningCash",
+          "endingCash",
           "tied"
         ]
       },

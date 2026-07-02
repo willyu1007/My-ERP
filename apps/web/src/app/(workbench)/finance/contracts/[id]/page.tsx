@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Breadcrumb, Section, StatusBadge } from '@my-erp/ui';
+import { Breadcrumb, Section, StatusBadge } from '@my-erp/ui/primitives';
 import type { TimelineItem } from '@my-erp/api-client';
 import { getContractTimeline } from '@/lib/finance/data-source';
-import { formatMoney } from '@/lib/finance/format';
+import { formatDate, formatMoney } from '@/lib/finance/format';
 import {
   CONTRACT_STATUS,
   CONTRACT_TYPE,
@@ -21,6 +21,16 @@ function hrefFor(item: TimelineItem): string | null {
   return null;
 }
 
+function periodLabel(
+  startDate: string | null | undefined,
+  endDate: string | null | undefined,
+): string {
+  if (startDate && endDate) return `${formatDate(startDate)} 至 ${formatDate(endDate)}`;
+  if (startDate) return `${formatDate(startDate)} 起`;
+  if (endDate) return `截至 ${formatDate(endDate)}`;
+  return '—';
+}
+
 export default async function ContractDetailPage({
   params,
 }: {
@@ -35,7 +45,8 @@ export default async function ContractDetailPage({
     ['类型', CONTRACT_TYPE[c.type] ?? c.type],
     ['对方单位', c.counterparty],
     ['合同金额', c.amount ? formatMoney(c.amount) : '—'],
-    ['摘要', c.summary],
+    ['履约期限', periodLabel(c.startDate, c.endDate)],
+    ['结构化条款', c.summary || '—'],
     ['制单人', c.createdBy],
   ];
 
@@ -45,7 +56,11 @@ export default async function ContractDetailPage({
 
       <Section title={`${c.code} · ${c.title}`}>
         <div className="wb-row wb-row--wrap">
-          <StatusBadge tone={contractStatusTone(c.status)} dot label={CONTRACT_STATUS[c.status] ?? c.status} />
+          <StatusBadge
+            tone={contractStatusTone(c.status)}
+            dot
+            label={CONTRACT_STATUS[c.status] ?? c.status}
+          />
         </div>
         <div className={styles.detailGrid}>
           {rows.map(([k, v]) => (
@@ -76,9 +91,7 @@ export default async function ContractDetailPage({
               <div key={`${item.refType}-${item.refId}-${i}`} className={styles.tlItem}>
                 <div className={styles.tlHead}>
                   <span className={styles.tlDate}>{item.date}</span>
-                  <span className={styles.tlKind}>
-                    [{TIMELINE_KIND[item.kind] ?? item.kind}]
-                  </span>
+                  <span className={styles.tlKind}>[{TIMELINE_KIND[item.kind] ?? item.kind}]</span>
                   {title}
                   {item.amount ? (
                     <span className={`${styles.tlAmount} wb-mono`}>{formatMoney(item.amount)}</span>
