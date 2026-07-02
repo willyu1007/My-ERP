@@ -6,16 +6,12 @@ import {
   listCashFlowItems,
 } from '@/lib/finance/data-source';
 import { CashFlowWorklist } from '../../cash-flow-worklist';
-import { PeriodCloseWorkflow, type PeriodWorkflowKey } from '../../period-close-client';
+import { PeriodCloseWorkflow } from '../../period-close-client';
+import { isPeriodWorkflow } from '../../period-close-workflow';
 
 export const dynamic = 'force-dynamic';
 
 const PERIOD_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
-const WORKFLOWS: readonly PeriodWorkflowKey[] = ['checks', 'cash-flow', 'close'];
-
-function isWorkflow(value: string): value is PeriodWorkflowKey {
-  return WORKFLOWS.includes(value as PeriodWorkflowKey);
-}
 
 export default async function PeriodCloseWorkflowPage({
   params,
@@ -26,7 +22,7 @@ export default async function PeriodCloseWorkflowPage({
   }>;
 }) {
   const { period, workflow } = await params;
-  if (!PERIOD_RE.test(period) || !isWorkflow(workflow)) notFound();
+  if (!PERIOD_RE.test(period) || !isPeriodWorkflow(workflow)) notFound();
 
   const readiness = await getPeriodReadiness(period);
 

@@ -1,16 +1,21 @@
 'use client';
 
-import { useRef, useState, useTransition, type ReactNode } from 'react';
+import { useTransition, type KeyboardEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@my-erp/ui/feedback';
-import { Stat, StatStrip, StatusBadge } from '@my-erp/ui/primitives';
+import { SetBreadcrumb } from '@my-erp/ui/shell';
 import type { PeriodClose, PeriodCloseReadiness } from '@my-erp/api-client';
 import { formatPeriod } from '@/lib/finance/format';
 import { closePeriodAction, reopenPeriodAction } from './actions';
+import {
+  nextPeriodWorkflow,
+  periodHardBlockerCount,
+  type PeriodWorkflowKey,
+} from './period-close-workflow';
 import styles from './period-close.module.css';
 
-type CheckTone = 'success' | 'warning' | 'muted' | 'info';
+type CheckTone = 'success' | 'warning' | 'muted' | 'info' | 'accent';
 
 interface CheckItem {
   readonly key: string;
@@ -20,35 +25,30 @@ interface CheckItem {
   readonly tone: CheckTone;
 }
 
-interface PeriodQueueItem {
+interface PeriodTableRow {
   readonly period: string;
   readonly title: string;
-  readonly meta: string;
-  readonly tone: CheckTone;
+  readonly statusTone: CheckTone;
   readonly statusLabel: string;
-  readonly countLabel: string;
+  readonly blockingLabel: string;
+  readonly blockingTone: CheckTone;
+  readonly currentStep: string;
+  readonly recordLabel: string;
+  readonly actionHref: string;
+  readonly isCurrent: boolean;
 }
 
-export type PeriodWorkflowKey = 'checks' | 'cash-flow' | 'close';
-
-interface PeriodActionCard {
-  readonly key: string;
+interface WorkflowTab {
+  readonly key: PeriodWorkflowKey;
   readonly title: string;
-  readonly metric: string;
-  readonly detail: string;
-  readonly tone: CheckTone;
   readonly statusLabel: string;
+  readonly tone: CheckTone;
   readonly href: string;
-  readonly actionLabel: string;
-}
-
-interface WorkflowMeta {
-  readonly title: string;
-  readonly meta: string;
+  readonly current: boolean;
 }
 
 const fmtDateTime = (iso: string | null | undefined): string =>
-  iso ? iso.slice(0, 19).replace('T', ' ') : '—';
+  iso ? iso.slice(0, 19).replace('T', ' ') : '-';
 
 function readinessLabel(readiness: PeriodCloseReadiness | null): {
   readonly tone: CheckTone;
@@ -58,6 +58,94 @@ function readinessLabel(readiness: PeriodCloseReadiness | null): {
   if (readiness.status === 'closed') return { tone: 'muted', label: '已关账' };
   if (readiness.canClose) return { tone: 'success', label: '可关账' };
   return { tone: 'warning', label: '未就绪' };
+}
+
+function blockingLabel(readiness: PeriodCloseReadiness | null): {
+  readonly tone: CheckTone;
+  readonly label: string;
+} {
+  if (!readiness) return { tone: 'info', label: '待检查' };
+  if (readiness.status === 'closed') return { tone: 'muted', label: '无' };
+
+  const parts = [
+    readiness.unpostedCount > 0 ? `未过账 ${readiness.unpostedCount}` : null,
+    readiness.unclosedPriorPeriods.length > 0
+      ? `前期 ${readiness.unclosedPriorPeriods.length}`
+      : null,
+  ].filter(Boolean);
+
+  return parts.length > 0
+    ? { tone: 'warning', label: parts.join(' / ') }
+    : { tone: 'success', label: '无' };
+}
+
+function currentStepLabel(readiness: PeriodCloseReadiness | null): string {
+  const workflow = nextPeriodWorkflow(readiness);
+  if (workflow === 'checks') return readiness ? '处理阻断项' : '同步检查';
+  if (workflow === 'cash-flow') return '补现金流量';
+  if (workflow === 'preview') return '预览结转';
+  return readiness?.status === 'closed' ? '查看记录' : '执行关账';
+}
+
+function periodTableRows(
+  period: string,
+  readiness: PeriodCloseReadiness | null,
+  periods: readonly PeriodClose[],
+): readonly PeriodTableRow[] {
+  const rows = new Map<string, PeriodTableRow>();
+  const status = readinessLabel(readiness);
+  const blocking = blockingLabel(readiness);
+  const workflow = nextPeriodWorkflow(readiness);
+
+  rows.set(period, {
+    period,
+    title: formatPeriod(period),
+    statusTone: status.tone,
+    statusLabel: status.label,
+    blockingLabel: blocking.label,
+    blockingTone: blocking.tone,
+    currentStep: currentStepLabel(readiness),
+    recordLabel: readiness?.status === 'closed' ? '已写入关账记录' : '-',
+    actionHref: `/finance/period-close/${period}/${workflow}`,
+    isCurrent: true,
+  });
+
+  for (const item of periods) {
+    if (item.period === period) continue;
+    const closed = item.status === 'closed';
+    rows.set(item.period, {
+      period: item.period,
+      title: formatPeriod(item.period),
+      statusTone: closed ? 'success' : 'muted',
+      statusLabel: closed ? '已关账' : '已开放',
+      blockingLabel: closed ? '无' : '待检查',
+      blockingTone: closed ? 'muted' : 'info',
+      currentStep: closed ? '查看记录' : '结账检查',
+      recordLabel: closed
+        ? `关账 ${fmtDateTime(item.closedAt)}`
+        : `开放 ${fmtDateTime(item.reopenedAt)}`,
+      actionHref: `/finance/period-close/${item.period}/${closed ? 'close' : 'checks'}`,
+      isCurrent: false,
+    });
+  }
+
+  for (const prior of readiness?.unclosedPriorPeriods ?? []) {
+    if (rows.has(prior)) continue;
+    rows.set(prior, {
+      period: prior,
+      title: formatPeriod(prior),
+      statusTone: 'warning',
+      statusLabel: '待补齐',
+      blockingLabel: '前期未关账',
+      blockingTone: 'warning',
+      currentStep: '补齐关账',
+      recordLabel: '-',
+      actionHref: `/finance/period-close/${prior}/checks`,
+      isCurrent: false,
+    });
+  }
+
+  return [...rows.values()].sort((a, b) => b.period.localeCompare(a.period));
 }
 
 function buildChecks(readiness: PeriodCloseReadiness | null): readonly CheckItem[] {
@@ -110,177 +198,85 @@ function buildChecks(readiness: PeriodCloseReadiness | null): readonly CheckItem
       value: `${readiness.untaggedCashFlowCount}`,
       detail:
         readiness.untaggedCashFlowCount > 0
-          ? '不阻断关账，但会影响现金流量表勾稽，建议本页补齐。'
+          ? '不阻断关账，但会影响现金流量表勾稽，建议补齐。'
           : '现金流量打标检查已通过。',
       tone: readiness.untaggedCashFlowCount > 0 ? 'warning' : 'success',
     },
-    {
-      key: 'closing',
-      label: '损益结转准备',
-      value: closed ? '已完成' : readiness.canClose ? '可执行' : '等待处理',
-      detail: closed
-        ? '关账记录已写入，期间已锁定。'
-        : readiness.canClose
-          ? '可生成结转损益凭证并锁定期间。'
-          : '处理阻断项后再执行关账。',
-      tone: closed ? 'success' : readiness.canClose ? 'success' : 'muted',
-    },
   ];
 }
 
-function issueCount(readiness: PeriodCloseReadiness | null): number {
-  if (!readiness || readiness.status === 'closed') return 0;
-  return (
-    readiness.unpostedCount +
-    readiness.unclosedPriorPeriods.length +
-    readiness.untaggedCashFlowCount
-  );
-}
-
-function issueMeta(readiness: PeriodCloseReadiness | null): string {
-  if (!readiness) return '等待检查';
-  if (readiness.status === 'closed') return '期间已锁定';
-
-  const parts = [
-    readiness.unpostedCount > 0 ? `未过账 ${readiness.unpostedCount}` : null,
-    readiness.unclosedPriorPeriods.length > 0
-      ? `前期 ${readiness.unclosedPriorPeriods.length}`
-      : null,
-    readiness.untaggedCashFlowCount > 0 ? `现金流量 ${readiness.untaggedCashFlowCount}` : null,
-  ].filter(Boolean);
-  return parts.length > 0 ? parts.join(' · ') : '检查已通过';
-}
-
-function workflowMeta(kind: PeriodWorkflowKey, closed: boolean): WorkflowMeta {
-  if (kind === 'cash-flow') return { title: '现金流量打标', meta: '月末补充事项' };
-  if (kind === 'close') {
-    return closed
-      ? { title: '反关账', meta: '高风险纠错操作' }
-      : { title: '执行关账', meta: '结转损益并锁定期间' };
-  }
-  return { title: '结账检查', meta: '阻断项与建议项' };
-}
-
-function buildActionCards(
+function workflowTabs(
   period: string,
   readiness: PeriodCloseReadiness | null,
-): readonly PeriodActionCard[] {
-  const closed = readiness?.status === 'closed';
-  const status = readinessLabel(readiness);
-  const unposted = readiness?.unpostedCount ?? 0;
-  const prior = readiness?.unclosedPriorPeriods.length ?? 0;
+): readonly WorkflowTab[] {
+  const hard = periodHardBlockerCount(readiness);
   const cashFlow = readiness?.untaggedCashFlowCount ?? 0;
+  const closed = readiness?.status === 'closed';
+  const current = nextPeriodWorkflow(readiness);
 
-  return [
-    {
-      key: 'period',
-      title: '期间状态',
-      metric: readiness ? (closed ? '已锁定' : '开放中') : '待同步',
-      detail: `${formatPeriod(period)} · ${closed ? '后续改动需先反关账' : '可处理凭证和月末事项'}`,
-      tone: status.tone,
-      statusLabel: status.label,
-      href: `/finance/period-close/${period}/checks`,
-      actionLabel: '查看检查',
-    },
+  const tabs: readonly Omit<WorkflowTab, 'statusLabel' | 'tone'>[] = [
     {
       key: 'checks',
-      title: '结账检查',
-      metric: issueMeta(readiness),
-      detail:
-        unposted + prior > 0
-          ? `阻断项 ${unposted + prior} · 需处理后才能关账`
-          : '阻断项已通过，可继续处理月末事项。',
-      tone: unposted + prior > 0 ? 'warning' : readiness ? 'success' : 'info',
-      statusLabel: unposted + prior > 0 ? '阻塞' : readiness ? '通过' : '待检查',
+      title: '检查',
       href: `/finance/period-close/${period}/checks`,
-      actionLabel: '进入检查',
+      current: current === 'checks',
     },
     {
       key: 'cash-flow',
-      title: '现金流量打标',
-      metric: cashFlow > 0 ? `${cashFlow} 项待补` : '已完成',
-      detail:
-        cashFlow > 0 ? '不阻断关账，但会影响现金流量表勾稽。' : '本期现金流量打标检查已通过。',
-      tone: cashFlow > 0 ? 'warning' : readiness ? 'success' : 'info',
-      statusLabel: cashFlow > 0 ? '建议处理' : readiness ? '通过' : '待检查',
+      title: '现金流量',
       href: `/finance/period-close/${period}/cash-flow`,
-      actionLabel: '处理打标',
+      current: current === 'cash-flow',
+    },
+    {
+      key: 'preview',
+      title: '结转预览',
+      href: `/finance/period-close/${period}/preview`,
+      current: current === 'preview',
     },
     {
       key: 'close',
-      title: closed ? '反关账' : '执行关账',
-      metric: closed ? '已锁定' : readiness?.canClose ? '可执行' : '等待处理',
-      detail: closed
-        ? '仅用于纠错，会红冲结转凭证并重新开放期间。'
-        : readiness?.canClose
-          ? '生成结转损益凭证、写入关账记录并锁定期间。'
-          : '处理阻断项后再执行关账。',
-      tone: closed ? 'muted' : readiness?.canClose ? 'success' : 'muted',
-      statusLabel: closed ? '高风险' : readiness?.canClose ? '可执行' : '等待检查',
+      title: closed ? '关账记录' : '关账',
       href: `/finance/period-close/${period}/close`,
-      actionLabel: closed ? '进入反关账' : '进入关账',
+      current: current === 'close',
     },
   ];
-}
 
-function periodQueue(
-  period: string,
-  readiness: PeriodCloseReadiness | null,
-  periods: readonly PeriodClose[],
-): readonly PeriodQueueItem[] {
-  const currentStatus = readinessLabel(readiness);
-  const currentIssues = issueCount(readiness);
-  const items = new Map<string, PeriodQueueItem>();
-
-  items.set(period, {
-    period,
-    title: formatPeriod(period),
-    meta: issueMeta(readiness),
-    tone: currentStatus.tone,
-    statusLabel: currentStatus.label,
-    countLabel:
-      readiness?.status === 'closed'
-        ? '已锁定'
-        : currentIssues > 0
-          ? `${currentIssues} 项`
-          : readiness?.canClose
-            ? '可执行'
-            : '待检查',
+  return tabs.map((tab) => {
+    if (tab.current) return { ...tab, statusLabel: '当前', tone: 'accent' };
+    if (tab.key === 'checks') {
+      return {
+        ...tab,
+        statusLabel: !readiness ? '待同步' : hard > 0 ? `阻塞 ${hard}` : '通过',
+        tone: !readiness ? 'info' : hard > 0 ? 'warning' : 'success',
+      };
+    }
+    if (tab.key === 'cash-flow') {
+      return {
+        ...tab,
+        statusLabel: !readiness ? '待检查' : cashFlow > 0 ? `建议 ${cashFlow}` : '完成',
+        tone: !readiness ? 'info' : cashFlow > 0 ? 'warning' : 'success',
+      };
+    }
+    if (tab.key === 'preview') {
+      return {
+        ...tab,
+        statusLabel: closed ? '已生成' : !readiness ? '待同步' : hard > 0 ? '等待检查' : '可查看',
+        tone: closed ? 'success' : !readiness ? 'info' : hard > 0 ? 'muted' : 'success',
+      };
+    }
+    return {
+      ...tab,
+      statusLabel: closed ? '已关账' : readiness?.canClose ? '可执行' : '等待',
+      tone: closed ? 'muted' : readiness?.canClose ? 'success' : 'muted',
+    };
   });
-
-  for (const item of periods) {
-    if (item.period === period) continue;
-    const closed = item.status === 'closed';
-    items.set(item.period, {
-      period: item.period,
-      title: formatPeriod(item.period),
-      meta: closed ? `关账 ${fmtDateTime(item.closedAt)}` : `开放 ${fmtDateTime(item.reopenedAt)}`,
-      tone: closed ? 'success' : 'muted',
-      statusLabel: closed ? '已关账' : '已开放',
-      countLabel: closed ? '已锁定' : '待检查',
-    });
-  }
-
-  for (const prior of readiness?.unclosedPriorPeriods ?? []) {
-    if (items.has(prior)) continue;
-    items.set(prior, {
-      period: prior,
-      title: formatPeriod(prior),
-      meta: '前置期间未关账',
-      tone: 'warning',
-      statusLabel: '待补齐',
-      countLabel: '阻塞',
-    });
-  }
-
-  return [...items.values()].sort((a, b) => b.period.localeCompare(a.period));
 }
 
 function CheckRow({ item }: { readonly item: CheckItem }) {
   return (
     <div className={styles.checkRow}>
       <div className={styles.checkMain}>
-        <StatusBadge tone={item.tone} dot label={item.value} />
+        <StatusCell tone={item.tone} label={item.value} />
         <div>
           <div className={styles.checkTitle}>{item.label}</div>
           <div className={styles.checkDetail}>{item.detail}</div>
@@ -290,122 +286,337 @@ function CheckRow({ item }: { readonly item: CheckItem }) {
   );
 }
 
-function ActionCard({ item }: { readonly item: PeriodActionCard }) {
-  return (
-    <Link className={styles.actionCard} href={item.href}>
-      <div className={styles.actionCardHead}>
-        <h3 className={styles.actionCardTitle}>{item.title}</h3>
-        <StatusBadge tone={item.tone} dot label={item.statusLabel} />
-      </div>
-      <div className={styles.actionCardMetric}>{item.metric}</div>
-      <div className={styles.actionCardDetail}>{item.detail}</div>
-      <div className={styles.actionCardAction}>{item.actionLabel}</div>
-    </Link>
-  );
-}
+const statusToneClass: Record<CheckTone, string> = {
+  success: styles.statusTextSuccess,
+  warning: styles.statusTextWarning,
+  muted: styles.statusTextMuted,
+  info: styles.statusTextInfo,
+  accent: styles.statusTextAccent,
+};
 
-function PeriodRow({ item }: { readonly item: PeriodQueueItem }) {
-  return (
-    <Link className={styles.periodRow} href={`/finance/period-close/${item.period}`}>
-      <div className={styles.periodRowMain}>
-        <div className={styles.periodRowTitle}>{item.title}</div>
-        <div className={styles.periodRowMeta}>{item.meta}</div>
-      </div>
-      <div className={styles.periodRowAside}>
-        <StatusBadge tone={item.tone} dot label={item.statusLabel} />
-        <span className={styles.periodRowCount}>{item.countLabel}</span>
-      </div>
-    </Link>
-  );
-}
-
-function WorkflowStep({
-  index,
-  title,
-  status,
-  children,
-}: {
-  readonly index: number;
-  readonly title: string;
-  readonly status?: ReactNode;
-  readonly children: ReactNode;
-}) {
-  return (
-    <section className={styles.workflowStep} aria-labelledby={`period-step-${index}`}>
-      <div className={styles.stepMarker} aria-hidden="true">
-        {index}
-      </div>
-      <div className={styles.stepContent}>
-        <div className={styles.stepHead}>
-          <h3 id={`period-step-${index}`} className={styles.stepTitle}>
-            {title}
-          </h3>
-          {status ? <div className={styles.stepStatus}>{status}</div> : null}
-        </div>
-        <div className={styles.stepBody}>{children}</div>
-      </div>
-    </section>
-  );
+function StatusCell({ tone, label }: { readonly tone: CheckTone; readonly label: string }) {
+  return <span className={`${styles.statusText} ${statusToneClass[tone]}`}>{label}</span>;
 }
 
 function CloseEffect({ children }: { readonly children: ReactNode }) {
   return <li className={styles.effectItem}>{children}</li>;
 }
 
-function PeriodPickerButton({
-  period,
-  onChange,
+function SummaryMetric({
+  label,
+  value,
+  tone = 'muted',
+  foot,
 }: {
-  readonly period: string;
-  readonly onChange: (period: string) => void;
+  readonly label: string;
+  readonly value: string;
+  readonly tone?: CheckTone;
+  readonly foot?: string;
 }) {
-  const inputRef = useRef<HTMLInputElement | null>(null);
-
-  function openPicker(): void {
-    const input = inputRef.current;
-    if (!input) return;
-    if (typeof input.showPicker === 'function') input.showPicker();
-    else input.click();
-  }
-
   return (
-    <span className="mt-date-button-control">
-      <button
-        type="button"
-        className={`mt-date-button ${styles.periodButton}`}
-        aria-label={`会计期间 ${formatPeriod(period)}`}
-        onClick={openPicker}
-      >
-        {formatPeriod(period)}
-      </button>
-      <input
-        ref={inputRef}
-        className="mt-date-button-native"
-        aria-hidden="true"
-        tabIndex={-1}
-        type="month"
-        value={period}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    </span>
+    <div className={styles.summaryMetric}>
+      <div className={styles.summaryMetricLabel}>{label}</div>
+      <div className={`${styles.summaryMetricValue} ${statusToneClass[tone]}`}>{value}</div>
+      {foot ? <div className={styles.summaryMetricFoot}>{foot}</div> : null}
+    </div>
   );
 }
 
-function PeriodSummary({ readiness }: { readonly readiness: PeriodCloseReadiness | null }) {
+function WorkSection({
+  title,
+  children,
+}: {
+  readonly title: string;
+  readonly children: ReactNode;
+}) {
   return (
-    <div className={styles.summaryStats}>
-      <StatStrip compact>
-        <Stat label="未过账凭证" value={readiness ? String(readiness.unpostedCount) : '—'} />
-        <Stat
-          label="前期未关账"
-          value={readiness ? String(readiness.unclosedPriorPeriods.length) : '—'}
-        />
-        <Stat
-          label="现金流"
-          value={readiness ? String(readiness.untaggedCashFlowCount) : '—'}
-          foot={readiness && readiness.untaggedCashFlowCount > 0 ? '建议处理' : undefined}
-        />
-      </StatStrip>
+    <section className={styles.workSection}>
+      <h4 className={styles.workSectionTitle}>{title}</h4>
+      {children}
+    </section>
+  );
+}
+
+function ActionBar({ children }: { readonly children: ReactNode }) {
+  return <div className={styles.actionBar}>{children}</div>;
+}
+
+function ChecksPanel({
+  period,
+  readiness,
+  onRefresh,
+  onConfirm,
+}: {
+  readonly period: string;
+  readonly readiness: PeriodCloseReadiness | null;
+  readonly onRefresh: () => void;
+  readonly onConfirm: () => void;
+}) {
+  const checks = buildChecks(readiness);
+  const hard = periodHardBlockerCount(readiness);
+  const firstPrior = readiness?.unclosedPriorPeriods[0];
+
+  return (
+    <div className={styles.panelBody}>
+      <WorkSection title="状态摘要">
+        <div className={styles.summaryGrid}>
+          <SummaryMetric
+            label="未过账凭证"
+            value={readiness ? String(readiness.unpostedCount) : '-'}
+            tone={
+              readiness && readiness.unpostedCount > 0 ? 'warning' : readiness ? 'success' : 'info'
+            }
+          />
+          <SummaryMetric
+            label="前期未关账"
+            value={readiness ? String(readiness.unclosedPriorPeriods.length) : '-'}
+            tone={
+              readiness && readiness.unclosedPriorPeriods.length > 0
+                ? 'warning'
+                : readiness
+                  ? 'success'
+                  : 'info'
+            }
+          />
+          <SummaryMetric
+            label="检查结论"
+            value={!readiness ? '待同步' : hard > 0 ? '需处理' : '通过'}
+            tone={!readiness ? 'info' : hard > 0 ? 'warning' : 'success'}
+            foot={hard > 0 ? '阻断关账' : undefined}
+          />
+        </div>
+      </WorkSection>
+
+      <WorkSection title="检查内容">
+        <div className={styles.checkList}>
+          {checks.map((item) => (
+            <CheckRow key={item.key} item={item} />
+          ))}
+        </div>
+        {readiness && readiness.unclosedPriorPeriods.length > 0 ? (
+          <div className={styles.inlineNotice}>
+            <div className={styles.inlineNoticeTitle}>需要先补齐前期关账</div>
+            <div className={styles.inlineNoticeText}>
+              {readiness.unclosedPriorPeriods.map((p) => formatPeriod(p)).join('、')} 未完成关账。
+            </div>
+          </div>
+        ) : null}
+      </WorkSection>
+
+      <ActionBar>
+        <button type="button" className="mt-btn mt-btn--secondary" onClick={onRefresh}>
+          刷新检查
+        </button>
+        <button type="button" className="mt-btn mt-btn--primary" onClick={onConfirm}>
+          确认检查
+        </button>
+        {readiness && readiness.unpostedCount > 0 ? (
+          <Link className="mt-btn mt-btn--secondary" href="/finance/daily-accounting">
+            去凭证处理
+          </Link>
+        ) : null}
+        {firstPrior ? (
+          <Link
+            className="mt-btn mt-btn--secondary"
+            href={`/finance/period-close/${firstPrior}/checks`}
+          >
+            处理前期
+          </Link>
+        ) : null}
+        {readiness && hard === 0 ? (
+          <Link className="mt-btn mt-btn--primary" href={`/finance/period-close/${period}/preview`}>
+            继续到结转预览
+          </Link>
+        ) : null}
+      </ActionBar>
+    </div>
+  );
+}
+
+function PreviewPanel({
+  period,
+  readiness,
+  onConfirm,
+}: {
+  readonly period: string;
+  readonly readiness: PeriodCloseReadiness | null;
+  readonly onConfirm: () => void;
+}) {
+  const hard = periodHardBlockerCount(readiness);
+  const closed = readiness?.status === 'closed';
+  const waitingForReadiness = !readiness;
+
+  return (
+    <div className={styles.panelBody}>
+      <WorkSection title="状态摘要">
+        <div className={styles.summaryGrid}>
+          <SummaryMetric
+            label="预览状态"
+            value={
+              waitingForReadiness ? '待同步' : hard > 0 ? '等待检查' : closed ? '已生成' : '可查看'
+            }
+            tone={waitingForReadiness ? 'info' : hard > 0 ? 'muted' : 'success'}
+          />
+          <SummaryMetric
+            label="现金流量建议"
+            value={readiness ? String(readiness.untaggedCashFlowCount) : '-'}
+            tone={
+              readiness && readiness.untaggedCashFlowCount > 0
+                ? 'warning'
+                : readiness
+                  ? 'success'
+                  : 'info'
+            }
+            foot={readiness && readiness.untaggedCashFlowCount > 0 ? '不阻断关账' : undefined}
+          />
+          <SummaryMetric
+            label="关账准备"
+            value={readiness?.canClose ? '可执行' : '等待'}
+            tone={readiness?.canClose ? 'success' : 'muted'}
+          />
+        </div>
+      </WorkSection>
+
+      <WorkSection title="结转影响">
+        <ul className={styles.effectList}>
+          {waitingForReadiness ? (
+            <>
+              <CloseEffect>当前环境暂无可用检查结果。</CloseEffect>
+              <CloseEffect>同步完成后再查看结转影响并执行关账。</CloseEffect>
+            </>
+          ) : hard > 0 ? (
+            <>
+              <CloseEffect>存在阻断项，需先完成结账检查。</CloseEffect>
+              <CloseEffect>阻断项清零后，才能执行关账并生成结转凭证。</CloseEffect>
+            </>
+          ) : (
+            <>
+              <CloseEffect>执行关账时生成结转损益凭证。</CloseEffect>
+              <CloseEffect>损益类科目余额结转至本年利润。</CloseEffect>
+              <CloseEffect>关账后锁定该会计期间，后续改动需先反关账。</CloseEffect>
+            </>
+          )}
+          {readiness && readiness.untaggedCashFlowCount > 0 ? (
+            <CloseEffect>
+              现金流量仍有 {readiness.untaggedCashFlowCount}{' '}
+              项建议补齐；不阻断关账，但会影响现金流量表勾稽。
+            </CloseEffect>
+          ) : null}
+        </ul>
+      </WorkSection>
+
+      <ActionBar>
+        <button
+          type="button"
+          className="mt-btn mt-btn--primary"
+          disabled={waitingForReadiness || hard > 0}
+          onClick={onConfirm}
+        >
+          确认结转预览
+        </button>
+        {waitingForReadiness || hard > 0 ? (
+          <Link
+            className="mt-btn mt-btn--secondary"
+            href={`/finance/period-close/${period}/checks`}
+          >
+            返回检查
+          </Link>
+        ) : null}
+        {!waitingForReadiness && hard === 0 ? (
+          <Link className="mt-btn mt-btn--secondary" href={`/finance/period-close/${period}/close`}>
+            前往关账
+          </Link>
+        ) : null}
+      </ActionBar>
+    </div>
+  );
+}
+
+function ClosePanel({
+  period,
+  readiness,
+  pending,
+  onClose,
+  onReopen,
+}: {
+  readonly period: string;
+  readonly readiness: PeriodCloseReadiness | null;
+  readonly pending: boolean;
+  readonly onClose: () => void;
+  readonly onReopen: (period: string) => void;
+}) {
+  const closedNow = readiness?.status === 'closed';
+  const hard = periodHardBlockerCount(readiness);
+
+  return (
+    <div className={styles.panelBody}>
+      <WorkSection title="状态摘要">
+        <div className={styles.summaryGrid}>
+          <SummaryMetric
+            label="期间状态"
+            value={closedNow ? '已锁定' : readiness ? '开放中' : '待同步'}
+            tone={closedNow ? 'muted' : readiness ? 'success' : 'info'}
+          />
+          <SummaryMetric
+            label="阻断项"
+            value={readiness ? String(hard) : '-'}
+            tone={hard > 0 ? 'warning' : readiness ? 'success' : 'info'}
+          />
+          <SummaryMetric
+            label="执行状态"
+            value={closedNow ? '可反关账' : readiness?.canClose ? '可关账' : '等待'}
+            tone={closedNow ? 'warning' : readiness?.canClose ? 'success' : 'muted'}
+          />
+        </div>
+      </WorkSection>
+
+      <WorkSection title={closedNow ? '反关账影响' : '关账影响'}>
+        <ul className={styles.effectList}>
+          {!closedNow ? (
+            <>
+              <CloseEffect>生成结转损益凭证并写入关账记录。</CloseEffect>
+              <CloseEffect>锁定该会计期间，后续改动需先反关账。</CloseEffect>
+              <CloseEffect>关账、反关账都会写入审计记录。</CloseEffect>
+            </>
+          ) : (
+            <>
+              <CloseEffect>红冲原结转凭证，并重新开放该期间。</CloseEffect>
+              <CloseEffect>反关账属于高风险操作，应仅用于纠错。</CloseEffect>
+              <CloseEffect>如果后续期间已关账，需要先从后往前反关账。</CloseEffect>
+            </>
+          )}
+        </ul>
+      </WorkSection>
+
+      <ActionBar>
+        {!closedNow && !readiness?.canClose ? (
+          <Link
+            className="mt-btn mt-btn--secondary"
+            href={`/finance/period-close/${period}/checks`}
+          >
+            返回检查
+          </Link>
+        ) : null}
+        {!closedNow ? (
+          <button
+            type="button"
+            className="mt-btn mt-btn--primary"
+            disabled={pending || !readiness?.canClose}
+            onClick={onClose}
+          >
+            {pending ? '处理中...' : '执行关账'}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="mt-btn mt-btn--secondary"
+            disabled={pending}
+            onClick={() => onReopen(period)}
+          >
+            {pending ? '处理中...' : '反关账'}
+          </button>
+        )}
+      </ActionBar>
     </div>
   );
 }
@@ -419,66 +630,69 @@ export function PeriodCloseList({
   readonly readiness: PeriodCloseReadiness | null;
   readonly periods: readonly PeriodClose[];
 }) {
-  const queueItems = periodQueue(period, readiness, periods);
-
-  return (
-    <div className={`wb-scene ${styles.scene}`}>
-      <section className={styles.periodBoard} aria-label="会计期间">
-        <div className={styles.panelHead}>
-          <h2 className={styles.panelTitle}>会计期间</h2>
-          <span className={styles.panelCount}>{queueItems.length}</span>
-        </div>
-        <div className={styles.periodGrid}>
-          {queueItems.map((item) => (
-            <PeriodRow key={item.period} item={item} />
-          ))}
-        </div>
-      </section>
-    </div>
-  );
-}
-
-export function PeriodCloseOverview({
-  period,
-  readiness,
-}: {
-  readonly period: string;
-  readonly readiness: PeriodCloseReadiness | null;
-}) {
+  const rows = periodTableRows(period, readiness, periods);
   const router = useRouter();
-  const [sel, setSel] = useState(period);
-  const status = readinessLabel(readiness);
-  const cards = buildActionCards(period, readiness);
 
-  function pick(next: string): void {
-    setSel(next);
-    if (next) router.push(`/finance/period-close/${next}`);
+  function openRow(href: string): void {
+    router.push(href);
+  }
+
+  function handleRowKeyDown(event: KeyboardEvent<HTMLTableRowElement>, href: string): void {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    openRow(href);
   }
 
   return (
     <div className={`wb-scene ${styles.scene}`}>
-      <section className={styles.overviewPage} aria-label={`${formatPeriod(period)} 关账概览`}>
-        <div className={styles.overviewHeader}>
-          <div>
-            <h2 className={styles.workflowTitle}>{formatPeriod(period)}</h2>
-            <div className={styles.workflowMeta}>关账概览</div>
-          </div>
-          <div className={styles.overviewHeaderActions}>
-            <StatusBadge tone={status.tone} dot label={status.label} />
-            <Link className="wb-action" href="/finance/period-close">
-              返回期间
-            </Link>
-            <div className={styles.periodControl}>
-              <span className={styles.periodLabel}>会计期间</span>
-              <PeriodPickerButton period={sel} onChange={pick} />
-            </div>
-          </div>
-        </div>
-
-        <div className={styles.actionCardGrid}>
-          {cards.map((item) => (
-            <ActionCard key={item.key} item={item} />
-          ))}
+      <section className={styles.periodBoard} aria-label="会计期间">
+        <div className="wb-table-wrap">
+          <table className={`wb-table ${styles.periodTable}`}>
+            <colgroup>
+              <col className={styles.periodColumn} />
+              <col />
+              <col />
+              <col />
+              <col />
+            </colgroup>
+            <thead>
+              <tr>
+                <th className="wb-table__th">会计期间</th>
+                <th className="wb-table__th">关账状态</th>
+                <th className="wb-table__th">阻断项</th>
+                <th className="wb-table__th">当前步骤</th>
+                <th className="wb-table__th">关账记录</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr
+                  key={row.period}
+                  className={`wb-table__row ${styles.periodRow}`}
+                  role="link"
+                  tabIndex={0}
+                  aria-label={`进入 ${row.title} 期末结账`}
+                  onClick={() => openRow(row.actionHref)}
+                  onKeyDown={(event) => handleRowKeyDown(event, row.actionHref)}
+                >
+                  <td>
+                    <div className={styles.periodCell}>
+                      <span className={styles.periodCellLink}>{row.title}</span>
+                      {row.isCurrent ? <span className={styles.currentPill}>当前期间</span> : null}
+                    </div>
+                  </td>
+                  <td>
+                    <StatusCell tone={row.statusTone} label={row.statusLabel} />
+                  </td>
+                  <td>
+                    <StatusCell tone={row.blockingTone} label={row.blockingLabel} />
+                  </td>
+                  <td>{row.currentStep}</td>
+                  <td className={styles.recordCell}>{row.recordLabel}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
     </div>
@@ -499,16 +713,7 @@ export function PeriodCloseWorkflow({
   const router = useRouter();
   const toast = useToast();
   const [pending, start] = useTransition();
-  const [sel, setSel] = useState(period);
-  const status = readinessLabel(readiness);
-  const closedNow = readiness?.status === 'closed';
-  const checks = buildChecks(readiness);
-  const currentWorkflow = workflowMeta(workflow, closedNow);
-
-  function pick(next: string): void {
-    setSel(next);
-    if (next) router.push(`/finance/period-close/${next}/${workflow}`);
-  }
+  const tabs = workflowTabs(period, readiness);
 
   function runClose(): void {
     if (!window.confirm(`确认对 ${formatPeriod(period)} 关账？将结转损益并锁定该期间。`)) return;
@@ -518,7 +723,7 @@ export function PeriodCloseWorkflow({
         toast.notify(
           'success',
           '已关账',
-          `${formatPeriod(period)} · 净利润 ${res.netProfit ?? '—'}`,
+          `${formatPeriod(period)} · 净利润 ${res.netProfit ?? '-'}`,
         );
         router.refresh();
       } else if (res.reason === 'unconfigured') {
@@ -545,138 +750,156 @@ export function PeriodCloseWorkflow({
     });
   }
 
+  function confirmStep(title: string, message: string): void {
+    toast.notify('success', title, message);
+  }
+
+  function confirmChecks(): void {
+    if (!readiness) {
+      router.refresh();
+      toast.notify('info', '正在同步检查', '已重新拉取检查结果');
+      return;
+    }
+    if (periodHardBlockerCount(readiness) > 0) {
+      toast.notify('info', '检查未通过', '需先处理阻断项后再确认');
+      return;
+    }
+    confirmStep('已确认检查', `${formatPeriod(period)} 检查项已通过确认`);
+  }
+
   return (
     <div className={`wb-scene ${styles.scene}`}>
-      <div className={styles.workflowPage}>
-        <section
-          className={styles.workflowCard}
-          aria-label={`${formatPeriod(period)} ${currentWorkflow.title}`}
-        >
-          <div className={styles.workflowCardHeader}>
-            <div>
-              <h2 className={styles.workflowTitle}>{currentWorkflow.title}</h2>
-              <div className={styles.workflowMeta}>
-                {formatPeriod(period)} · {currentWorkflow.meta}
-              </div>
-            </div>
-            <div className={styles.workflowCardHeaderActions}>
-              <StatusBadge tone={status.tone} dot label={status.label} />
-              <Link className="wb-action" href={`/finance/period-close/${period}`}>
-                返回概览
-              </Link>
-              <div className={styles.periodControl}>
-                <span className={styles.periodLabel}>会计期间</span>
-                <PeriodPickerButton period={sel} onChange={pick} />
-              </div>
-            </div>
+      <SetBreadcrumb items={[{ label: formatPeriod(period) }]} />
+      <section className={styles.workflowPage} aria-label={`${formatPeriod(period)} 期末结账`}>
+        <div className={styles.detailHeader}>
+          <div className={styles.detailTitleRow}>
+            <h2 className={styles.workflowTitle}>{formatPeriod(period)}</h2>
+            <Link className="wb-action" href="/finance/period-close">
+              返回期间列表
+            </Link>
           </div>
+        </div>
 
-          <div className={styles.workflowCardSummary}>
-            <PeriodSummary readiness={readiness} />
-          </div>
+        <nav className={styles.workflowTabs} aria-label="结账步骤">
+          {tabs.map((tab) => (
+            <Link
+              key={tab.key}
+              className={`${styles.workflowTab} ${
+                tab.key === workflow ? styles.workflowTabActive : ''
+              }`}
+              href={tab.href}
+              aria-current={tab.key === workflow ? 'page' : undefined}
+            >
+              <span className={styles.workflowTabTitle}>{tab.title}</span>
+              <StatusCell tone={tab.tone} label={tab.statusLabel} />
+            </Link>
+          ))}
+        </nav>
 
-          <div className={styles.workflowSteps}>
-            {workflow === 'checks' ? (
-              <WorkflowStep index={1} title="检查结果">
-                <div className={styles.checkList}>
-                  {checks.map((item) => (
-                    <CheckRow key={item.key} item={item} />
-                  ))}
+        <section className={styles.workPanel} aria-label={`${formatPeriod(period)} 当前结账步骤`}>
+          {workflow === 'checks' ? (
+            <ChecksPanel
+              period={period}
+              readiness={readiness}
+              onRefresh={() => router.refresh()}
+              onConfirm={confirmChecks}
+            />
+          ) : null}
+
+          {workflow === 'cash-flow' ? (
+            <div className={styles.panelBody}>
+              <WorkSection title="状态摘要">
+                <div className={styles.summaryGrid}>
+                  <SummaryMetric
+                    label="待打标"
+                    value={readiness ? String(readiness.untaggedCashFlowCount) : '-'}
+                    tone={
+                      readiness && readiness.untaggedCashFlowCount > 0
+                        ? 'warning'
+                        : readiness
+                          ? 'success'
+                          : 'info'
+                    }
+                    foot={
+                      readiness && readiness.untaggedCashFlowCount > 0 ? '不阻断关账' : undefined
+                    }
+                  />
+                  <SummaryMetric
+                    label="报表影响"
+                    value={readiness && readiness.untaggedCashFlowCount > 0 ? '影响勾稽' : '无待补'}
+                    tone={
+                      readiness && readiness.untaggedCashFlowCount > 0
+                        ? 'warning'
+                        : readiness
+                          ? 'success'
+                          : 'info'
+                    }
+                  />
+                  <SummaryMetric
+                    label="下一步"
+                    value="结转预览"
+                    tone={readiness ? 'success' : 'muted'}
+                  />
                 </div>
-                {readiness && readiness.unpostedCount > 0 ? (
-                  <div className={styles.workflowFooter}>
-                    <Link className="mt-btn mt-btn--secondary" href="/finance/daily-accounting">
-                      去凭证处理
-                    </Link>
-                  </div>
-                ) : null}
-              </WorkflowStep>
-            ) : null}
+              </WorkSection>
 
-            {workflow === 'cash-flow' ? (
-              <WorkflowStep
-                index={1}
-                title="现金流量项目"
-                status={
-                  readiness?.untaggedCashFlowCount ? (
-                    <StatusBadge
-                      tone="warning"
-                      dot
-                      label={`${readiness.untaggedCashFlowCount} 项`}
-                    />
-                  ) : (
-                    <StatusBadge
-                      tone={readiness ? 'success' : 'info'}
-                      dot
-                      label={readiness ? '通过' : '待检查'}
-                    />
-                  )
-                }
-              >
+              <WorkSection title="处理内容">
                 {cashFlowWorklist ? (
                   <div className={styles.embeddedWorklist}>{cashFlowWorklist}</div>
                 ) : (
                   <p className={styles.noExtraWork}>暂无现金流量补充事项。</p>
                 )}
-              </WorkflowStep>
-            ) : null}
+              </WorkSection>
 
-            {workflow === 'close' ? (
-              <WorkflowStep
-                index={1}
-                title={closedNow ? '反关账' : '执行关账'}
-                status={
-                  !closedNow && !readiness?.canClose ? (
-                    <StatusBadge tone="muted" dot label="等待检查" />
-                  ) : undefined
-                }
-              >
-                <div className={styles.execution}>
-                  <div>
-                    <div className={styles.executionTitle}>
-                      {closedNow
-                        ? `${formatPeriod(period)} 已锁定`
-                        : `准备关账 ${formatPeriod(period)}`}
-                    </div>
-                    <ul className={styles.effectList}>
-                      {!closedNow ? (
-                        <>
-                          <CloseEffect>生成结转损益凭证并写入关账记录。</CloseEffect>
-                          <CloseEffect>锁定该会计期间，后续改动需先反关账。</CloseEffect>
-                        </>
-                      ) : (
-                        <>
-                          <CloseEffect>红冲原结转凭证，并重新开放该期间。</CloseEffect>
-                          <CloseEffect>反关账属于高风险操作，应仅用于纠错。</CloseEffect>
-                        </>
-                      )}
-                    </ul>
-                  </div>
-                  {!closedNow ? (
-                    <button
-                      type="button"
-                      className="mt-btn mt-btn--primary"
-                      disabled={pending || !readiness?.canClose}
-                      onClick={runClose}
-                    >
-                      {pending ? '处理中…' : `执行关账`}
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="mt-btn mt-btn--secondary"
-                      disabled={pending}
-                      onClick={() => runReopen(period)}
-                    >
-                      {pending ? '处理中…' : '反关账'}
-                    </button>
-                  )}
-                </div>
-              </WorkflowStep>
-            ) : null}
-          </div>
+              <ActionBar>
+                <button
+                  type="button"
+                  className="mt-btn mt-btn--secondary"
+                  onClick={() => router.refresh()}
+                >
+                  刷新打标状态
+                </button>
+                <button
+                  type="button"
+                  className="mt-btn mt-btn--primary"
+                  disabled={!readiness}
+                  onClick={() =>
+                    confirmStep('已确认现金流量', `${formatPeriod(period)} 现金流量事项已确认`)
+                  }
+                >
+                  确认现金流量
+                </button>
+                <Link
+                  className="mt-btn mt-btn--secondary"
+                  href={`/finance/period-close/${period}/preview`}
+                >
+                  继续到结转预览
+                </Link>
+              </ActionBar>
+            </div>
+          ) : null}
+
+          {workflow === 'preview' ? (
+            <PreviewPanel
+              period={period}
+              readiness={readiness}
+              onConfirm={() =>
+                confirmStep('已确认结转预览', `${formatPeriod(period)} 结转影响已确认`)
+              }
+            />
+          ) : null}
+
+          {workflow === 'close' ? (
+            <ClosePanel
+              period={period}
+              readiness={readiness}
+              pending={pending}
+              onClose={runClose}
+              onReopen={runReopen}
+            />
+          ) : null}
         </section>
-      </div>
+      </section>
     </div>
   );
 }

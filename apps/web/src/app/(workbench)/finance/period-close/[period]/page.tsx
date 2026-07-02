@@ -1,12 +1,12 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getPeriodReadiness } from '@/lib/finance/data-source';
-import { PeriodCloseOverview } from '../period-close-client';
+import { nextPeriodWorkflow } from '../period-close-workflow';
 
 export const dynamic = 'force-dynamic';
 
 const PERIOD_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
 
-export default async function PeriodCloseOverviewPage({
+export default async function PeriodClosePeriodPage({
   params,
 }: {
   readonly params: Promise<{ readonly period: string }>;
@@ -16,5 +16,5 @@ export default async function PeriodCloseOverviewPage({
 
   const readiness = await getPeriodReadiness(period);
 
-  return <PeriodCloseOverview period={period} readiness={readiness} />;
+  redirect(`/finance/period-close/${period}/${nextPeriodWorkflow(readiness)}`);
 }

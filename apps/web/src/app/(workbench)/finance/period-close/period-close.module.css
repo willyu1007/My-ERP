@@ -4,44 +4,10 @@
   gap: var(--sp-5);
 }
 
-.summaryStats {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.summaryStats :global(.wb-stats) {
-  margin-bottom: 0;
-}
-
-.summaryStats :global(.wb-stat) {
-  min-width: 0;
-}
-
-.periodControl {
-  display: inline-flex;
-  flex: 0 0 auto;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
-  align-items: center;
-}
-
-.periodLabel {
-  color: var(--fg-2);
-  font-size: var(--small-size);
-  font-weight: var(--body-weight);
-  line-height: var(--small-lh);
-}
-
-.periodButton {
-  width: 164px;
-  min-width: 0;
-  background: var(--bg-field-quiet);
-}
-
 .periodBoard,
-.overviewPage,
-.workflowPage,
-.workflowCard {
+.workflowPage {
+  width: 100%;
+  max-width: 1180px;
   min-width: 0;
 }
 
@@ -50,41 +16,6 @@
   flex-direction: column;
 }
 
-.periodGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: var(--sp-3);
-}
-
-.workflowPage {
-  width: 100%;
-  max-width: 920px;
-}
-
-.overviewPage {
-  display: flex;
-  width: 100%;
-  max-width: 920px;
-  flex-direction: column;
-  gap: var(--sp-4);
-}
-
-.workflowCard {
-  border-radius: var(--r-xl);
-  padding: var(--sp-5);
-  background: var(--bg-surface);
-  box-shadow: inset 0 0 0 1px var(--border-1);
-}
-
-.panelHead {
-  display: flex;
-  gap: var(--sp-2);
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: var(--sp-3);
-}
-
-.panelTitle,
 .workflowTitle {
   margin: 0;
   color: var(--fg-1);
@@ -94,232 +25,233 @@
   line-height: var(--h3-lh);
 }
 
-.panelCount,
-.workflowMeta,
-.periodRowMeta,
 .checkDetail,
-.historyMeta,
-.noExtraWork {
+.recordCell,
+.noExtraWork,
+.inlineNoticeText {
   color: var(--fg-3);
   font-size: var(--small-size);
   line-height: var(--small-lh);
 }
 
+.periodTable {
+  min-width: 760px;
+  table-layout: fixed;
+  font-size: var(--h4-size);
+}
+
+.periodColumn {
+  width: 260px;
+}
+
+.periodTable :global(.wb-table__th) {
+  color: var(--fg-2);
+  font-size: var(--body-size);
+}
+
+.periodTable :global(th),
+.periodTable :global(td) {
+  padding-top: var(--sp-4);
+  padding-bottom: var(--sp-4);
+}
+
 .periodRow {
-  display: flex;
-  min-height: 76px;
-  gap: var(--sp-3);
-  align-items: center;
-  justify-content: space-between;
-  border-radius: var(--r-lg);
-  padding: var(--sp-3);
-  background: var(--bg-surface);
-  color: inherit;
-  box-shadow: inset 0 0 0 1px var(--border-1);
-  text-decoration: none;
-  transition:
-    background var(--t-fast) var(--ease-out),
-    box-shadow var(--t-fast) var(--ease-out);
+  cursor: pointer;
 }
 
 .periodRow:hover {
-  background: color-mix(in oklab, var(--mt-navy) 5%, transparent);
-  box-shadow: inset 0 0 0 1px var(--border-2);
+  background: var(--bg-tint);
 }
 
-.periodRowMain {
+.periodRow:hover .periodCellLink {
+  color: var(--mt-navy);
+}
+
+.periodRow:focus-visible {
+  outline: 2px solid var(--mt-navy-300);
+  outline-offset: -2px;
+}
+
+.periodCell {
+  display: flex;
   min-width: 0;
+  gap: var(--sp-2);
+  align-items: center;
 }
 
-.periodRowTitle,
-.checkTitle,
-.executionTitle {
+.periodCellLink {
+  color: var(--fg-1);
+  font-weight: var(--h4-weight);
+  text-decoration: none;
+}
+
+.periodCellLink:hover {
+  color: var(--mt-navy);
+}
+
+.statusText {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--caption-size);
+  font-weight: var(--h4-weight);
+  line-height: var(--caption-lh);
+  white-space: nowrap;
+}
+
+.statusTextSuccess {
+  color: var(--mt-success);
+}
+
+.statusTextWarning {
+  color: var(--mt-warning);
+}
+
+.statusTextMuted {
+  color: var(--fg-3);
+}
+
+.statusTextInfo {
+  color: var(--mt-navy);
+}
+
+.statusTextAccent {
+  color: var(--mt-orange);
+}
+
+.currentPill {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  color: var(--mt-orange);
+  font-size: var(--caption-size, var(--small-size));
+  font-weight: var(--h4-weight);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.detailHeader {
+  display: flex;
+  gap: var(--sp-4);
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.detailTitleRow {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  align-items: center;
+}
+
+.workflowTabs {
+  display: flex;
+  gap: 0;
+  margin-top: var(--sp-4);
+  border-bottom: 1px solid var(--border-2);
+  overflow-x: auto;
+}
+
+.workflowTab {
+  display: flex;
+  min-width: 0;
+  min-height: 36px;
+  gap: var(--sp-2);
+  align-items: center;
+  border-right: 1px solid var(--border-1);
+  border-bottom: 2px solid transparent;
+  padding: 0 var(--sp-4) var(--sp-2);
+  background: transparent;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color var(--t-fast) var(--ease-out),
+    color var(--t-fast) var(--ease-out);
+}
+
+.workflowTab:first-child {
+  padding-left: 0;
+}
+
+.workflowTab:last-child {
+  border-right: 0;
+}
+
+.workflowTab:hover {
+  border-bottom-color: var(--border-2);
+}
+
+.workflowTab:focus-visible {
+  outline: 2px solid var(--mt-navy-300);
+  outline-offset: 3px;
+}
+
+.workflowTabActive {
+  border-bottom-color: var(--mt-navy);
+}
+
+.workflowTabTitle {
+  min-width: 0;
   color: var(--fg-1);
   font-size: var(--body-size);
   font-weight: var(--h4-weight);
   line-height: var(--body-lh);
-}
-
-.periodRowTitle,
-.periodRowMeta {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.periodRowAside {
-  display: inline-flex;
-  flex-shrink: 0;
-  flex-direction: column;
-  gap: var(--sp-1);
-  align-items: flex-end;
+.workPanel {
+  min-width: 0;
+  min-height: 0;
+  margin-top: var(--sp-4);
 }
 
-.periodRowCount {
+.panelBody {
+  padding-top: 0;
+}
+
+.workSection {
+  padding: var(--sp-4) 0;
+  border-bottom: 1px solid var(--border-1);
+}
+
+.workSection:first-child {
+  padding-top: 0;
+}
+
+.workSectionTitle {
+  margin: 0 0 var(--sp-3);
+  color: var(--fg-2);
+  font-size: var(--small-size);
+  font-weight: var(--h4-weight);
+  line-height: var(--small-lh);
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-4);
+}
+
+.summaryMetric {
+  min-width: 0;
+}
+
+.summaryMetricLabel,
+.summaryMetricFoot {
   color: var(--fg-3);
-  font-family: var(--font-mono);
   font-size: var(--small-size);
   line-height: var(--small-lh);
 }
 
-.overviewHeader,
-.workflowCardHeader {
-  display: flex;
-  gap: var(--sp-3);
-  align-items: flex-start;
-  justify-content: space-between;
-}
-
-.overviewHeaderActions,
-.workflowCardHeaderActions {
-  display: inline-flex;
-  flex: 0 0 auto;
-  flex-wrap: wrap;
-  gap: var(--sp-3);
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.actionCardGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--sp-3);
-}
-
-.actionCard {
-  display: flex;
-  min-height: 148px;
-  flex-direction: column;
-  gap: var(--sp-2);
-  border-radius: var(--r-lg);
-  padding: var(--sp-4);
-  background: var(--bg-surface);
-  color: inherit;
-  box-shadow: inset 0 0 0 1px var(--border-1);
-  text-decoration: none;
-  transition:
-    background var(--t-fast) var(--ease-out),
-    box-shadow var(--t-fast) var(--ease-out),
-    transform var(--t-fast) var(--ease-out);
-}
-
-.actionCard:hover {
-  background: color-mix(in oklab, var(--mt-navy) 4%, transparent);
-  box-shadow: inset 0 0 0 1px var(--border-2);
-  transform: translateY(-1px);
-}
-
-.actionCard:focus-visible,
-.periodRow:focus-visible {
-  outline: 2px solid var(--mt-navy-300);
-  outline-offset: 3px;
-}
-
-.actionCardHead {
-  display: flex;
-  gap: var(--sp-2);
-  align-items: flex-start;
-  justify-content: space-between;
-}
-
-.actionCardTitle {
-  margin: 0;
-  color: var(--fg-1);
-  font-size: var(--body-size);
-  font-weight: var(--h4-weight);
-  line-height: var(--body-lh);
-}
-
-.actionCardMetric {
-  color: var(--fg-1);
+.summaryMetricValue {
+  margin-top: var(--sp-1);
   font-family: var(--font-display);
   font-size: var(--h3-size);
   font-weight: var(--h3-weight);
   line-height: var(--h3-lh);
-}
-
-.actionCardDetail {
-  flex: 1 1 auto;
-  color: var(--fg-3);
-  font-size: var(--small-size);
-  line-height: var(--small-lh);
-}
-
-.actionCardAction {
-  color: var(--mt-navy);
-  font-size: var(--small-size);
-  font-weight: var(--h4-weight);
-  line-height: var(--small-lh);
-}
-
-.workflowCardHeader {
-  padding-bottom: var(--sp-4);
-}
-
-.workflowCardSummary {
-  padding: var(--sp-4) 0;
-  border-top: 1px solid var(--border-1);
-}
-
-.workflowSteps {
-  display: flex;
-  flex-direction: column;
-}
-
-.workflowStep {
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
-  gap: var(--sp-3);
-  padding: var(--sp-4) 0;
-  border-top: 1px solid var(--border-1);
-}
-
-.workflowStep:first-child {
-  border-top: 0;
-  padding-top: 0;
-}
-
-.stepMarker {
-  display: inline-flex;
-  width: 24px;
-  height: 24px;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--r-pill);
-  background: var(--bg-sunken);
-  color: var(--fg-2);
-  font-family: var(--font-mono);
-  font-size: var(--small-size);
-  font-weight: var(--h4-weight);
-  line-height: 1;
-}
-
-.stepContent {
-  min-width: 0;
-}
-
-.stepHead {
-  display: flex;
-  gap: var(--sp-3);
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--sp-3);
-}
-
-.stepTitle {
-  margin: 0;
-  color: var(--fg-1);
-  font-size: var(--body-size);
-  font-weight: var(--h4-weight);
-  line-height: var(--body-lh);
-}
-
-.stepStatus {
-  flex-shrink: 0;
-}
-
-.stepBody {
-  min-width: 0;
 }
 
 .checkList {
@@ -348,8 +280,33 @@
   align-items: flex-start;
 }
 
+.checkTitle,
+.inlineNoticeTitle {
+  color: var(--fg-1);
+  font-size: var(--body-size);
+  font-weight: var(--h4-weight);
+  line-height: var(--body-lh);
+}
+
+.actionBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  justify-content: flex-start;
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-4);
+}
+
+.inlineNotice {
+  margin-top: var(--sp-3);
+  border-radius: var(--r-md);
+  padding: var(--sp-3);
+  background: var(--bg-sunken);
+}
+
 .embeddedWorklist {
-  margin-top: var(--sp-5);
+  max-height: 54vh;
+  overflow: auto;
 }
 
 .embeddedWorklist :global(.wb-section__head) {
@@ -361,21 +318,8 @@
   font-weight: var(--h4-weight);
 }
 
-.workflowFooter {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: var(--sp-4);
-}
-
 .noExtraWork {
-  margin: var(--sp-2) 0 0;
-}
-
-.execution {
-  display: flex;
-  gap: var(--sp-4);
-  align-items: flex-start;
-  justify-content: space-between;
+  margin: var(--sp-4) 0 0;
 }
 
 .effectList {
@@ -390,67 +334,15 @@
   margin-top: var(--sp-1);
 }
 
-@media (width <= 920px) {
-  .overviewPage,
-  .workflowPage {
-    max-width: none;
+@media (width <= 900px) {
+  .detailHeader {
+    flex-direction: column;
   }
 }
 
 @media (width <= 720px) {
-  .workflowCard {
-    padding: var(--sp-4);
-  }
-
-  .periodControl,
-  .periodButton {
-    width: 100%;
-  }
-
-  .overviewHeaderActions,
-  .workflowCardHeaderActions {
-    width: 100%;
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .overviewHeaderActions :global(.mt-badge),
-  .workflowCardHeaderActions :global(.mt-badge) {
-    align-self: flex-start;
-  }
-
-  .actionCardGrid,
-  .periodGrid {
+  .summaryGrid {
     grid-template-columns: 1fr;
-  }
-
-  .overviewHeader,
-  .workflowCardHeader,
-  .stepHead,
-  .checkRow,
-  .execution {
-    align-items: stretch;
-  }
-
-  .overviewHeader,
-  .workflowCardHeader,
-  .stepHead {
-    align-items: flex-start;
-  }
-
-  .periodRow {
-    align-items: stretch;
-  }
-
-  .overviewHeader,
-  .workflowCardHeader,
-  .periodRow,
-  .checkRow,
-  .execution {
-    flex-direction: column;
-  }
-
-  .periodRowAside {
-    align-items: flex-start;
+    gap: var(--sp-3);
   }
 }
