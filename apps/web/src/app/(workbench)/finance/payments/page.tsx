@@ -1,5 +1,6 @@
 import {
   getAccountPreferences,
+  getAccountingCapable,
   getBusinessPartner,
   listAccounts,
   listBusinessPartners,
@@ -25,15 +26,23 @@ export default async function PaymentsPage({
 }) {
   const sp = await searchParams;
   const partnerId = first(sp.partnerId);
-  const [payments, accounts, contracts, partners, filterPartner, accountPreferences] =
-    await Promise.all([
-      listPayments(partnerId ? { partnerId } : undefined),
-      listAccounts(),
-      listContracts(),
-      listBusinessPartners({ active: true }),
-      partnerId ? getBusinessPartner(partnerId) : Promise.resolve(null),
-      getAccountPreferences(),
-    ]);
+  const [
+    payments,
+    accounts,
+    contracts,
+    partners,
+    filterPartner,
+    accountPreferences,
+    canEnterAccounting,
+  ] = await Promise.all([
+    listPayments(partnerId ? { partnerId } : undefined),
+    listAccounts(),
+    listContracts(),
+    listBusinessPartners({ active: true }),
+    partnerId ? getBusinessPartner(partnerId) : Promise.resolve(null),
+    getAccountPreferences(),
+    getAccountingCapable(),
+  ]);
   const today = new Date().toISOString().slice(0, 10);
 
   return (
@@ -44,6 +53,7 @@ export default async function PaymentsPage({
       partners={partners}
       filterPartner={filterPartner}
       accountPreferences={accountPreferences}
+      canEnterAccounting={canEnterAccounting}
       initialDate={today}
       initialEntryOpen={first(sp.entry) === '1'}
     />

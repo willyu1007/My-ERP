@@ -128,3 +128,17 @@
   - `pnpm typecheck` / `pnpm lint` / `pnpm lint:css` -> passed. `pnpm test` -> 46 files / 180 tests passed (preference RLS test extended).
   - Live `/v1` smoke after package rebuild + API restart: merged GET, single-PATCH pinned+hidden, `seed-standard` -> `{seeded:0, convertedParents:0, conflicts:[]}` on the up-to-date ledger, cash-copy assembled from the constant, D2 member-link rejection via the targeted query — all correct.
   - Web SSR spot-check (dev server w/ HMR): both pickers render, shared `queue-page_*` classes active on the entry panels, chart-import card correctly absent on an up-to-date ledger.
+- 2026-07-06 (Phase 3 implementation — cashier-to-accountant enrichment):
+  - Design: fan-out understand+design workflow (5 parallel current-state readers → 3 design angles → adversarial judge → synthesis). Design agents dropped connections mid-response; the synthesizer recovered by first-principles design re-verified against the code. User confirmed FULL D7 enrichment + confirm-actor deferral.
+  - `pnpm exec prisma validate/format/generate` -> passed; `ctl-db-ssot sync-to-context` -> refreshed. Migration `20260706120000_t012_payment_enrichment` applied cleanly to test + dev DBs.
+  - `pnpm vitest run apps/api/src/payments/payments.integration.test.ts` -> 14/14 (direct path T-007 back-compat with accounting-capable identities; cashier create → pending_accounting + payment.enrich task; smuggled-subjects 400; cashier-enrich 403; submit rejects un-enriched; enrich → pending_approval + NO voucher + task handoff; enrich guards wrong-status/invalid-subject/stale; enrich closed-period; full chain create→enrich→approve→confirm threads aux + cash-flow onto the contra line only).
+  - `pnpm vitest run packages/finance-domain/src/cashier.test.ts` -> 6/6 (aux + cash-flow on contra line; omitted when not enriched).
+  - `pnpm typecheck` / `pnpm lint` / `pnpm lint:css` -> passed. `pnpm test` -> 46 files / 190 tests passed.
+  - `pnpm --filter @my-erp/api-client codegen` + `ctl-api-index generate --touch` -> API context refreshed (PaymentDoc nullable subjects + pending_accounting + contraAux/cashFlowItem; CreatePayment optional subjects; EnrichPayment; /payments/{id}/enrich; /me + Me schema).
+  - Live `/v1` smoke (fresh DB, packages rebuilt, cashier + admin memberships + a cash-flow item seeded; `/tmp/*.tok` minted):
+    - `/v1/me`: admin accountingCapable=true, cashier accountingCapable=false.
+    - cashier create → pending_accounting (null subjects); smuggle subjects → 400; cashier enrich → 403 (missing post Voucher).
+    - admin enrich → pending_approval, subjects+cash-flow+aux set, settlementVoucherId null (D7 — no voucher at enrich).
+    - approve → confirm → voucher 记-2026-06-001 posted; contra line (1122) carries aux `{customer:{id,name}}` + cashFlowItem `0101`; cash line (1002) cashFlowItem null.
+    - admin direct create → draft (D8 back-compat); ledger distinct statuses {draft, confirmed}.
+  - Browser SSR walkthrough (running dev server, HMR + Next .env reload): cashier token → create form hides account fields (由会计补录 hint + 登记（转会计补录）button) and the list shows the 6 D11 tabs (待办/待补录/待审批/待确认/已完成/全部); admin token → create form shows 对方科目 + 暂存/提交, and a pending_accounting detail renders the enrich form (会计补录 / 现金流量项目 / 辅助核算 / 提交补录) with 待会计补录 subject rows.

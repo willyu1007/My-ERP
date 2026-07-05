@@ -8,6 +8,7 @@ import { appendWorkItemOutboxEventTx } from '../work-items/voucher-workflow';
  * approve/confirm actions happen on the payment endpoints (MVP); these tasks give
  * the role queues + workbench visibility + metadata-only outbox correlation.
  */
+export const PAYMENT_ENRICH_WORK_ITEM_TYPE = 'payment.enrich';
 export const PAYMENT_APPROVE_WORK_ITEM_TYPE = 'payment.approve';
 export const PAYMENT_CONFIRM_WORK_ITEM_TYPE = 'payment.confirm';
 
@@ -50,6 +51,23 @@ async function createPaymentWorkItemTx(
   });
   if (result.created) await appendWorkItemOutboxEventTx(tx, result.item, 'work_item.created');
   return result.item;
+}
+
+/**
+ * Opened on cashier create (T-012 Phase 3, D3) — the accountant's subject-completion
+ * queue (assignedRole accountant). Completed on enrich; cancelled on void.
+ */
+export function createPaymentEnrichWorkItemTx(
+  tx: TxClient,
+  input: { orgId: string; ledgerBookId: string; paymentId: string; actorId: string },
+): Promise<WorkItemEntity> {
+  return createPaymentWorkItemTx(tx, {
+    ...input,
+    workItemType: PAYMENT_ENRICH_WORK_ITEM_TYPE,
+    assignedRole: 'accountant',
+    subStatus: 'pending_accounting',
+    titleKey: 'finance.payment.enrich',
+  });
 }
 
 /** Opened on submit — the approver's queue (assignedRole supervisor). */

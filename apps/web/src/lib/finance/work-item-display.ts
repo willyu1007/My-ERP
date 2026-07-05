@@ -10,6 +10,7 @@ import type { WorkItemView } from '@my-erp/api-client';
 export const WORK_ITEM_TITLE: Record<string, string> = {
   'finance.voucher.review': '凭证复核',
   'finance.voucher.confirm': '凭证补全 / 确认',
+  'finance.payment.enrich': '收付款补录',
   'finance.payment.approve': '收付款审批',
   'finance.payment.confirm': '收付款确认',
 };
@@ -32,6 +33,7 @@ export const WORK_ITEM_SUBSTATUS_LABEL: Record<string, string> = {
   pending_correction: '待更正',
   pending_external: '待外部',
   pending_system: '待系统',
+  pending_accounting: '待补录',
   blocked: '阻塞',
   ready: '就绪',
   done: '已完成',

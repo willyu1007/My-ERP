@@ -1,12 +1,13 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-05T14:15:49.346Z",
+  "generatedAt": "2026-07-05T22:45:17.266Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "c4569a18310f359dbabba90b7e002a59c2285481bd731fbc6781071825ab39ea",
+  "sourceChecksumSha256": "cff0c9e4828cda46b9895953a2062be01d501fcd000406c2dd00ab83f0259af0",
   "stats": {
-    "totalEndpoints": 67,
+    "totalEndpoints": 69,
     "byTag": {
       "system": 1,
+      "identity": 1,
       "organization": 1,
       "ledger-books": 2,
       "invitations": 4,
@@ -19,7 +20,7 @@
       "periods": 4,
       "cash-flow": 5,
       "reports": 3,
-      "payments": 7,
+      "payments": 8,
       "contracts": 5,
       "business-partners": 4,
       "opening-balances": 2
@@ -49,6 +50,35 @@
       "errors": [],
       "example": {
         "curl": "curl -X GET '/health'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/me",
+      "operationId": "getMe",
+      "summary": "The caller's own identity + capabilities (T-012 Phase 3)",
+      "tag": "identity",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "userId",
+          "orgId",
+          "roles",
+          "accountingCapable",
+          "ledgerBookId"
+        ]
+      },
+      "errors": [
+        401
+      ],
+      "example": {
+        "curl": "curl -X GET '/v1/me' -H 'Authorization: Bearer <token>'"
       }
     },
     {
@@ -1764,13 +1794,15 @@
             "direction",
             "date",
             "summary",
-            "amount",
-            "cashAccountCode",
-            "contraAccountCode"
+            "amount"
           ],
           "optional": [
             "counterparty",
             "partnerId",
+            "cashAccountCode",
+            "contraAccountCode",
+            "contraAux",
+            "cashFlowItem",
             "contractId"
           ]
         }
@@ -1786,14 +1818,16 @@
           "counterparty",
           "summary",
           "amount",
-          "cashAccountCode",
-          "contraAccountCode",
           "status",
           "maker",
           "version",
           "createdAt",
           "updatedAt",
           "partnerId",
+          "cashAccountCode",
+          "contraAccountCode",
+          "contraAux",
+          "cashFlowItem",
           "settlementVoucherId",
           "contractId",
           "approver",
@@ -1804,7 +1838,7 @@
         400
       ],
       "example": {
-        "curl": "curl -X POST '/v1/payments' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"direction\":\"<direction>\",\"date\":\"<date>\",\"summary\":\"<summary>\",\"amount\":\"<amount>\",\"cashAccountCode\":\"<cashAccountCode>\",\"contraAccountCode\":\"<contraAccountCode>\"}'"
+        "curl": "curl -X POST '/v1/payments' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"direction\":\"<direction>\",\"date\":\"<date>\",\"summary\":\"<summary>\",\"amount\":\"<amount>\"}'"
       }
     },
     {
@@ -1832,14 +1866,16 @@
           "counterparty",
           "summary",
           "amount",
-          "cashAccountCode",
-          "contraAccountCode",
           "status",
           "maker",
           "version",
           "createdAt",
           "updatedAt",
           "partnerId",
+          "cashAccountCode",
+          "contraAccountCode",
+          "contraAux",
+          "cashFlowItem",
           "settlementVoucherId",
           "contractId",
           "approver",
@@ -1851,6 +1887,66 @@
       ],
       "example": {
         "curl": "curl -X GET '/v1/payments/{id}' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/payments/{id}/enrich",
+      "operationId": "enrichPayment",
+      "summary": "pending_accounting → pending_approval — accountant completes accounting facts (T-012 Phase 3, D3/D7)",
+      "tag": "payments",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id"
+        ],
+        "query": [],
+        "body": {
+          "required": [
+            "expectedVersion",
+            "cashAccountCode",
+            "contraAccountCode"
+          ],
+          "optional": [
+            "contraAux",
+            "cashFlowItem"
+          ]
+        }
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "no",
+          "direction",
+          "date",
+          "period",
+          "counterparty",
+          "summary",
+          "amount",
+          "status",
+          "maker",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "partnerId",
+          "cashAccountCode",
+          "contraAccountCode",
+          "contraAux",
+          "cashFlowItem",
+          "settlementVoucherId",
+          "contractId",
+          "approver",
+          "confirmer"
+        ]
+      },
+      "errors": [
+        400,
+        403,
+        409
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/payments/{id}/enrich' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"expectedVersion\":\"<expectedVersion>\",\"cashAccountCode\":\"<cashAccountCode>\",\"contraAccountCode\":\"<contraAccountCode>\"}'"
       }
     },
     {
@@ -1883,14 +1979,16 @@
           "counterparty",
           "summary",
           "amount",
-          "cashAccountCode",
-          "contraAccountCode",
           "status",
           "maker",
           "version",
           "createdAt",
           "updatedAt",
           "partnerId",
+          "cashAccountCode",
+          "contraAccountCode",
+          "contraAux",
+          "cashFlowItem",
           "settlementVoucherId",
           "contractId",
           "approver",
@@ -1935,14 +2033,16 @@
           "counterparty",
           "summary",
           "amount",
-          "cashAccountCode",
-          "contraAccountCode",
           "status",
           "maker",
           "version",
           "createdAt",
           "updatedAt",
           "partnerId",
+          "cashAccountCode",
+          "contraAccountCode",
+          "contraAux",
+          "cashFlowItem",
           "settlementVoucherId",
           "contractId",
           "approver",
@@ -1990,14 +2090,16 @@
           "counterparty",
           "summary",
           "amount",
-          "cashAccountCode",
-          "contraAccountCode",
           "status",
           "maker",
           "version",
           "createdAt",
           "updatedAt",
           "partnerId",
+          "cashAccountCode",
+          "contraAccountCode",
+          "contraAux",
+          "cashFlowItem",
           "settlementVoucherId",
           "contractId",
           "approver",
@@ -2046,14 +2148,16 @@
           "counterparty",
           "summary",
           "amount",
-          "cashAccountCode",
-          "contraAccountCode",
           "status",
           "maker",
           "version",
           "createdAt",
           "updatedAt",
           "partnerId",
+          "cashAccountCode",
+          "contraAccountCode",
+          "contraAux",
+          "cashFlowItem",
           "settlementVoucherId",
           "contractId",
           "approver",

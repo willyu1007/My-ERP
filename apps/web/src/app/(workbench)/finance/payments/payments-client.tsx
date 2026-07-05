@@ -23,35 +23,40 @@ import { PaymentCreateForm } from './payment-create-form';
 import chrome from '../_components/queue-page.module.css';
 import styles from './payments.module.css';
 
-type PaymentQueueKey =
-  | 'open'
-  | 'draft'
-  | 'pending_approval'
-  | 'approved'
-  | 'confirmed'
-  | 'void'
-  | 'all';
+// D11: who-acts-next groups (6), NOT one raw tab per status. `open` is the
+// in-flight super-group; `to_enrich`/`to_approve`/`to_confirm` are its slices.
+type PaymentQueueKey = 'open' | 'to_enrich' | 'to_approve' | 'to_confirm' | 'done' | 'all';
 
 const PAYMENT_QUEUES: readonly { readonly key: PaymentQueueKey; readonly label: string }[] = [
-  { key: 'open', label: '待处理' },
-  { key: 'draft', label: '草稿' },
-  { key: 'pending_approval', label: '待审批' },
-  { key: 'approved', label: '待确认' },
-  { key: 'confirmed', label: '已确认' },
-  { key: 'void', label: '已作废' },
+  { key: 'open', label: '待办' },
+  { key: 'to_enrich', label: '待补录' },
+  { key: 'to_approve', label: '待审批' },
+  { key: 'to_confirm', label: '待确认' },
+  { key: 'done', label: '已完成' },
   { key: 'all', label: '全部' },
 ];
 
 function matchesQueue(payment: PaymentDoc, queue: PaymentQueueKey): boolean {
-  if (queue === 'all') return true;
-  if (queue === 'open') {
-    return (
-      payment.status === 'draft' ||
-      payment.status === 'pending_approval' ||
-      payment.status === 'approved'
-    );
+  switch (queue) {
+    case 'all':
+      return true;
+    case 'open':
+      // Everything in-flight that needs someone's action next.
+      return (
+        payment.status === 'pending_accounting' ||
+        payment.status === 'draft' ||
+        payment.status === 'pending_approval' ||
+        payment.status === 'approved'
+      );
+    case 'to_enrich':
+      return payment.status === 'pending_accounting';
+    case 'to_approve':
+      return payment.status === 'pending_approval';
+    case 'to_confirm':
+      return payment.status === 'approved';
+    case 'done':
+      return payment.status === 'confirmed' || payment.status === 'void';
   }
-  return payment.status === queue;
 }
 
 function countOf(payments: readonly PaymentDoc[], queue: PaymentQueueKey): number {
@@ -60,12 +65,14 @@ function countOf(payments: readonly PaymentDoc[], queue: PaymentQueueKey): numbe
 
 function nextStep(status: PaymentStatus): string {
   switch (status) {
+    case 'pending_accounting':
+      return '会计补录科目';
     case 'draft':
       return '提交审批';
     case 'pending_approval':
       return '主管审批';
     case 'approved':
-      return '确认收付并过账';
+      return '确认收付';
     case 'confirmed':
       return '结算凭证与账簿';
     case 'void':
@@ -75,6 +82,8 @@ function nextStep(status: PaymentStatus): string {
 
 function actionLabel(status: PaymentStatus): string {
   switch (status) {
+    case 'pending_accounting':
+      return '补录';
     case 'draft':
       return '补全';
     case 'pending_approval':
@@ -92,14 +101,19 @@ function paymentToRow(payment: PaymentDoc): RowModel {
     title: payment.summary,
     sub: payment.no,
     note: `对方：${payment.counterparty} · 类型：${PAYMENT_DIRECTION[payment.direction] ?? payment.direction} · 下游：${nextStep(payment.status)}`,
-    meta: [{ text: formatDate(payment.date) }, { text: `账户 ${payment.cashAccountCode}` }],
+    meta: [
+      { text: formatDate(payment.date) },
+      { text: payment.cashAccountCode ? `账户 ${payment.cashAccountCode}` : '待会计补录' },
+    ],
     metrics: [{ label: '金额', value: `${formatMoney(payment.amount)} CNY` }],
     status: {
       tone: paymentStatusTone(payment.status),
       label: PAYMENT_STATUS[payment.status] ?? payment.status,
     },
     emphasis:
-      payment.status === 'pending_approval' || payment.status === 'approved'
+      payment.status === 'pending_accounting' ||
+      payment.status === 'pending_approval' ||
+      payment.status === 'approved'
         ? 'warning'
         : undefined,
   };
@@ -154,6 +168,7 @@ export function PaymentsClient({
   partners,
   filterPartner = null,
   accountPreferences,
+  canEnterAccounting,
   initialDate,
   initialEntryOpen = false,
 }: {
@@ -163,6 +178,8 @@ export function PaymentsClient({
   readonly partners: readonly BusinessPartner[];
   readonly filterPartner?: BusinessPartner | null;
   readonly accountPreferences?: AccountPreferences;
+  /** D8: whether the caller may fill accounting subjects at create (direct path). */
+  readonly canEnterAccounting: boolean;
   readonly initialDate: string;
   readonly initialEntryOpen?: boolean;
 }) {
@@ -213,6 +230,7 @@ export function PaymentsClient({
             contracts={contracts}
             partners={partners}
             accountPreferences={accountPreferences}
+            canEnterAccounting={canEnterAccounting}
             initialDate={initialDate}
           />
         </div>

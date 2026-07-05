@@ -1,10 +1,20 @@
 # 03 — Implementation Notes
 
 ## Status
-- Current status: `in-progress` — Phase 1 (BusinessPartner) and Phase 2 (chart v2 + progressive picker + preferences) implemented and verified 2026-07-05; Phase 3 (cashier-to-accountant enrichment) next.
-- Last updated: 2026-07-05
+- Current status: `in-progress` — Phases 1-3 implemented and verified; Phase 4 (accountant voucher → cashier fund consumption, D4) next.
+- Last updated: 2026-07-06
 
 ## What changed
+- Phase 3 (2026-07-06): cashier-to-accountant enrichment (D3/D7/D8/D11), designed via a fan-out understand+design workflow then implemented + reviewed.
+  - Decisions locked with the user: FULL D7 enrichment now (subjects + aux + cash-flow + posting-template); confirm-actor tension deferred to Phase 4.
+  - State machine: new `pending_accounting` status + `enrich` transition. Cashier create → `pending_accounting` (null subjects) + opens a `payment.enrich` WorkItem (assignedRole accountant); accountant `enrich()` sets subjects/aux/cash-flow and advances **straight to `pending_approval`** (opening the approve WorkItem) — refinement over the synth's enrich→draft, since D3's flow is create→enrich→approval and the kernel should auto-hand-off. Direct accounting-capable create → `draft` (T-007 unchanged, D8 back-compat).
+  - D8 fork via one predicate `isAccountingCapable(identity) = defineAbilityFor(identity).can('post','Voucher')` — moved into `@my-erp/platform` (single source); no CASL matrix change, no hardcoded role strings. The `/payments/:id/enrich` route is gated by `@RequirePermission('post','Voucher')` (coarse) + the service capability check (fine); cashier create rejects smuggled subjects (D3).
+  - D7 (voucher timing): `enrich()` NEVER builds a voucher; the settlement voucher is still generated + posted only at confirm. A single `isAccountingComplete` predicate guards submit + confirm against the null-subject hole. "Posting-template decision" has no DP28 engine to bind to, so it resolves to the explicit enrich confirmation; the settlement template itself is direction-driven (借/贷 cash↔contra).
+  - FULL D7 enrichment fields: new nullable `PaymentDoc.contraAux` (Json) + `cashFlowItem` (String); `buildSettlementEntry` threads them onto the CONTRA (non-cash) line only; confirm passes them into the voucher line. Partner-typed aux (customer/supplier) prefills from the doc's 往来单位; department/project are free text; cash-flow item auto-suggests from `Account.defaultCashFlowItem`.
+  - New `/v1/me` endpoint returns the caller's `accountingCapable` so the web can fork the create surface (the API still enforces the fork).
+  - Web: `payment-create-form` forks cashier-simple (hides account fields → 待补录) vs direct; new `payment-enrich-form` (subjects + cash-flow Select + aux-by-auxType); `payments-client` regrouped to 6 who-acts-next tabs (待办/待补录/待审批/待确认/已完成/全部, NOT 8 raw); detail actions `确认收付并过账`→`确认收付`; display maps + home board gained `pending_accounting`/`finance.payment.enrich`.
+  - Migration `20260706120000_t012_payment_enrichment` (drop NOT NULL on the two subject columns + add `contra_aux`/`cash_flow_item`), back-compatible with existing non-null rows.
+
 - Phase 1 (2026-07-05): BusinessPartner master implemented end to end.
   - Ledger-scoped `business_partner` table (RLS, no DELETE policy) + nullable `partner_id` on `payment_doc` / `contract` (migration `20260705120000_t012_business_partner`).
   - `packages/db`: `BusinessPartnerEntity` + create/get/list(search q over name/wechat, role/partyType/active filters)/version-guarded update; `partnerId` on payment/contract entities, create inputs, and list filters.

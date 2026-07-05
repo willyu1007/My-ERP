@@ -7,11 +7,12 @@ import { classifyActionFailure } from '@/lib/finance/action-failure';
  * backend re-checks SoD + status + optimistic version, so a 403/409 surfaces as
  * "已变化，请刷新". Create returns the new id so the client can route to the detail.
  */
-import type { CreatePayment } from '@my-erp/api-client';
+import type { CreatePayment, EnrichPayment } from '@my-erp/api-client';
 import {
   approvePayment,
   confirmPayment,
   createPayment,
+  enrichPayment,
   submitPayment,
   voidPayment,
 } from '@/lib/finance/data-source';
@@ -44,6 +45,19 @@ export async function createAndSubmitPaymentAction(
     const created = await createPayment(input);
     const submitted = await submitPayment(created.id, created.version);
     return { ok: true, id: submitted.id, no: submitted.no };
+  } catch (err) {
+    return toFailure(err);
+  }
+}
+
+/** Accountant enrichment: complete accounting facts on a 待补录 doc (T-012 Phase 3). */
+export async function enrichPaymentAction(
+  id: string,
+  input: EnrichPayment,
+): Promise<PaymentActionResult> {
+  try {
+    const p = await enrichPayment(id, input);
+    return { ok: true, id: p.id, no: p.no };
   } catch (err) {
     return toFailure(err);
   }

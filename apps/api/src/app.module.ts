@@ -19,6 +19,7 @@ import { InvitationsController } from './invitations/invitations.controller';
 import { InvitationService } from './invitations/invitation.service';
 import { LedgerController } from './ledger/ledger.controller';
 import { LedgerBooksController } from './ledger-books/ledger-books.controller';
+import { MeController } from './me/me.controller';
 import { MembersController } from './members/members.controller';
 import { OpeningBalancesController } from './opening-balances/opening-balances.controller';
 import { OrganizationController } from './organization/organization.controller';
@@ -39,6 +40,7 @@ import { WorkItemsService } from './work-items/work-items.service';
     OrganizationController,
     LedgerBooksController,
     InvitationsController,
+    MeController,
     MembersController,
     AccountsController,
     AccountPreferencesController,

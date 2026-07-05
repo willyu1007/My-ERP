@@ -93,18 +93,24 @@ function PaymentSummaryEditor({
   );
 }
 
-/** 新建收/付款单 — drafts a PaymentDoc, then routes to its detail for submit/approve/confirm. */
+/**
+ * 新建收/付款单 (T-012 Phase 3). Forks by capability (D8): a cashier captures
+ * business facts only → the doc enters 待补录 (pending_accounting) and an accountant
+ * completes the subjects later; an accounting-capable caller fills subjects directly.
+ */
 export function PaymentCreateForm({
   accounts,
   contracts,
   partners,
   accountPreferences,
+  canEnterAccounting,
   initialDate,
 }: {
   readonly accounts: readonly AccountVM[];
   readonly contracts: readonly Contract[];
   readonly partners: readonly BusinessPartner[];
   readonly accountPreferences?: AccountPreferences;
+  readonly canEnterAccounting: boolean;
   readonly initialDate: string;
 }) {
   const router = useRouter();
@@ -133,14 +139,16 @@ export function PaymentCreateForm({
 
   const amountOk = AMOUNT_RE.test(amount) && Number(amount) > 0;
   const busy = pending || busyAction !== null;
+  // Cashier path: business facts only; accounting subjects are filled at enrichment.
+  const subjectsOk =
+    !canEnterAccounting ||
+    (cashAccountCode !== '' && contraAccountCode !== '' && cashAccountCode !== contraAccountCode);
   const canSubmit =
     !busy &&
     amountOk &&
     (partnerId !== '' || counterparty.trim() !== '') &&
     summary.trim() !== '' &&
-    cashAccountCode !== '' &&
-    contraAccountCode !== '' &&
-    cashAccountCode !== contraAccountCode;
+    subjectsOk;
   const displayDate = date ? date.replaceAll('-', ' - ') : '选择日期';
 
   function openDatePicker(): void {
@@ -160,8 +168,8 @@ export function PaymentCreateForm({
           ...(partnerId ? { partnerId } : {}),
           summary: summary.trim(),
           amount,
-          cashAccountCode,
-          contraAccountCode,
+          // D3: the cashier path sends no accounting subjects.
+          ...(canEnterAccounting ? { cashAccountCode, contraAccountCode } : {}),
           ...(contractId ? { contractId } : {}),
         };
         const res =
@@ -169,7 +177,9 @@ export function PaymentCreateForm({
             ? await createAndSubmitPaymentAction(input)
             : await createPaymentAction(input);
         if (res.ok && res.id) {
-          toast.notify('success', mode === 'submit' ? '已提交审批' : '已暂存', res.no ?? '');
+          const okTitle =
+            mode === 'submit' ? '已提交审批' : canEnterAccounting ? '已暂存' : '已登记，待会计补录';
+          toast.notify('success', okTitle, res.no ?? '');
           router.push(`/finance/payments/${res.id}`);
         } else if (!res.ok && res.reason === 'unconfigured') {
           toast.notify(
@@ -270,38 +280,47 @@ export function PaymentCreateForm({
             ariaLabel={direction === 'receipt' ? '付款方' : '收款方'}
           />
         </div>
-        <div className="mt-field">
-          <span className="mt-label">
-            {direction === 'receipt' ? '收款账户' : '付款账户'}（货币资金）
-          </span>
-          <AccountPicker
-            accounts={cashAccounts}
-            value={cashAccountCode}
-            displayName={selectedCashAccount?.name ?? ''}
-            onSelect={(account) => setCashAccountCode(account.code)}
-            onClear={() => setCashAccountCode('')}
-            ariaLabel={direction === 'receipt' ? '收款账户' : '付款账户'}
-            name="cashAccountCode"
-            placeholder="编码或账户名"
-            emptyLabel="无匹配账户"
-            variant="compact"
-          />
-        </div>
-        <div className="mt-field">
-          <span className="mt-label">对方科目</span>
-          <AccountPicker
-            accounts={contraAccounts}
-            value={contraAccountCode}
-            displayName={selectedContraAccount?.name ?? ''}
-            onSelect={(account) => setContraAccountCode(account.code)}
-            onClear={() => setContraAccountCode('')}
-            ariaLabel="对方科目"
-            name="contraAccountCode"
-            preferences={preferences}
-            onTogglePin={togglePin}
-            recentKey="myerp.recentAccounts.payments"
-          />
-        </div>
+        {canEnterAccounting ? (
+          <>
+            <div className="mt-field">
+              <span className="mt-label">
+                {direction === 'receipt' ? '收款账户' : '付款账户'}（货币资金）
+              </span>
+              <AccountPicker
+                accounts={cashAccounts}
+                value={cashAccountCode}
+                displayName={selectedCashAccount?.name ?? ''}
+                onSelect={(account) => setCashAccountCode(account.code)}
+                onClear={() => setCashAccountCode('')}
+                ariaLabel={direction === 'receipt' ? '收款账户' : '付款账户'}
+                name="cashAccountCode"
+                placeholder="编码或账户名"
+                emptyLabel="无匹配账户"
+                variant="compact"
+              />
+            </div>
+            <div className="mt-field">
+              <span className="mt-label">对方科目</span>
+              <AccountPicker
+                accounts={contraAccounts}
+                value={contraAccountCode}
+                displayName={selectedContraAccount?.name ?? ''}
+                onSelect={(account) => setContraAccountCode(account.code)}
+                onClear={() => setContraAccountCode('')}
+                ariaLabel="对方科目"
+                name="contraAccountCode"
+                preferences={preferences}
+                onTogglePin={togglePin}
+                recentKey="myerp.recentAccounts.payments"
+              />
+            </div>
+          </>
+        ) : (
+          <div className="mt-field">
+            <span className="mt-label">会计科目</span>
+            <p className={styles.enrichHint}>由会计补录（提交后进入「待补录」）</p>
+          </div>
+        )}
         <div className="mt-field">
           <span className="mt-label">关联合同（可选）</span>
           <ContractPicker
@@ -315,26 +334,41 @@ export function PaymentCreateForm({
       </div>
 
       <div className={styles.actionGroup}>
-        <button
-          type="button"
-          className={`mt-btn mt-btn--secondary ${styles.primaryAction}${
-            canSubmit ? '' : ' mt-btn--disabled'
-          }`}
-          disabled={!canSubmit}
-          onClick={() => persist('draft')}
-        >
-          {busyAction === 'draft' ? '暂存中…' : '暂存'}
-        </button>
-        <button
-          type="button"
-          className={`mt-btn mt-btn--primary ${styles.primaryAction}${
-            canSubmit ? '' : ' mt-btn--disabled'
-          }`}
-          disabled={!canSubmit}
-          onClick={() => persist('submit')}
-        >
-          {busyAction === 'submit' ? '提交中…' : '提交'}
-        </button>
+        {canEnterAccounting ? (
+          <>
+            <button
+              type="button"
+              className={`mt-btn mt-btn--secondary ${styles.primaryAction}${
+                canSubmit ? '' : ' mt-btn--disabled'
+              }`}
+              disabled={!canSubmit}
+              onClick={() => persist('draft')}
+            >
+              {busyAction === 'draft' ? '暂存中…' : '暂存'}
+            </button>
+            <button
+              type="button"
+              className={`mt-btn mt-btn--primary ${styles.primaryAction}${
+                canSubmit ? '' : ' mt-btn--disabled'
+              }`}
+              disabled={!canSubmit}
+              onClick={() => persist('submit')}
+            >
+              {busyAction === 'submit' ? '提交中…' : '提交'}
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            className={`mt-btn mt-btn--primary ${styles.primaryAction}${
+              canSubmit ? '' : ' mt-btn--disabled'
+            }`}
+            disabled={!canSubmit}
+            onClick={() => persist('draft')}
+          >
+            {busyAction === 'draft' ? '登记中…' : '登记（转会计补录）'}
+          </button>
+        )}
       </div>
     </div>
   );

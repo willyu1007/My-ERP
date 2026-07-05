@@ -29,6 +29,7 @@ export const PlatformSubStatusSchema = z.enum([
   'pending_correction',
   'pending_external',
   'pending_system',
+  'pending_accounting',
   'blocked',
   'ready',
   'done',

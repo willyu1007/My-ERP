@@ -23,6 +23,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthStatus'
+  /v1/me:
+    get:
+      operationId: getMe
+      summary: The caller's own identity + capabilities (T-012 Phase 3)
+      tags: [identity]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Identity summary
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Me' }
+        '401': { description: Missing or invalid bearer token }
   /v1/organization:
     get:
       operationId: getCurrentOrganization
@@ -835,6 +848,20 @@ paths:
       responses:
         '200': { description: Payment doc, content: { application/json: { schema: { $ref: '#/components/schemas/PaymentDoc' } } } }
         '404': { description: Not found }
+  /v1/payments/{id}/enrich:
+    post:
+      operationId: enrichPayment
+      summary: pending_accounting → pending_approval — accountant completes accounting facts (T-012 Phase 3, D3/D7)
+      description: Sets cash/bank + contra subjects, the contra line's auxiliary dimensions, and the cash-flow item; advances to approval. Never generates a voucher (that is confirm). Requires post-Voucher rights (accounting-capable).
+      tags: [payments]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/EnrichPayment' } } } }
+      responses:
+        '200': { description: Enriched, content: { application/json: { schema: { $ref: '#/components/schemas/PaymentDoc' } } } }
+        '400': { description: Wrong status / closed period / invalid subject }
+        '403': { description: Caller is not accounting-capable }
+        '409': { description: Stale version }
   /v1/payments/{id}/submit:
     post:
       operationId: submitPayment
@@ -845,7 +872,7 @@ paths:
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PaymentActionRequest' } } } }
       responses:
         '200': { description: Submitted, content: { application/json: { schema: { $ref: '#/components/schemas/PaymentDoc' } } } }
-        '400': { description: Wrong status / closed period }
+        '400': { description: Wrong status / closed period / not accounting-complete }
         '409': { description: Stale version }
   /v1/payments/{id}/approve:
     post:
@@ -1028,6 +1055,15 @@ components:
         status: { type: string, example: ok }
         service: { type: string }
         time: { type: string, format: date-time }
+    Me:
+      type: object
+      required: [userId, orgId, roles, accountingCapable]
+      properties:
+        userId: { type: string }
+        orgId: { type: string, format: uuid }
+        ledgerBookId: { type: string, format: uuid, nullable: true }
+        roles: { type: array, items: { type: string } }
+        accountingCapable: { type: boolean, description: 'D8: may fill accounting subjects directly / enrich (post-Voucher right)' }
     Organization:
       type: object
       required: [id, name, createdAt]
@@ -1465,7 +1501,7 @@ components:
         cashFlowItem: { type: string, nullable: true, description: 'CF item code; null/empty clears the tag' }
     PaymentDoc:
       type: object
-      required: [id, no, direction, date, period, counterparty, summary, amount, cashAccountCode, contraAccountCode, status, maker, version, createdAt, updatedAt]
+      required: [id, no, direction, date, period, counterparty, summary, amount, status, maker, version, createdAt, updatedAt]
       properties:
         id: { type: string, format: uuid }
         no: { type: string, example: 收-2026-06-001 }
@@ -1476,9 +1512,11 @@ components:
         partnerId: { type: string, format: uuid, nullable: true, description: 'Optional BusinessPartner link (T-012)' }
         summary: { type: string }
         amount: { type: string, description: '2dp' }
-        cashAccountCode: { type: string }
-        contraAccountCode: { type: string }
-        status: { type: string, enum: [draft, pending_approval, approved, confirmed, void] }
+        cashAccountCode: { type: string, nullable: true, description: 'Null until accounting enrichment (T-012 Phase 3 cashier path)' }
+        contraAccountCode: { type: string, nullable: true }
+        contraAux: { type: object, additionalProperties: true, nullable: true, description: '辅助核算 for the contra line, keyed by AuxType (T-012 Phase 3)' }
+        cashFlowItem: { type: string, nullable: true, description: '现金流量项目 code for the contra line (T-012 Phase 3)' }
+        status: { type: string, enum: [pending_accounting, draft, pending_approval, approved, confirmed, void] }
         settlementVoucherId: { type: string, format: uuid, nullable: true }
         contractId: { type: string, format: uuid, nullable: true, description: 'Reserved for T-005' }
         maker: { type: string }
@@ -1489,7 +1527,7 @@ components:
         updatedAt: { type: string, format: date-time }
     CreatePayment:
       type: object
-      required: [direction, date, summary, amount, cashAccountCode, contraAccountCode]
+      required: [direction, date, summary, amount]
       properties:
         direction: { type: string, enum: [receipt, payment] }
         date: { type: string, format: date }
@@ -1497,9 +1535,21 @@ components:
         partnerId: { type: string, format: uuid, nullable: true, description: 'Optional BusinessPartner link (T-012); must be active and in-scope' }
         summary: { type: string }
         amount: { type: string, description: 'positive, ≤2dp' }
-        cashAccountCode: { type: string, description: '货币资金类 (1001/1002/1012)' }
-        contraAccountCode: { type: string, description: '对方科目' }
+        cashAccountCode: { type: string, description: '货币资金类 (1001/1002/1012). Omit on the cashier path (T-012 Phase 3, D3); accounting-capable roles may set it directly.' }
+        contraAccountCode: { type: string, description: '对方科目. Omit on the cashier path.' }
+        contraAux: { type: object, additionalProperties: true, description: 'Direct-path enrichment: 辅助核算 for the contra line (T-012 Phase 3)' }
+        cashFlowItem: { type: string, description: 'Direct-path enrichment: 现金流量项目 code for the contra line' }
         contractId: { type: string, format: uuid, nullable: true, description: 'Optional Contract link (T-005)' }
+    EnrichPayment:
+      type: object
+      required: [expectedVersion, cashAccountCode, contraAccountCode]
+      description: 'Accountant completion of a cashier doc (T-012 Phase 3, D3/D7). No voucher — that is confirm.'
+      properties:
+        expectedVersion: { type: integer }
+        cashAccountCode: { type: string, description: '货币资金类' }
+        contraAccountCode: { type: string, description: '对方科目' }
+        contraAux: { type: object, additionalProperties: true, description: '辅助核算 for the contra line, keyed by AuxType (optional)' }
+        cashFlowItem: { type: string, description: '现金流量项目 code for the contra line (optional; auto-suggested from the account)' }
     PaymentActionRequest:
       type: object
       required: [expectedVersion]

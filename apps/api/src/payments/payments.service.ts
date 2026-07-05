@@ -18,6 +18,7 @@ import {
   getVoucherTx,
   isPeriodClosedTx,
   listAccountsTx,
+  listCashFlowItemsTx,
   listPaymentDocsTx,
   Prisma,
   setVoucherStatusTx,
@@ -33,13 +34,15 @@ import {
   isCashAccountCode,
   Money,
 } from '@my-erp/finance-domain';
-import type { Identity } from '@my-erp/platform';
+import { isAccountingCapable, type Identity } from '@my-erp/platform';
 import { appendWorkItemOutboxEventTx } from '../work-items/voucher-workflow';
 import {
   createPaymentApproveWorkItemTx,
   createPaymentConfirmWorkItemTx,
+  createPaymentEnrichWorkItemTx,
   PAYMENT_APPROVE_WORK_ITEM_TYPE,
   PAYMENT_CONFIRM_WORK_ITEM_TYPE,
+  PAYMENT_ENRICH_WORK_ITEM_TYPE,
 } from './payment-workflow';
 
 const DATE_RE = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
@@ -54,12 +57,47 @@ export interface CreatePaymentInput {
   partnerId?: string | null;
   summary: string;
   amount: string;
-  cashAccountCode: string;
-  contraAccountCode: string;
+  /** Accounting subjects — omitted on the cashier path (T-012 Phase 3, D3). */
+  cashAccountCode?: string | null;
+  contraAccountCode?: string | null;
+  /** Enrichment fields for the direct accounting-capable path (T-012 Phase 3, D7). */
+  contraAux?: unknown;
+  cashFlowItem?: string | null;
   contractId?: string | null;
 }
 
+/** T-012 Phase 3 (D7): accountant completes the accounting facts of a cashier doc. */
+export interface EnrichPaymentInput {
+  expectedVersion: number;
+  cashAccountCode: string;
+  contraAccountCode: string;
+  /** 辅助核算 for the contra line, keyed by AuxType (optional). */
+  contraAux?: unknown;
+  /** 现金流量项目 code for the contra line (optional; auto-suggested from the account). */
+  cashFlowItem?: string | null;
+}
+
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** A doc is accounting-complete iff both subjects are set, distinct, and cash-typed. */
+function isAccountingComplete(
+  doc: Pick<PaymentDocEntity, 'cashAccountCode' | 'contraAccountCode'>,
+): boolean {
+  return (
+    !!doc.cashAccountCode &&
+    !!doc.contraAccountCode &&
+    doc.cashAccountCode !== doc.contraAccountCode &&
+    isCashAccountCode(doc.cashAccountCode)
+  );
+}
+
+/** Auxiliary-dimension blob must be a plain JSON object (or absent). */
+function normalizeContraAux(value: unknown): Prisma.InputJsonValue | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== 'object' || Array.isArray(value))
+    throw new BadRequestException('contraAux 必须是对象');
+  return value as Prisma.InputJsonValue;
+}
 
 function iso(d: Date): string {
   return d.toISOString();
@@ -77,6 +115,8 @@ function toDto(p: PaymentDocEntity) {
     amount: p.amount,
     cashAccountCode: p.cashAccountCode,
     contraAccountCode: p.contraAccountCode,
+    contraAux: p.contraAux ?? null,
+    cashFlowItem: p.cashFlowItem,
     status: p.status,
     settlementVoucherId: p.settlementVoucherId,
     contractId: p.contractId,
@@ -150,6 +190,13 @@ export class PaymentsService {
     });
   }
 
+  /** Validate an optional 现金流量项目 code against the ledger's active CF master. */
+  private async assertCashFlowItem(tx: TxClient, code: string): Promise<void> {
+    const item = (await listCashFlowItemsTx(tx)).find((i) => i.code === code);
+    if (!item) throw new BadRequestException(`现金流量项目不存在：${code}`);
+    if (!item.active) throw new BadRequestException(`现金流量项目已停用：${code}`);
+  }
+
   async create(identity: Identity, ledgerBookId: string, input: CreatePaymentInput) {
     if (input.direction !== 'receipt' && input.direction !== 'payment')
       throw new BadRequestException('direction must be receipt | payment');
@@ -161,15 +208,36 @@ export class PaymentsService {
     if (!partnerId && !input.counterparty?.trim())
       throw new BadRequestException('counterparty is required');
     if (!input.summary?.trim()) throw new BadRequestException('summary is required');
-    if (input.cashAccountCode === input.contraAccountCode)
-      throw new BadRequestException('现金科目与对方科目不能相同');
-    if (!isCashAccountCode(input.cashAccountCode))
-      throw new BadRequestException(
-        `现金科目必须是货币资金类（${CASH_ACCOUNT_ROOT_CODES.join('/')}）`,
-      );
     if (input.contractId != null && input.contractId !== '' && !UUID_RE.test(input.contractId))
       throw new BadRequestException('contractId must be a uuid');
     const period = input.date.slice(0, 7);
+
+    // D8 role fork: cashiers capture business facts only; accounting-capable roles may
+    // fill subjects at creation (direct path). Decided by capability, not a role string.
+    const capable = isAccountingCapable(identity);
+    const cashAccountCode = input.cashAccountCode?.trim() || null;
+    const contraAccountCode = input.contraAccountCode?.trim() || null;
+    let contraAux: Prisma.InputJsonValue | undefined;
+    let cashFlowItem: string | null = null;
+
+    if (!capable) {
+      // D3: cashier docs enter enrichment; no accounting fields are accepted here.
+      if (cashAccountCode || contraAccountCode)
+        throw new BadRequestException('出纳建单不填写会计科目');
+      if (input.contraAux != null || input.cashFlowItem)
+        throw new BadRequestException('出纳建单不填写会计信息');
+    } else {
+      if (!cashAccountCode || !contraAccountCode)
+        throw new BadRequestException('会计建单需填写现金科目与对方科目');
+      if (cashAccountCode === contraAccountCode)
+        throw new BadRequestException('现金科目与对方科目不能相同');
+      if (!isCashAccountCode(cashAccountCode))
+        throw new BadRequestException(
+          `现金科目必须是货币资金类（${CASH_ACCOUNT_ROOT_CODES.join('/')}）`,
+        );
+      contraAux = normalizeContraAux(input.contraAux);
+      cashFlowItem = input.cashFlowItem?.trim() || null;
+    }
 
     return withScope(identity.orgId, ledgerBookId, async (tx) => {
       if (await isPeriodClosedTx(tx, period))
@@ -182,9 +250,12 @@ export class PaymentsService {
         if (!partner.active) throw new BadRequestException('往来单位已停用');
         if (!counterparty) counterparty = partner.name;
       }
-      const byCode = new Map((await listAccountsTx(tx)).map((a) => [a.code, a]));
-      assertPostable(byCode.get(input.cashAccountCode), input.cashAccountCode, '现金');
-      assertPostable(byCode.get(input.contraAccountCode), input.contraAccountCode, '对方');
+      if (capable) {
+        const byCode = new Map((await listAccountsTx(tx)).map((a) => [a.code, a]));
+        assertPostable(byCode.get(cashAccountCode!), cashAccountCode!, '现金');
+        assertPostable(byCode.get(contraAccountCode!), contraAccountCode!, '对方');
+        if (cashFlowItem) await this.assertCashFlowItem(tx, cashFlowItem);
+      }
 
       const seq = (await countPaymentDocsInPeriodTx(tx, period, input.direction)) + 1;
       const no = `${input.direction === 'receipt' ? '收' : '付'}-${period}-${String(seq).padStart(3, '0')}`;
@@ -198,16 +269,104 @@ export class PaymentsService {
         partnerId,
         summary: input.summary.trim(),
         amount,
-        cashAccountCode: input.cashAccountCode,
-        contraAccountCode: input.contraAccountCode,
+        cashAccountCode,
+        contraAccountCode,
+        contraAux,
+        cashFlowItem,
+        status: capable ? 'draft' : 'pending_accounting',
         maker: identity.userId,
         contractId: input.contractId || null,
       });
+      // Cashier docs open the accountant's enrichment queue (D3).
+      if (!capable) {
+        await createPaymentEnrichWorkItemTx(tx, {
+          orgId: identity.orgId,
+          ledgerBookId,
+          paymentId: doc.id,
+          actorId: identity.userId,
+        });
+      }
       await this.audit(tx, identity, 'CREATE_PAYMENT', doc.id, ledgerBookId, {
         no,
         direction: input.direction,
+        path: capable ? 'direct' : 'cashier',
       });
       return toDto(doc);
+    });
+  }
+
+  /**
+   * T-012 Phase 3 (D3/D7): the accountant completes accounting facts on a cashier
+   * doc — cash/bank + contra subjects, the contra line's auxiliary dimensions, and
+   * the cash-flow item — then the doc advances straight to `pending_approval` and the
+   * approver queue opens (D3 flow: create → enrich → approval → confirm; the accountant
+   * confirmation IS the control point before approval). NEVER generates a voucher
+   * (D7: the voucher is built + posted only at confirm) and leaves maker/approver/
+   * confirmer untouched so downstream SoD still measures against the cashier maker.
+   */
+  async enrich(
+    identity: Identity,
+    ledgerBookId: string,
+    id: string,
+    input: EnrichPaymentInput,
+  ) {
+    if (!isAccountingCapable(identity)) throw new ForbiddenException('仅会计可补全科目');
+    const cashAccountCode = input.cashAccountCode?.trim();
+    const contraAccountCode = input.contraAccountCode?.trim();
+    if (!cashAccountCode || !contraAccountCode)
+      throw new BadRequestException('现金科目与对方科目必填');
+    if (cashAccountCode === contraAccountCode)
+      throw new BadRequestException('现金科目与对方科目不能相同');
+    if (!isCashAccountCode(cashAccountCode))
+      throw new BadRequestException(
+        `现金科目必须是货币资金类（${CASH_ACCOUNT_ROOT_CODES.join('/')}）`,
+      );
+    const contraAux = normalizeContraAux(input.contraAux);
+    const cashFlowItem = input.cashFlowItem?.trim() || null;
+
+    return withScope(identity.orgId, ledgerBookId, async (tx) => {
+      const doc = await getPaymentDocTx(tx, id);
+      if (!doc) throw new NotFoundException('payment doc not found');
+      if (doc.status !== 'pending_accounting')
+        throw new BadRequestException(`无法补录 ${doc.status} 状态的单据`);
+      if (await isPeriodClosedTx(tx, doc.period))
+        throw new BadRequestException('会计期间已结账，请先反结账');
+      const byCode = new Map((await listAccountsTx(tx)).map((a) => [a.code, a]));
+      assertPostable(byCode.get(cashAccountCode), cashAccountCode, '现金');
+      assertPostable(byCode.get(contraAccountCode), contraAccountCode, '对方');
+      if (cashFlowItem) await this.assertCashFlowItem(tx, cashFlowItem);
+
+      const updated = await updatePaymentDocTx(tx, id, {
+        expectedVersion: input.expectedVersion,
+        status: 'pending_approval',
+        cashAccountCode,
+        contraAccountCode,
+        contraAux: contraAux ?? null,
+        cashFlowItem,
+      });
+      if (!updated) throw new ConflictException('单据已变化，请刷新');
+      // Complete ONLY the enrich item — never a co-existing approve/confirm item.
+      const completed = await completeActiveWorkItemsForSourceTx(tx, {
+        sourceType: 'PaymentDoc',
+        sourceId: id,
+        actorId: identity.userId,
+        actionKey: 'complete',
+        workItemType: PAYMENT_ENRICH_WORK_ITEM_TYPE,
+      });
+      for (const item of completed)
+        await appendWorkItemOutboxEventTx(tx, item, 'work_item.completed', 'complete');
+      // Hand off to the approver queue (task-driven; same item submit() opens).
+      await createPaymentApproveWorkItemTx(tx, {
+        orgId: identity.orgId,
+        ledgerBookId,
+        paymentId: id,
+        actorId: identity.userId,
+      });
+      await this.audit(tx, identity, 'ENRICH_PAYMENT', id, ledgerBookId, {
+        cashAccountCode,
+        contraAccountCode,
+      });
+      return toDto(updated);
     });
   }
 
@@ -217,6 +376,10 @@ export class PaymentsService {
       if (!doc) throw new NotFoundException('payment doc not found');
       if (doc.status !== 'draft')
         throw new BadRequestException(`无法提交 ${doc.status} 状态的单据`);
+      // Belt-and-braces: a draft reached via enrich or the direct path is already
+      // complete, but make the invariant explicit (T-012 Phase 3).
+      if (!isAccountingComplete(doc))
+        throw new BadRequestException('会计科目未补全，无法提交');
       if (await isPeriodClosedTx(tx, doc.period))
         throw new BadRequestException('会计期间已结账，请先反结账');
       const updated = await updatePaymentDocTx(tx, id, {
@@ -292,17 +455,23 @@ export class PaymentsService {
       if (doc.maker === identity.userId && !(singlePerson && confirmSinglePerson))
         throw new ForbiddenException('确认人不能是申请人（职责分离）；单人模式需显式确认');
 
+      // T-012 Phase 3: guards the null-subject hole opened by nullable columns.
+      if (!isAccountingComplete(doc))
+        throw new BadRequestException('结算科目缺失或无效，无法生成凭证');
       const byCode = new Map((await listAccountsTx(tx)).map((a) => [a.code, a]));
-      const cash = byCode.get(doc.cashAccountCode);
-      const contra = byCode.get(doc.contraAccountCode);
+      const cash = byCode.get(doc.cashAccountCode!);
+      const contra = byCode.get(doc.contraAccountCode!);
       if (!cash || !contra) throw new BadRequestException('结算科目缺失，无法生成凭证');
 
       // 自动生成结算凭证：系统生成、直接过账（制单=审核，SoD 豁免，审计留痕）。
+      // 补录的辅助核算 + 现金流量项目 随对方（非现金）分录进入凭证（D7）。
       const entry = buildSettlementEntry({
         direction: doc.direction as 'receipt' | 'payment',
         amount: doc.amount,
         cash: { code: cash.code, name: cash.name },
         contra: { code: contra.code, name: contra.name },
+        contraAux: doc.contraAux ?? undefined,
+        contraCashFlowItem: doc.cashFlowItem,
       });
       const seq = (await countVouchersInPeriodTx(tx, doc.period)) + 1;
       const no = `记-${doc.period}-${String(seq).padStart(3, '0')}`;
@@ -322,6 +491,8 @@ export class PaymentsService {
           summary,
           debit: l.debit ?? null,
           credit: l.credit ?? null,
+          aux: l.aux,
+          cashFlowItem: l.cashFlowItem ?? null,
         })),
       });
       await setVoucherStatusTx(tx, voucher.id, {

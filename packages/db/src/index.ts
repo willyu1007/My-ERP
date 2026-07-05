@@ -1978,8 +1978,13 @@ export interface PaymentDocEntity {
   summary: string;
   /** 2dp string */
   amount: string;
-  cashAccountCode: string;
-  contraAccountCode: string;
+  /** Null until accounting enrichment (T-012 Phase 3 cashier path). */
+  cashAccountCode: string | null;
+  contraAccountCode: string | null;
+  /** 辅助核算 for the contra line; keyed by AuxType. Null until enriched. */
+  contraAux: unknown;
+  /** 现金流量项目 code for the contra line. Null until enriched. */
+  cashFlowItem: string | null;
   status: string;
   settlementVoucherId: string | null;
   contractId: string | null;
@@ -2002,8 +2007,10 @@ function toPaymentDoc(p: {
   partnerId: string | null;
   summary: string;
   amount: Prisma.Decimal;
-  cashAccountCode: string;
-  contraAccountCode: string;
+  cashAccountCode: string | null;
+  contraAccountCode: string | null;
+  contraAux: Prisma.JsonValue;
+  cashFlowItem: string | null;
   status: string;
   settlementVoucherId: string | null;
   contractId: string | null;
@@ -2027,6 +2034,8 @@ function toPaymentDoc(p: {
     amount: p.amount.toFixed(2),
     cashAccountCode: p.cashAccountCode,
     contraAccountCode: p.contraAccountCode,
+    contraAux: p.contraAux ?? null,
+    cashFlowItem: p.cashFlowItem,
     status: p.status,
     settlementVoucherId: p.settlementVoucherId,
     contractId: p.contractId,
@@ -2049,10 +2058,15 @@ export interface CreatePaymentDocInput {
   partnerId?: string | null;
   summary: string;
   amount: string;
-  cashAccountCode: string;
-  contraAccountCode: string;
+  /** Optional since T-012 Phase 3 (cashier path creates without subjects). */
+  cashAccountCode?: string | null;
+  contraAccountCode?: string | null;
+  contraAux?: unknown;
+  cashFlowItem?: string | null;
   maker: string;
   contractId?: string | null;
+  /** Initial status; defaults to 'draft'. Cashier path passes 'pending_accounting'. */
+  status?: string;
 }
 
 export async function createPaymentDocTx(
@@ -2070,9 +2084,14 @@ export async function createPaymentDocTx(
       partnerId: input.partnerId ?? null,
       summary: input.summary,
       amount: input.amount,
-      cashAccountCode: input.cashAccountCode,
-      contraAccountCode: input.contraAccountCode,
-      status: 'draft',
+      cashAccountCode: input.cashAccountCode ?? null,
+      contraAccountCode: input.contraAccountCode ?? null,
+      contraAux:
+        input.contraAux === undefined || input.contraAux === null
+          ? Prisma.JsonNull
+          : (input.contraAux as Prisma.InputJsonValue),
+      cashFlowItem: input.cashFlowItem ?? null,
+      status: input.status ?? 'draft',
       contractId: input.contractId ?? null,
       maker: input.maker,
     },
@@ -2119,8 +2138,11 @@ export interface UpdatePaymentDocInput {
   counterparty?: string;
   summary?: string;
   amount?: string;
-  cashAccountCode?: string;
-  contraAccountCode?: string;
+  cashAccountCode?: string | null;
+  contraAccountCode?: string | null;
+  /** Accounting enrichment (T-012 Phase 3). */
+  contraAux?: unknown;
+  cashFlowItem?: string | null;
   date?: string;
   period?: string;
 }
@@ -2141,6 +2163,10 @@ export async function updatePaymentDocTx(
   if (input.amount !== undefined) data.amount = input.amount;
   if (input.cashAccountCode !== undefined) data.cashAccountCode = input.cashAccountCode;
   if (input.contraAccountCode !== undefined) data.contraAccountCode = input.contraAccountCode;
+  if (input.contraAux !== undefined)
+    data.contraAux =
+      input.contraAux === null ? Prisma.JsonNull : (input.contraAux as Prisma.InputJsonValue);
+  if (input.cashFlowItem !== undefined) data.cashFlowItem = input.cashFlowItem;
   if (input.date !== undefined) data.date = new Date(input.date);
   if (input.period !== undefined) data.period = input.period;
 

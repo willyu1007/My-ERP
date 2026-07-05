@@ -24,6 +24,7 @@ import {
   type ContractType,
   type CreateContract,
   type CreatePayment,
+  type EnrichPayment,
   type IncomeStatement,
   type Intake,
   type Membership,
@@ -313,6 +314,11 @@ export async function createPayment(input: CreatePayment): Promise<PaymentDoc> {
   return requireFinanceApi().createPayment(input);
 }
 
+/** Accountant enrichment: complete accounting facts on a cashier doc (T-012 Phase 3). */
+export async function enrichPayment(id: string, input: EnrichPayment): Promise<PaymentDoc> {
+  return requireFinanceApi().enrichPayment(id, input);
+}
+
 /** Advance a payment doc. Requires the backend. */
 export async function submitPayment(id: string, expectedVersion: number): Promise<PaymentDoc> {
   return requireFinanceApi().submitPayment(id, expectedVersion);
@@ -429,6 +435,20 @@ export async function listMembers(): Promise<readonly Membership[]> {
   const api = getFinanceApi();
   if (!api) return [];
   return api.listMembers();
+}
+
+/**
+ * The caller's accounting capability (T-012 Phase 3, D8). In demo mode (no backend)
+ * default to `true` so the full form is shown; the API still enforces the fork.
+ */
+export async function getAccountingCapable(): Promise<boolean> {
+  const api = getFinanceApi();
+  if (!api) return true;
+  try {
+    return (await api.getMe()).accountingCapable;
+  } catch {
+    return true;
+  }
 }
 
 // --- Account display preferences + standard chart v2 (T-012 Phase 2) ---

@@ -178,6 +178,13 @@
   padding: 0 var(--sp-3);
 }
 
+.enrichHint {
+  margin: 0;
+  padding: 7px 0;
+  color: var(--fg-3);
+  font-size: var(--small-size);
+}
+
 @media (max-width: 720px) {
   .formGrid {
     grid-template-columns: 1fr;

@@ -13,6 +13,15 @@ This file exists to prevent repeating mistakes within this task.
 
 ## Pitfall log (append-only)
 
+### 2026-07-06 - WorkItem is org-scoped; assert it under withScope, not withLedgerScope
+- Symptom: a payments integration test asserting a `payment.enrich` WorkItem got `undefined` — `listWorkItemsTx` returned nothing under RLS.
+- Context: T-012 Phase 3 service test, run as the app role (RLS enforced).
+- Why: `work_item` is ORG-scoped (RLS by `app.current_org`). The query ran inside `withLedgerScope` (sets only `app.current_ledger`), so the RLS `app.current_org` GUC was empty → zero rows.
+- Fix: query work items inside `withScope(orgId, ledgerBookId, ...)` (sets both GUCs). Ledger-scoped rows (payment_doc, journal_voucher) are fine under `withLedgerScope`.
+- Prevention: match the scope helper to the table's RLS axis — org-scoped (work_item/outbox/membership) → `withScope`/`withOrgScope`; ledger-scoped → `withLedgerScope`.
+- References: `apps/api/src/payments/payments.integration.test.ts`.
+
+
 ### 2026-07-05 - dev API connects as the table owner, so RLS is OFF in dev
 - Symptom: `/v1/accounts` returned rows from TWO ledgers (duplicate codes with conflicting isLeaf), which surfaced visibly once the progressive picker rendered the whole chart.
 - Context: T-012 Phase 2 browser verification against the long-lived dev DB.

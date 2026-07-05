@@ -96,6 +96,7 @@ export default async function DashboardPage() {
   ).length;
   const paymentOpen = payments.filter(
     (payment) =>
+      payment.status === 'pending_accounting' ||
       payment.status === 'draft' ||
       payment.status === 'pending_approval' ||
       payment.status === 'approved',

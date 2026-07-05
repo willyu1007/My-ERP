@@ -91,11 +91,12 @@
   - [x] Existing ledgers only receive chart additions through explicit import/diff review (`standard-diff` preview + `import-standard`; posted-leaf conflicts skipped).
   - [x] Cash/bank account identification is tree/metadata-based (`CASH_ACCOUNT_ROOT_CODES` + tree-prefix ancestor test), not a scattered hardcoded list.
   - [x] Ledger-default + personal display preferences affect picker ranking/visibility only; hidden accounts stay searchable/selectable.
-- Cashier-to-accountant enrichment:
-  - [ ] Cashier simple doc -> accountant enrichment -> approval/confirmation -> voucher flow works.
-  - [ ] Cashier form has no account-subject fields; un-enriched docs cannot be approved/confirmed.
-  - [ ] Accounting-capable roles can still enter docs directly with accounting subjects.
-  - [ ] Payment action buttons use business wording and the status tabs are simplified per D11.
+- Cashier-to-accountant enrichment (Phase 3 done 2026-07-06):
+  - [x] Cashier simple doc -> accountant enrichment -> approval/confirmation -> voucher flow works (service integration + live `/v1` smoke).
+  - [x] Cashier form has no account-subject fields; un-enriched (`pending_accounting`) docs cannot be submitted/approved/confirmed.
+  - [x] Accounting-capable roles can still enter docs directly with accounting subjects (D8, direct path unchanged).
+  - [x] Payment action buttons use business wording (`确认收付`, no 过账) and the status tabs are simplified to 6 who-acts-next groups per D11.
+  - [x] FULL D7 enrichment: subjects + contra-line auxiliary dimensions + cash-flow item thread into the settlement voucher, generated only at confirm.
 - Accountant voucher to cashier consumption:
   - [ ] Accountant cash/bank voucher -> cashier consumption flow works and traces to voucher lines.
   - [ ] Consumption never creates a second voucher or duplicate ledger effect.

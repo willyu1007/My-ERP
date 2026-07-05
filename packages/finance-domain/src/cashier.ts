@@ -20,6 +20,10 @@ export interface SettlementLine {
   readonly accountName: string;
   readonly debit?: string;
   readonly credit?: string;
+  /** 辅助核算 for this line (contra/non-cash line only; T-012 Phase 3, D7). */
+  readonly aux?: unknown;
+  /** 现金流量项目 code for this line (contra/non-cash line only; T-006 M3b). */
+  readonly cashFlowItem?: string | null;
 }
 
 export interface SettlementInput {
@@ -28,6 +32,13 @@ export interface SettlementInput {
   readonly amount: string;
   readonly cash: SettlementAccount;
   readonly contra: SettlementAccount;
+  /**
+   * Accounting enrichment carried onto the CONTRA (non-cash) settlement line only
+   * (T-012 Phase 3, D7): auxiliary dimensions + the cash-flow item. The cash line
+   * stays money-only. Omitted for legacy/direct docs that were not enriched.
+   */
+  readonly contraAux?: unknown;
+  readonly contraCashFlowItem?: string | null;
 }
 
 export interface SettlementEntry {
@@ -47,9 +58,12 @@ export function buildSettlementEntry(input: SettlementInput): SettlementEntry {
   }
   const value = amount.toFixed(2);
   const cashLine: SettlementLine = { accountCode: input.cash.code, accountName: input.cash.name };
+  // Auxiliary dimensions + cash-flow item ride the contra (non-cash) line (D7 / T-006 M3b).
   const contraLine: SettlementLine = {
     accountCode: input.contra.code,
     accountName: input.contra.name,
+    ...(input.contraAux != null ? { aux: input.contraAux } : {}),
+    ...(input.contraCashFlowItem ? { cashFlowItem: input.contraCashFlowItem } : {}),
   };
 
   const lines: SettlementLine[] =

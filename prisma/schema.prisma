@@ -480,10 +480,20 @@ model PaymentDoc {
   summary             String
   amount              Decimal  @db.Decimal(18, 2)
   /// 现金/银行存款科目 (1001/1002…); reused chart account, no FundAccount master in MVP.
-  cashAccountCode     String   @map("cash_account_code")
-  /// 对方科目 (往来/费用/收入…).
-  contraAccountCode   String   @map("contra_account_code")
-  /// draft | pending_approval | approved | confirmed | void
+  /// Nullable since T-012 Phase 3: cashier simple docs enter accounting enrichment
+  /// (pending_accounting) with no subjects; the accountant fills them at enrich.
+  cashAccountCode     String?  @map("cash_account_code")
+  /// 对方科目 (往来/费用/收入…). Nullable for the cashier path (see cashAccountCode).
+  contraAccountCode   String?  @map("contra_account_code")
+  /// 辅助核算维度 for the contra (non-cash) settlement line (T-012 Phase 3, D7),
+  /// keyed by AuxType, e.g. { "customer": { id, name }, "department": "…" }. Threaded
+  /// into the settlement voucher's contra line at confirm.
+  contraAux           Json?    @map("contra_aux")
+  /// 现金流量项目 code for the contra (non-cash) settlement line (T-012 Phase 3, D7 /
+  /// T-006 M3b direct-method CF). Set at enrich; threaded onto the voucher at confirm.
+  cashFlowItem        String?  @map("cash_flow_item")
+  /// pending_accounting | draft | pending_approval | approved | confirmed | void
+  /// (pending_accounting = cashier doc awaiting accountant enrichment, T-012 Phase 3).
   status              String   @default("draft")
   /// The posted settlement voucher (set on confirm).
   settlementVoucherId String?  @map("settlement_voucher_id") @db.Uuid

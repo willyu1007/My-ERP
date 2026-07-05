@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-07-05T07:05:05.107Z",
+  "updatedAt": "2026-07-05T22:26:10.457Z",
   "ssot": {
     "mode": "repo-prisma",
     "source": {
@@ -2867,9 +2867,20 @@
         {
           "name": "cashAccountCode",
           "type": "String",
-          "nullable": false,
+          "nullable": true,
           "list": false,
           "dbName": "cash_account_code",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "cashFlowItem",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "cash_flow_item",
           "dbType": null,
           "default": null,
           "primaryKey": false,
@@ -2889,9 +2900,20 @@
         {
           "name": "contraAccountCode",
           "type": "String",
-          "nullable": false,
+          "nullable": true,
           "list": false,
           "dbName": "contra_account_code",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "contraAux",
+          "type": "Json",
+          "nullable": true,
+          "list": false,
+          "dbName": "contra_aux",
           "dbType": null,
           "default": null,
           "primaryKey": false,

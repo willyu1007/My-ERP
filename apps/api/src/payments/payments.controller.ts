@@ -63,6 +63,31 @@ export class PaymentsController {
     return this.service.get(identity, ledgerBookId, id);
   }
 
+  // T-012 Phase 3: accountant completes the accounting facts of a cashier doc.
+  // `post Voucher` route gate = accounting-capable; the cashier lacks it → 403.
+  @Post(':id/enrich')
+  @HttpCode(200)
+  @RequirePermission('post', 'Voucher')
+  async enrich(
+    @LedgerBookId() ledgerBookId: string,
+    @CurrentIdentity() identity: Identity,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    const b = (body ?? {}) as Record<string, unknown>;
+    const cashAccountCode = typeof b.cashAccountCode === 'string' ? b.cashAccountCode : '';
+    const contraAccountCode = typeof b.contraAccountCode === 'string' ? b.contraAccountCode : '';
+    if (!cashAccountCode || !contraAccountCode)
+      throw new BadRequestException('cashAccountCode/contraAccountCode required');
+    return this.service.enrich(identity, ledgerBookId, id, {
+      expectedVersion: expectedVersion(body),
+      cashAccountCode,
+      contraAccountCode,
+      contraAux: b.contraAux,
+      cashFlowItem: typeof b.cashFlowItem === 'string' ? b.cashFlowItem : null,
+    });
+  }
+
   @Post(':id/submit')
   @HttpCode(200)
   @RequirePermission('update', 'Voucher')

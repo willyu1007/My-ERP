@@ -31,9 +31,10 @@ export type WorkItemView =
   | 'handled_by_me'
   | 'supervision'
   | 'audit_readonly';
-// Cashier payments (T-007)
+// Cashier payments (T-007) + enrichment (T-012 Phase 3)
 export type PaymentDoc = components['schemas']['PaymentDoc'];
 export type CreatePayment = components['schemas']['CreatePayment'];
+export type EnrichPayment = components['schemas']['EnrichPayment'];
 export type PaymentConfirmResult = components['schemas']['PaymentConfirmResult'];
 export type PaymentDirection = PaymentDoc['direction'];
 export type PaymentStatus = PaymentDoc['status'];
@@ -52,6 +53,7 @@ export type UpdateBusinessPartner = components['schemas']['UpdateBusinessPartner
 export type PartnerPartyType = BusinessPartner['partyType'];
 export type PartnerRole = BusinessPartner['roles'][number];
 export type Membership = components['schemas']['Membership'];
+export type Me = components['schemas']['Me'];
 // Standard chart v2 + display preferences (T-012 Phase 2)
 export type StandardChartDiff = components['schemas']['StandardChartDiff'];
 export type StandardChartImportResult = components['schemas']['StandardChartImportResult'];
@@ -156,6 +158,7 @@ export interface ApiClient {
   }): Promise<PaymentDoc[]>;
   getPayment(id: string): Promise<PaymentDoc>;
   createPayment(body: CreatePayment): Promise<PaymentDoc>;
+  enrichPayment(id: string, body: EnrichPayment): Promise<PaymentDoc>;
   submitPayment(id: string, expectedVersion: number): Promise<PaymentDoc>;
   approvePayment(id: string, expectedVersion: number): Promise<PaymentDoc>;
   confirmPayment(
@@ -186,6 +189,8 @@ export interface ApiClient {
   updateBusinessPartner(id: string, body: UpdateBusinessPartner): Promise<BusinessPartner>;
   /** Org roster — employee quick-select for individual partners (T-012 D2). */
   listMembers(): Promise<Membership[]>;
+  /** The caller's own identity + capabilities (T-012 Phase 3). */
+  getMe(): Promise<Me>;
   // Standard chart v2 + display preferences (T-012 Phase 2).
   getStandardChartDiff(): Promise<StandardChartDiff>;
   importStandardChart(): Promise<StandardChartImportResult>;
@@ -312,6 +317,8 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
     },
     getPayment: (id) => request<PaymentDoc>('GET', `/v1/payments/${encodeURIComponent(id)}`),
     createPayment: (body) => request<PaymentDoc>('POST', '/v1/payments', body),
+    enrichPayment: (id, body) =>
+      request<PaymentDoc>('POST', `/v1/payments/${encodeURIComponent(id)}/enrich`, body),
     submitPayment: (id, expectedVersion) =>
       request<PaymentDoc>('POST', `/v1/payments/${encodeURIComponent(id)}/submit`, {
         expectedVersion,
@@ -360,6 +367,7 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
     updateBusinessPartner: (id, body) =>
       request<BusinessPartner>('PATCH', `/v1/business-partners/${encodeURIComponent(id)}`, body),
     listMembers: () => request<Membership[]>('GET', '/v1/members'),
+    getMe: () => request<Me>('GET', '/v1/me'),
     getStandardChartDiff: () => request<StandardChartDiff>('GET', '/v1/accounts/standard-diff'),
     importStandardChart: () =>
       request<StandardChartImportResult>('POST', '/v1/accounts/import-standard'),

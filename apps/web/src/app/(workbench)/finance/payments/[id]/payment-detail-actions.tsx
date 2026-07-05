@@ -86,7 +86,7 @@ export function PaymentDetailActions({
           disabled={pending}
           onClick={() => run('确认收付', () => confirmPaymentAction(id, version))}
         >
-          确认收付并过账
+          确认收付
         </button>
       )}
       <button

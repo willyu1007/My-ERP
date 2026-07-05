@@ -84,6 +84,12 @@
   - Action button copy uses business-facing wording for cashier-visible actions instead of accounting jargon (current labels such as 「确认收付并过账」 expose posting concepts to cashier users).
   - The payments list status tabs (currently seven: 待处理/草稿/待审批/待确认/已确认/已作废/全部) must be simplified/regrouped when the enrichment state lands, not grown to eight; group around who acts next rather than raw status values.
   - Exact copy and grouping are decided during Phase 3 UI work; the accounting state machine itself is unchanged by wording.
+- Phase 3 implementation refinements (2026-07-06, confirmed during build):
+  - D7 scope: FULL enrichment now — the accountant fills cash/bank + contra subjects, the contra line's auxiliary dimensions, and the cash-flow item; all thread into the settlement voucher's contra (non-cash) line at confirm. "Posting-template decision" has no DP28 posting-rule engine to bind to yet, so it resolves to the explicit enrich confirmation; the settlement template is direction-driven.
+  - Enrich advances directly to `pending_approval` (opening the approve WorkItem), not back to `draft` — faithful to D3's create→enrich→approval flow and the task-driven hand-off principle.
+  - D8 capability is the `post Voucher` CASL right, surfaced to the web via `/v1/me.accountingCapable`; no role-name hardcoding, no CASL matrix change.
+  - Confirm-actor tension (the `payment.confirm` WorkItem is queued to cashier but confirm needs post-Voucher rights) is pre-existing and deferred to Phase 4 (D4); Phase 3 only softened the button copy.
+  - D11 concrete result: 6 who-acts-next tabs (待办/待补录/待审批/待确认/已完成/全部) and `确认收付并过账` → `确认收付`.
 
 ### Open questions (answer before execution)
 - None for Phase 0 product alignment. Implementation details such as exact account codes, migration shape, and rollout switches are handled in design/implementation.

@@ -92,3 +92,13 @@ export function defineAbilityFor(identity: Identity): AppAbility {
 
   return build();
 }
+
+/**
+ * D8 accounting-capability discriminator (T-012 Phase 3) — accountant/admin/supervisor,
+ * NOT cashier/viewer. Deliberately coupled to the `post Voucher` right (the same one that
+ * gates confirm), so enrich-eligibility never drifts from a hardcoded role-name list.
+ * If a future role must enrich-but-not-post, escalate to a dedicated PaymentDoc subject.
+ */
+export function isAccountingCapable(identity: Identity): boolean {
+  return defineAbilityFor(identity).can('post', 'Voucher');
+}
