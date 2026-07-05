@@ -20,6 +20,7 @@
   - Link partner to payment and contract.
   - Filter payment and contract lists by partner and verify results match linked documents (D9).
   - Verify individual partner creation is org-entered with an org-provided display name; member quick-select only prefills the link (D10).
+  - Search a partner by typing the person's name and verify it is found directly; create an individual partner with a WeChat ID and verify it is stored/displayed but never appears in outbox metadata (D10).
   - Rename/deactivate partner and verify existing document snapshots remain stable.
 - Account picker:
   - Select account through category -> primary -> detail.
@@ -36,7 +37,8 @@
 - Cashier/accountant flow:
   - Cashier creates simple payment doc without choosing any accounting subjects, including cash/bank and contra account subjects.
   - Accounting-capable role creates a payment doc directly with accounting subjects and skips the enrichment state (D8).
-  - Accountant enriches accounting details before approval/confirmation; the settlement voucher is generated and posted only at confirmation (D7).
+  - Accountant enriches accounting details before approval/confirmation; the settlement voucher is generated and posted only by the explicit confirm click (D7).
+  - Payment action buttons read as business actions (no accounting jargon for cashier users) and the payments list tabs are simplified/regrouped, not grown by one raw-status tab (D11).
   - Payment approval/confirmation or voucher generation preserves SoD and period lock.
   - Accountant-created cash/bank voucher produces cashier-consumable work linked to the original voucher line.
   - Cashier consumption records execution evidence/status without creating a second accounting voucher or duplicate ledger effect.
@@ -82,3 +84,8 @@
   - Plan restructured into five implementation phases (chart v2 folded into Phase 2; cashier->accountant and accountant->cashier chains split into Phase 3 and Phase 4).
   - Ran `node .ai/scripts/ctl-project-governance.mjs sync --apply --project main` -> passed.
   - Ran `node .ai/scripts/ctl-project-governance.mjs lint --check --project main` -> passed; one transient warning about a non-enum `State:` value was introduced and fixed (State line must stay exactly `planned|in-progress|blocked|done`); no remaining warning for `finance-sme-usability-foundation`.
+- 2026-07-05 (third alignment round, refinements + D11):
+  - D7 refined: voucher generation is the explicit confirm click after enrichment completes; never auto-generated on enrichment completion.
+  - D10 refined: partner search matches typed person/company names; individual entry gains an optional WeChat ID contact field (display/search-only PII, never in outbox metadata).
+  - D11 recorded: payment action button copy uses business wording and payments list status tabs are simplified/regrouped (current state checked in code: seven tabs in `payments-client.tsx`; labels such as 「确认收付并过账」 in `payment-detail-actions.tsx`).
+  - Ran `node .ai/scripts/ctl-project-governance.mjs sync --apply --project main` and `lint --check --project main` -> passed; no warning for `finance-sme-usability-foundation`.

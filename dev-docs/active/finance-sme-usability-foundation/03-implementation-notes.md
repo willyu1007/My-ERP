@@ -54,6 +54,12 @@
 - Decision: Individual partners are entered by the organization; display name lives on the partner record. Confirmed 2026-07-05 (D10).
   - Rationale: `Membership` has no name field and ERP must not depend on live Logto profile data; partner master should own its display name with snapshot semantics. No self-service partner creation, consistent with invite-only membership.
   - Alternatives considered: Pull display names from Logto at render time; rejected because it creates a live identity dependency and unstable audit/history rendering.
+  - Refinement (2026-07-05): partner search matches typed person/company names directly, and individual entry includes an optional WeChat ID (微信号) contact field. Contact fields are display/search-only PII: ledger-scoped, never driving accounting/workflow logic, never in outbox metadata.
+- Decision: D7 refinement — voucher generation is the explicit confirm click after enrichment completes; enrichment completion never auto-generates. Confirmed 2026-07-05.
+  - Rationale: keeps a human control point between "accounting facts are complete" and "ledger effect happens", matching the current confirm semantics.
+- Decision: Payment workbench vocabulary is simplified: business-facing action button copy and regrouped status tabs. Confirmed 2026-07-05 (D11).
+  - Rationale: current labels (such as 「确认收付并过账」) expose accounting jargon to cashier users, and the payments list already has seven status tabs; adding the enrichment state without regrouping would make the queue harder to read, defeating the SME-simplicity goal.
+  - Alternatives considered: Keep raw status tabs and only add an eighth for enrichment; rejected as more noise. Rename statuses in the state machine itself; rejected — wording is a display concern and the accounting state machine stays unchanged.
 
 ## Deviations from plan
 - None yet.

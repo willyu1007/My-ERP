@@ -65,6 +65,7 @@
 - D7 (2026-07-05): Settlement voucher generation stays at payment confirmation; accountant enrichment only completes PaymentDoc accounting fields.
   - Enrichment updates the payment document (cash/bank subject, contra subject, auxiliary dimensions, cash-flow item, posting-template decision) without creating a voucher draft.
   - The settlement voucher is generated and posted at confirm, matching current T-007 behavior, to keep one simple mental model for small teams.
+  - Voucher generation is an explicit user action: after enrichment completes, clicking confirm generates and posts the settlement voucher. Enrichment completion itself never auto-generates a voucher.
   - Service guards must prevent a payment doc from entering approval/confirmation until required accounting fields are complete.
 - D8 (2026-07-05): Payment entry paths split by role: cashier-created docs always enter accounting enrichment; accounting-capable roles may fill accounting subjects directly.
   - Cashier creation captures business facts only and always lands in the enrichment state.
@@ -77,6 +78,12 @@
   - Individual partner records are created by authorized organization finance users; there is no self-service partner creation.
   - Member quick-select prefills the link (userId/email), but the display name is entered by the organization and stored as partner master data with snapshot semantics; no dependency on live Logto profile data.
   - Non-member individuals continue to require explicit confirmation per D2.
+  - Partner search matches typed person/company names directly; org-entered individuals must be findable by name.
+  - Individual partner entry includes an optional WeChat ID (微信号) contact field. Contact fields are display/search-only PII: ledger-scoped, never driving accounting/workflow logic, never exposed in outbox metadata.
+- D11 (2026-07-05): Payment workbench vocabulary is simplified for SME users: action button copy and status tab categories.
+  - Action button copy uses business-facing wording for cashier-visible actions instead of accounting jargon (current labels such as 「确认收付并过账」 expose posting concepts to cashier users).
+  - The payments list status tabs (currently seven: 待处理/草稿/待审批/待确认/已确认/已作废/全部) must be simplified/regrouped when the enrichment state lands, not grown to eight; group around who acts next rather than raw status values.
+  - Exact copy and grouping are decided during Phase 3 UI work; the accounting state machine itself is unchanged by wording.
 
 ### Open questions (answer before execution)
 - None for Phase 0 product alignment. Implementation details such as exact account codes, migration shape, and rollout switches are handled in design/implementation.
@@ -166,8 +173,8 @@ This section is a **non-binding, early hypothesis** to help humans confirm expec
    - Deliverable: broad SME second-level chart template with an explicit import/diff path for existing ledgers; two-step account picker with category/primary account/detail selection and display preferences; tree/metadata-based cash-account identification; no disruptive native suggestion popover.
    - Acceptance criteria: users can select final postable leaf accounts faster while partner/customer dimensions stay outside the chart hierarchy; existing ledgers only change through reviewed import; cash/bank detection no longer relies on a hardcoded code list.
 4. **Phase 3: Cashier-to-accountant enrichment**
-   - Deliverable: cashier simple docs without accounting subjects; accounting-enrichment state and `payment.enrich` WorkItem; role-split entry paths per D8; voucher generation unchanged at confirm per D7.
-   - Acceptance criteria: cashier UI has no account-subject fields; un-enriched docs cannot be approved/confirmed; direct entry still works for accounting-capable roles.
+   - Deliverable: cashier simple docs without accounting subjects; accounting-enrichment state and `payment.enrich` WorkItem; role-split entry paths per D8; voucher generation unchanged at confirm per D7; SME-friendly action copy and simplified status tabs on payment surfaces per D11.
+   - Acceptance criteria: cashier UI has no account-subject fields; un-enriched docs cannot be approved/confirmed; direct entry still works for accounting-capable roles; payment tabs/buttons read as business actions, not accounting jargon.
 5. **Phase 4: Accountant voucher to cashier fund consumption**
    - Deliverable: cashier WorkItems/fund-consumption views derived from cash/bank voucher lines; execution/attachment/reconciliation updates without second vouchers.
    - Acceptance criteria: fund tasks trace to voucher/voucher line; no duplicate ledger effect; both chains work through WorkItem without a hard-coded linear pipeline.
@@ -192,8 +199,8 @@ This section is a **non-binding, early hypothesis** to help humans confirm expec
 ### Phase 1 — BusinessPartner master
 - Objective: replace free-text-only counterparties with queryable, classifiable, snapshot-safe partner records.
 - Deliverables:
-  - Additive Prisma model/migration for partner master and nullable links.
-  - Repository/service/controller/API-client support.
+  - Additive Prisma model/migration for partner master and nullable links, including optional WeChat ID contact field for individuals.
+  - Repository/service/controller/API-client support; search matches person/company names directly.
   - Web picker/list entry points for partners.
 - Verification:
   - Prisma validate/migrate status in approved DB workflow.
@@ -224,7 +231,8 @@ This section is a **non-binding, early hypothesis** to help humans confirm expec
   - Role-split creation paths per D8: cashier -> enrichment state; accounting-capable roles -> direct entry.
   - `payment.enrich` WorkItem for accountants.
   - Web flows for simple cashier entry and accountant enrichment.
-  - Settlement voucher generation unchanged: generated and posted at confirm per D7.
+  - Settlement voucher generation unchanged: generated and posted by the explicit confirm click per D7.
+  - Payment action button copy and status tab regrouping per D11.
 - Verification:
   - Service integration tests: cashier simple doc -> accountant enrichment -> approval/confirmation -> voucher.
   - Un-enriched docs are rejected at submit/approve/confirm.

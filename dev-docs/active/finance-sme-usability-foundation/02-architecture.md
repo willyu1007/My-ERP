@@ -19,6 +19,8 @@
   - Supports an optional organization-member link for individuals. Joined employees can be searched and quick-selected; non-member individuals are manual entries only and require explicit confirmation before save/use.
   - The member link is not required and must not make finance history depend on live identity or membership state.
   - Individual partners are entered by authorized organization finance users (D10); there is no self-service creation. Membership carries no display name, so the partner display name is entered by the organization and stored on the partner record with snapshot semantics; member quick-select only prefills the link (userId/email).
+  - Partner search matches typed person/company names directly; org-entered individuals are found by name. Search normalization (case/whitespace) is decided during implementation.
+  - Individual partner entry includes an optional WeChat ID (微信号) contact field. Contact fields are display/search-only PII: ledger-scoped under RLS, never driving accounting or workflow decisions, and never exposed in outbox metadata.
   - Partner is a first-class query dimension (D9): payment and contract list APIs and web lists support filtering by `partnerId`, alongside free-text search over counterparty snapshots.
 - Payment/cashier flow:
   - Cashier simple entry captures business facts only: direction/type, date, amount, partner/payment object, purpose/remark, attachments, and optional non-accounting settlement information if available.
@@ -27,8 +29,9 @@
   - Suggested posting rules may prefill accountant-facing fields, but accountant confirmation is required before approval/confirmation and voucher effect.
   - Cashier-created docs should flow through an accounting-enrichment state, then approval/confirmation only after required accounting fields are complete.
   - Entry paths split by role (D8): cashier creation always enters the enrichment state; accounting-capable roles (per existing finance permissions) may complete accounting subjects at creation and skip enrichment. This keeps the current direct path alive for accountant-entered docs and provides transition compatibility.
-  - Voucher timing (D7): enrichment only updates PaymentDoc accounting fields; the settlement voucher is still generated and posted at confirmation, exactly as today. No voucher drafts are created at enrichment.
+  - Voucher timing (D7): enrichment only updates PaymentDoc accounting fields; the settlement voucher is generated and posted by the explicit confirm click, exactly as today. Enrichment completion never auto-generates a voucher.
   - `PaymentDoc.cashAccountCode` / `contraAccountCode` become nullable at creation for the cashier path; service-level guards block submit/approve/confirm until required accounting fields are complete.
+  - Payment UI vocabulary (D11): cashier-visible action copy uses business wording instead of accounting jargon (for example, the current 「确认收付并过账」 exposes posting to cashier users), and the payments list status tabs are regrouped around who acts next instead of adding an eighth raw-status tab when the enrichment state lands. Wording/grouping are display concerns only; the state machine is unchanged.
 - Accountant voucher to cashier consumption:
   - Accountant-created vouchers remain the accounting source of truth.
   - Cash/bank voucher lines that require cashier action produce cashier WorkItems and fund-consumption views linked back to the voucher and line.
