@@ -8,8 +8,8 @@ import {
   appendAuditRecordTx,
   createBusinessPartnerTx,
   getBusinessPartnerTx,
+  getMembershipByUserTx,
   listBusinessPartnersTx,
-  listMembershipsTx,
   Prisma,
   updateBusinessPartnerTx,
   withScope,
@@ -101,8 +101,7 @@ export class BusinessPartnersService {
 
   /** D2: the member link must point at an actual org member (convenience/dedup only). */
   private async assertMember(tx: TxClient, memberUserId: string): Promise<void> {
-    const members = await listMembershipsTx(tx);
-    if (!members.some((m) => m.userId === memberUserId))
+    if (!(await getMembershipByUserTx(tx, memberUserId)))
       throw new BadRequestException('memberUserId 不是本组织成员');
   }
 

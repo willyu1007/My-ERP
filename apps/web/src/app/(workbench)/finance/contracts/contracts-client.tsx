@@ -9,6 +9,7 @@ import { Queue } from '@my-erp/ui/queue';
 import { formatDate, formatMoney } from '@/lib/finance/format';
 import { CONTRACT_STATUS, CONTRACT_TYPE, contractStatusTone } from '@/lib/finance/contract-display';
 import { ContractCreateForm } from './contract-create-form';
+import chrome from '../_components/queue-page.module.css';
 import styles from './contracts.module.css';
 
 type ContractQueueKey = 'incomplete' | 'active' | 'expiring' | 'closed' | 'all';
@@ -182,12 +183,12 @@ export function ContractsClient({
   const filtered = contracts.filter((contract) => matchesQueue(contract, queue, today));
 
   const nav = (
-    <div className={styles.navActions}>
+    <div className={chrome.navActions}>
       <ActionButton kind="primary" onClick={() => setEntryOpen((value) => !value)}>
         {entryOpen ? '收起登记' : '登记合同'}
       </ActionButton>
       {filterPartner ? (
-        <span className={styles.filterChip}>
+        <span className={chrome.filterChip}>
           对方：{filterPartner.name}
           <Link href="/finance/contracts" aria-label="清除往来单位筛选">
             ×
@@ -215,14 +216,14 @@ export function ContractsClient({
   return (
     <Scene nav={nav}>
       <div
-        className={`${styles.entryPanel}${entryOpen ? ` ${styles.entryPanelOpen}` : ''}`}
+        className={`${chrome.entryPanel}${entryOpen ? ` ${chrome.entryPanelOpen}` : ''}`}
         inert={!entryOpen}
       >
-        <div className={styles.entryPanelInner}>
+        <div className={chrome.entryPanelInner}>
           <ContractCreateForm partners={partners} />
         </div>
       </div>
-      <div className={styles.queueScope}>
+      <div className={chrome.queueScope}>
         <Queue<Contract>
           items={filtered}
           rowKey={(contract) => contract.id}

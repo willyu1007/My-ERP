@@ -318,13 +318,21 @@ paths:
       security: [{ bearerAuth: [] }]
       responses:
         '201':
-          description: Number of accounts newly seeded
+          description: Seed result (skipped posted-leaf conflicts are reported, never silently applied)
           content:
             application/json:
               schema:
                 type: object
-                required: [seeded]
-                properties: { seeded: { type: integer } }
+                required: [seeded, convertedParents, conflicts]
+                properties:
+                  seeded: { type: integer }
+                  convertedParents: { type: integer }
+                  conflicts:
+                    type: array
+                    items:
+                      type: object
+                      required: [code, name, reason]
+                      properties: { code: { type: string }, name: { type: string }, reason: { type: string } }
         '401': { description: Missing or invalid bearer token }
         '403': { description: Lacks create permission }
   /v1/accounts/standard-diff:

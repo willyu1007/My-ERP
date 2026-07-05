@@ -120,7 +120,7 @@ export class AccountsController {
           ledgerBookId,
           metadata: { chartVersion: STANDARD_CHART_VERSION, seeded },
         });
-        return { seeded };
+        return { seeded, convertedParents: 0, conflicts: [] };
       }
       const diff = await computeStandardChartDiffTx(tx, STANDARD_CHART, existing);
       const result = await applyStandardChartDiffTx(tx, ledgerBookId, diff);
@@ -136,7 +136,12 @@ export class AccountsController {
           conflicts: result.conflicts.length,
         },
       });
-      return { seeded: result.added };
+      // Skipped conflicts must be visible to the caller, not only to the audit log.
+      return {
+        seeded: result.added,
+        convertedParents: result.convertedParents,
+        conflicts: result.conflicts,
+      };
     });
   }
 

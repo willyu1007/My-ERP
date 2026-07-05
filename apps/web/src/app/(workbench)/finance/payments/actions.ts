@@ -1,5 +1,7 @@
 'use server';
 
+import { classifyActionFailure } from '@/lib/finance/action-failure';
+
 /**
  * Server actions for 出纳收付款 (T-007 C3). Each runs against the real `/v1`; the
  * backend re-checks SoD + status + optimistic version, so a 403/409 surfaces as
@@ -23,13 +25,7 @@ export type PaymentActionResult =
     };
 
 function toFailure(err: unknown): PaymentActionResult {
-  const message = err instanceof Error ? err.message : String(err);
-  const reason = message.includes('not configured')
-    ? 'unconfigured'
-    : /API (403|409)|conflict|stale|已变化/i.test(message)
-      ? 'conflict'
-      : 'error';
-  return { ok: false, reason, message };
+  return { ok: false, ...classifyActionFailure(err) };
 }
 
 export async function createPaymentAction(input: CreatePayment): Promise<PaymentActionResult> {

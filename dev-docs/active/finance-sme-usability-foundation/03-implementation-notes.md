@@ -22,6 +22,16 @@
   - AccountPicker progressive rework (grouped variant): browse mode = 常用 chips (pinned → recommended → device recents) + 分类 → 主科目(带 › 下钻) → 明细 columns; hidden accounts drop out of browse with an "已少展示 n 项" note but stay searchable (tagged 已隐藏); ★ pin toggle persists via server action with optimistic state; recents in localStorage (per device — cheap, no per-click API chatter); native autocomplete/autocorrect/spellcheck suppressed. Compact variant unchanged. Call sites now pass the active subtree (branches included) — only active leaves are selectable.
   - 科目设置 page: explicit chart-v2 import review card (diff counts + expandable addition list + 导入 button); card disappears once the ledger is up to date.
 
+- Review fixes (2026-07-05): an 8-angle recall-biased code review over Phases 1+2 surfaced 10 verified findings (no correctness-blocking bugs); all fixed.
+  - Defense in depth: `getAccountPreferenceTx` now requires `ledgerBookId` and reads via the composite unique key (RLS alone was the only guard; the dev owner connection bypasses RLS).
+  - Picker robustness: level-1 ancestor derivation walks `parentCode` instead of `code.slice(0, 4)` (falls back to the prefix only when branch rows are absent).
+  - API visibility: `seed-standard` now returns `{ seeded, convertedParents, conflicts }` — skipped posted-leaf conflicts are no longer audit-log-only.
+  - Copy drift: the cash-account error message is assembled from `CASH_ACCOUNT_ROOT_CODES`.
+  - Reuse: new `usePickerPopover` hook (positioning/placement/outside-click) shared by account/partner/contract pickers; `picker.module.css` shared by partner+contract pickers (was a byte-identical copy); `queue-page.module.css` shared chrome (navActions/filterChip/entryPanel/queueScope) for payments/contracts/partners clients; `classifyActionFailure` shared by four actions files.
+  - Efficiency: preferences PATCH loads the chart once and reuses a `mergedPreferences` helper; `assertMember` uses a targeted `getMembershipByUserTx`; the picker keyboard index is a memoized code→index Map (was per-option findIndex).
+  - Conventions: the chart-import card's inline style moved to `accounts.module.css`.
+  - Deliberately NOT changed (review candidates refuted): browse-mode replacing the flat grouped layout (roadmap-intended), `''` sentinel for the ledger-default preference row and localStorage recents (documented tradeoffs), ★/☆ pin glyphs (dingbats, not emoji — brand rule targets emoji).
+
 ## Files/modules touched (high level)
 - `prisma/schema.prisma` + `prisma/migrations/20260705120000_t012_business_partner/`
 - `packages/db` (repo + 2 new integration test files), `packages/platform` (ability), `packages/api-client`

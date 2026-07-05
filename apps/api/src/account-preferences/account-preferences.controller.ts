@@ -19,12 +19,26 @@ const LEDGER_DEFAULT = '';
 const MAX_CODES = 300;
 
 /** Sanitize a code list: strings, deduped, capped, and existing in this ledger. */
-async function sanitizeCodes(tx: TxClient, value: unknown, field: string): Promise<string[]> {
+function sanitizeCodes(known: ReadonlySet<string>, value: unknown, field: string): string[] {
   if (!Array.isArray(value) || !value.every((c) => typeof c === 'string'))
     throw new BadRequestException(`${field} must be an array of account codes`);
   const unique = [...new Set(value.map((c) => c.trim()).filter(Boolean))].slice(0, MAX_CODES);
-  const known = new Set((await listAccountsTx(tx)).map((a) => a.code));
   return unique.filter((code) => known.has(code));
+}
+
+async function knownCodes(tx: TxClient): Promise<ReadonlySet<string>> {
+  return new Set((await listAccountsTx(tx)).map((a) => a.code));
+}
+
+/** The merged picker view: team default + the caller's personal prefs. */
+async function mergedPreferences(tx: TxClient, ledgerBookId: string, userId: string) {
+  const ledgerDefault = await getAccountPreferenceTx(tx, ledgerBookId, LEDGER_DEFAULT);
+  const personal = await getAccountPreferenceTx(tx, ledgerBookId, userId);
+  return {
+    recommended: ledgerDefault?.recommended ?? [],
+    pinned: personal?.pinned ?? [],
+    hidden: personal?.hidden ?? [],
+  };
 }
 
 /**
@@ -35,19 +49,12 @@ async function sanitizeCodes(tx: TxClient, value: unknown, field: string): Promi
 @Controller('account-preferences')
 @UseGuards(AuthGuard, PermissionGuard, LedgerScopeGuard)
 export class AccountPreferencesController {
-  /** Merged view for the picker: team default + the caller's personal prefs. */
   @Get()
   @RequirePermission('read', 'Account')
   async get(@LedgerBookId() ledgerBookId: string, @CurrentIdentity() identity: Identity) {
-    return withLedgerScope(ledgerBookId, async (tx) => {
-      const ledgerDefault = await getAccountPreferenceTx(tx, LEDGER_DEFAULT);
-      const personal = await getAccountPreferenceTx(tx, identity.userId);
-      return {
-        recommended: ledgerDefault?.recommended ?? [],
-        pinned: personal?.pinned ?? [],
-        hidden: personal?.hidden ?? [],
-      };
-    });
+    return withLedgerScope(ledgerBookId, (tx) =>
+      mergedPreferences(tx, ledgerBookId, identity.userId),
+    );
   }
 
   /** Update the caller's personal pinned/hidden lists. */
@@ -59,20 +66,12 @@ export class AccountPreferencesController {
     @Body() body: Record<string, unknown>,
   ) {
     return withLedgerScope(ledgerBookId, async (tx) => {
+      const known = await knownCodes(tx);
       const patch: { pinned?: string[]; hidden?: string[] } = {};
-      if (body.pinned !== undefined) patch.pinned = await sanitizeCodes(tx, body.pinned, 'pinned');
-      if (body.hidden !== undefined) patch.hidden = await sanitizeCodes(tx, body.hidden, 'hidden');
-      const row = await upsertAccountPreferenceTx(tx, {
-        ledgerBookId,
-        userId: identity.userId,
-        ...patch,
-      });
-      const ledgerDefault = await getAccountPreferenceTx(tx, LEDGER_DEFAULT);
-      return {
-        recommended: ledgerDefault?.recommended ?? [],
-        pinned: row.pinned,
-        hidden: row.hidden,
-      };
+      if (body.pinned !== undefined) patch.pinned = sanitizeCodes(known, body.pinned, 'pinned');
+      if (body.hidden !== undefined) patch.hidden = sanitizeCodes(known, body.hidden, 'hidden');
+      await upsertAccountPreferenceTx(tx, { ledgerBookId, userId: identity.userId, ...patch });
+      return mergedPreferences(tx, ledgerBookId, identity.userId);
     });
   }
 
@@ -85,18 +84,9 @@ export class AccountPreferencesController {
     @Body() body: Record<string, unknown>,
   ) {
     return withLedgerScope(ledgerBookId, async (tx) => {
-      const recommended = await sanitizeCodes(tx, body.recommended ?? [], 'recommended');
-      const row = await upsertAccountPreferenceTx(tx, {
-        ledgerBookId,
-        userId: LEDGER_DEFAULT,
-        recommended,
-      });
-      const personal = await getAccountPreferenceTx(tx, identity.userId);
-      return {
-        recommended: row.recommended,
-        pinned: personal?.pinned ?? [],
-        hidden: personal?.hidden ?? [],
-      };
+      const recommended = sanitizeCodes(await knownCodes(tx), body.recommended ?? [], 'recommended');
+      await upsertAccountPreferenceTx(tx, { ledgerBookId, userId: LEDGER_DEFAULT, recommended });
+      return mergedPreferences(tx, ledgerBookId, identity.userId);
     });
   }
 }

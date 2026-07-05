@@ -20,6 +20,7 @@ import {
   paymentStatusTone,
 } from '@/lib/finance/payment-display';
 import { PaymentCreateForm } from './payment-create-form';
+import chrome from '../_components/queue-page.module.css';
 import styles from './payments.module.css';
 
 type PaymentQueueKey =
@@ -170,12 +171,12 @@ export function PaymentsClient({
   const filtered = payments.filter((payment) => matchesQueue(payment, queue));
 
   const nav = (
-    <div className={styles.navActions}>
+    <div className={chrome.navActions}>
       <ActionButton kind="primary" onClick={() => setEntryOpen((value) => !value)}>
         {entryOpen ? '收起登记' : '登记收付'}
       </ActionButton>
       {filterPartner ? (
-        <span className={styles.filterChip}>
+        <span className={chrome.filterChip}>
           对方：{filterPartner.name}
           <Link href="/finance/payments" aria-label="清除往来单位筛选">
             ×
@@ -203,10 +204,10 @@ export function PaymentsClient({
   return (
     <Scene nav={nav}>
       <div
-        className={`${styles.entryPanel}${entryOpen ? ` ${styles.entryPanelOpen}` : ''}`}
+        className={`${chrome.entryPanel}${entryOpen ? ` ${chrome.entryPanelOpen}` : ''}`}
         inert={!entryOpen}
       >
-        <div className={styles.entryPanelInner}>
+        <div className={chrome.entryPanelInner}>
           <PaymentCreateForm
             accounts={accounts}
             contracts={contracts}
@@ -216,7 +217,7 @@ export function PaymentsClient({
           />
         </div>
       </div>
-      <div className={styles.queueScope}>
+      <div className={chrome.queueScope}>
         <Queue<PaymentDoc>
           items={filtered}
           rowKey={(payment) => payment.id}

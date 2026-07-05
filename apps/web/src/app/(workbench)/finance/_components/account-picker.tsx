@@ -5,13 +5,12 @@ import {
   useId,
   useLayoutEffect,
   useMemo,
-  useRef,
   useState,
-  type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 import { createPortal } from 'react-dom';
 import type { AccountCategory, AccountVM } from '@/lib/finance/types';
+import { usePickerPopover } from './use-picker-popover';
 import styles from './account-picker.module.css';
 
 const ACCOUNT_CATEGORIES: readonly {
@@ -25,12 +24,10 @@ const ACCOUNT_CATEGORIES: readonly {
   { value: 'profitLoss', label: '损益' },
 ];
 
-const PICKER_GAP = 6;
 const PICKER_WIDTH = 820;
 const PICKER_HEIGHT = 400;
 const PICKER_COMPACT_WIDTH = 320;
 const PICKER_COMPACT_HEIGHT = 260;
-const VIEWPORT_MARGIN = 12;
 const COMMON_LIMIT = 10;
 const RECENT_LIMIT = 8;
 
@@ -114,17 +111,26 @@ export function AccountPicker({
   const reactId = useId();
   const inputId = `${reactId}-input`;
   const pickerId = `${reactId}-picker`;
-  const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [editing, setEditing] = useState(false);
   const [active, setActive] = useState(0);
-  const [placement, setPlacement] = useState<'top' | 'bottom'>('bottom');
-  const [popoverStyle, setPopoverStyle] = useState<CSSProperties | null>(null);
   const [browseCategory, setBrowseCategory] = useState<AccountCategory>('asset');
   const [browsePrimary, setBrowsePrimary] = useState<string | null>(null);
   const [recents, setRecents] = useState<readonly string[]>([]);
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const popoverRef = useRef<HTMLDivElement | null>(null);
+  const {
+    open,
+    setOpen,
+    placement,
+    popoverStyle,
+    inputRef,
+    popoverRef,
+    computePosition,
+    openPopover,
+    fallbackStyle,
+  } = usePickerPopover({
+    width: variant === 'compact' ? PICKER_COMPACT_WIDTH : PICKER_WIDTH,
+    height: variant === 'compact' ? PICKER_COMPACT_HEIGHT : PICKER_HEIGHT,
+  });
 
   const hiddenSet = useMemo(() => new Set(preferences?.hidden ?? []), [preferences?.hidden]);
   const pinnedSet = useMemo(() => new Set(preferences?.pinned ?? []), [preferences?.pinned]);
@@ -201,6 +207,12 @@ export function AccountPicker({
     return [...commonAccounts, ...categoryLeaves.filter((a) => !seen.has(a.code))];
   }, [variant, filteredAccounts, browsing, grouped, selectable, browseCategory, hiddenSet, commonAccounts]);
 
+  const flatIndexByCode = useMemo(() => {
+    const map = new Map<string, number>();
+    flatAccounts.forEach((a, index) => map.set(a.code, index));
+    return map;
+  }, [flatAccounts]);
+
   const showAllOption = variant === 'compact' && Boolean(allOptionLabel);
   const optionCount = flatAccounts.length + (showAllOption ? 1 : 0);
   const selectedText = value
@@ -215,56 +227,29 @@ export function AccountPicker({
     registerRef?.(el);
   }
 
-  function computePosition(): void {
-    const anchor = inputRef.current;
-    if (!anchor) return;
-    const rect = anchor.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const pickerWidth = variant === 'compact' ? PICKER_COMPACT_WIDTH : PICKER_WIDTH;
-    const pickerHeight = variant === 'compact' ? PICKER_COMPACT_HEIGHT : PICKER_HEIGHT;
-    const width = Math.min(pickerWidth, viewportWidth - VIEWPORT_MARGIN * 2);
-    const left = Math.min(
-      Math.max(rect.left, VIEWPORT_MARGIN),
-      viewportWidth - width - VIEWPORT_MARGIN,
-    );
-    const maxHeight = Math.min(pickerHeight, viewportHeight - VIEWPORT_MARGIN * 2);
-    const measuredHeight = popoverRef.current?.getBoundingClientRect().height ?? maxHeight;
-    const panelHeight = Math.min(maxHeight, Math.max(1, measuredHeight));
-    const preferredTop =
-      placement === 'bottom' ? rect.bottom + PICKER_GAP : rect.top - panelHeight - PICKER_GAP;
-    const top = Math.min(
-      Math.max(preferredTop, VIEWPORT_MARGIN),
-      viewportHeight - panelHeight - VIEWPORT_MARGIN,
-    );
-
-    setPopoverStyle({
-      position: 'fixed',
-      left,
-      top,
-      width,
-      maxHeight,
-    });
+  /** Level-1 ancestor via the parentCode chain; falls back to the code prefix
+   *  when branch rows are absent from `accounts` (legacy leaf-only call sites). */
+  function primaryAncestorCode(account: AccountVM): string {
+    let current = account;
+    while (current.level > 1 && current.parentCode) {
+      const parent = byCode.get(current.parentCode);
+      if (!parent) return account.code.slice(0, 4);
+      current = parent;
+    }
+    return current.code;
   }
 
   function openPicker(): void {
-    const rect = inputRef.current?.getBoundingClientRect();
-    if (rect) {
-      const below = window.innerHeight - rect.bottom - VIEWPORT_MARGIN;
-      const above = rect.top - VIEWPORT_MARGIN;
-      const pickerHeight = variant === 'compact' ? PICKER_COMPACT_HEIGHT : PICKER_HEIGHT;
-      setPlacement(below >= pickerHeight || below >= above ? 'bottom' : 'top');
-    }
     setRecents(readRecents(recentKey));
     const selected = value ? byCode.get(value) : undefined;
     if (selected) {
       setBrowseCategory(selected.category);
-      setBrowsePrimary(selected.level > 1 ? selected.code.slice(0, 4) : selected.code);
+      setBrowsePrimary(primaryAncestorCode(selected));
     }
-    const selectedIndex = flatAccounts.findIndex((a) => a.code === value);
+    const selectedIndex = value ? (flatIndexByCode.get(value) ?? -1) : -1;
     const offset = showAllOption ? 1 : 0;
     setActive(selectedIndex >= 0 ? selectedIndex + offset : 0);
-    setOpen(true);
+    openPopover();
   }
 
   function choose(account: AccountVM): void {
@@ -348,26 +333,6 @@ export function AccountPicker({
     if (!open) restoreSelected();
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent): void => {
-      const target = e.target;
-      if (!(target instanceof Node)) return;
-      if (inputRef.current?.contains(target)) return;
-      if (popoverRef.current?.contains(target)) return;
-      setOpen(false);
-    };
-    const onFrameChange = (): void => computePosition();
-    document.addEventListener('mousedown', onDown);
-    window.addEventListener('resize', onFrameChange);
-    window.addEventListener('scroll', onFrameChange, true);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      window.removeEventListener('resize', onFrameChange);
-      window.removeEventListener('scroll', onFrameChange, true);
-    };
-  }, [open]);
-
   function onPopoverKeyDown(e: ReactKeyboardEvent<HTMLDivElement>): void {
     if (e.key === 'Escape') {
       e.preventDefault();
@@ -409,7 +374,7 @@ export function AccountPicker({
   }
 
   function leafOption(a: AccountVM, extraClass = ''): React.ReactNode {
-    const flatIndex = flatAccounts.findIndex((item) => item.code === a.code);
+    const flatIndex = flatIndexByCode.get(a.code) ?? -1;
     const optionIndex = flatIndex + (showAllOption ? 1 : 0);
     return (
       <button
@@ -563,16 +528,7 @@ export function AccountPicker({
               id={pickerId}
               ref={popoverRef}
               className={`${styles.picker}${variant === 'compact' ? ` ${styles.pickerCompact}` : ''}`}
-              style={
-                popoverStyle ?? {
-                  position: 'fixed',
-                  top: 0,
-                  left: 0,
-                  width: variant === 'compact' ? PICKER_COMPACT_WIDTH : PICKER_WIDTH,
-                  maxHeight: variant === 'compact' ? PICKER_COMPACT_HEIGHT : PICKER_HEIGHT,
-                  visibility: 'hidden',
-                }
-              }
+              style={popoverStyle ?? fallbackStyle}
               role="dialog"
               aria-label={ariaLabel}
               onKeyDown={onPopoverKeyDown}

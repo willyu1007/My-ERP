@@ -345,6 +345,15 @@ function toInvitation(i: {
   };
 }
 
+/** A single member of the current org scope (RLS-filtered), or null. */
+export async function getMembershipByUserTx(
+  tx: TxClient,
+  userId: string,
+): Promise<MembershipEntity | null> {
+  const row = await tx.membership.findFirst({ where: { userId } });
+  return row ? toMembership(row) : null;
+}
+
 export async function listMembershipsTx(tx: TxClient): Promise<MembershipEntity[]> {
   const rows = await tx.membership.findMany({ orderBy: { createdAt: 'asc' } });
   return rows.map(toMembership);
@@ -2459,9 +2468,15 @@ export interface AccountPreferenceEntity {
 
 export async function getAccountPreferenceTx(
   tx: TxClient,
+  ledgerBookId: string,
   userId: string,
 ): Promise<AccountPreferenceEntity | null> {
-  const row = await tx.accountPreference.findFirst({ where: { userId } });
+  // Explicit ledger filter on top of RLS (defense in depth): the dev connection
+  // runs as the table owner where RLS does not apply, and userId alone collides
+  // across ledgers.
+  const row = await tx.accountPreference.findUnique({
+    where: { ledgerBookId_userId: { ledgerBookId, userId } },
+  });
   if (!row) return null;
   return {
     ledgerBookId: row.ledgerBookId,

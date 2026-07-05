@@ -1,5 +1,7 @@
 'use server';
 
+import { classifyActionFailure } from '@/lib/finance/action-failure';
+
 /** Server actions for 合同 (T-005 C3). create returns the new id for routing. */
 import type { CreateContract } from '@my-erp/api-client';
 import { createContract, updateContract } from '@/lib/finance/data-source';
@@ -13,13 +15,7 @@ export type ContractActionResult =
     };
 
 function toFailure(err: unknown): ContractActionResult {
-  const message = err instanceof Error ? err.message : String(err);
-  const reason = message.includes('not configured')
-    ? 'unconfigured'
-    : /API (403|409)|conflict|stale|已变化/i.test(message)
-      ? 'conflict'
-      : 'error';
-  return { ok: false, reason, message };
+  return { ok: false, ...classifyActionFailure(err) };
 }
 
 export async function createContractAction(input: CreateContract): Promise<ContractActionResult> {

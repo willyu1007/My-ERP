@@ -11,6 +11,7 @@ import { Queue } from '@my-erp/ui/queue';
 import { PARTNER_PARTY_TYPE, partnerRolesLabel } from '@/lib/finance/partner-display';
 import { updateBusinessPartnerAction } from './actions';
 import { PartnerCreateForm } from './partner-create-form';
+import chrome from '../_components/queue-page.module.css';
 import styles from './partners.module.css';
 
 type PartnerQueueKey = 'customer' | 'supplier' | 'individual' | 'inactive' | 'all';
@@ -103,7 +104,7 @@ export function PartnersClient({
   }
 
   const nav = (
-    <div className={styles.navActions}>
+    <div className={chrome.navActions}>
       <ActionButton kind="primary" onClick={() => setEntryOpen((value) => !value)}>
         {entryOpen ? '收起新增' : '新增往来单位'}
       </ActionButton>
@@ -138,14 +139,14 @@ export function PartnersClient({
   return (
     <Scene nav={nav}>
       <div
-        className={`${styles.entryPanel}${entryOpen ? ` ${styles.entryPanelOpen}` : ''}`}
+        className={`${chrome.entryPanel}${entryOpen ? ` ${chrome.entryPanelOpen}` : ''}`}
         inert={!entryOpen}
       >
-        <div className={styles.entryPanelInner}>
+        <div className={chrome.entryPanelInner}>
           <PartnerCreateForm members={members} onCreated={() => setEntryOpen(false)} />
         </div>
       </div>
-      <div className={styles.queueScope}>
+      <div className={chrome.queueScope}>
         <Queue<BusinessPartner>
           items={filtered}
           rowKey={(partner) => partner.id}

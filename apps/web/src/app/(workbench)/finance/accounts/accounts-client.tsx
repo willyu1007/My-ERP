@@ -14,6 +14,7 @@ import {
 } from '@/lib/finance/types';
 import type { AccountCategory, AccountVM } from '@/lib/finance/types';
 import { importStandardChartAction } from './actions';
+import styles from './accounts.module.css';
 
 /**
  * 会计科目体系 — 树视图。编码升序即树前序，名称按层级缩进标识父子关系。
@@ -115,7 +116,7 @@ function ChartImportCard({ diff }: { readonly diff: StandardChartDiff }) {
           {diff.additions.map((a) => `${a.code} ${a.name}`).join('、')}
         </p>
       ) : null}
-      <div style={{ display: 'inline-flex', gap: 8 }}>
+      <div className={styles.importActions}>
         <button
           type="button"
           className="mt-btn mt-btn--secondary"

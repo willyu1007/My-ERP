@@ -59,8 +59,8 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS — account_preference (ledger-scop
       }),
     );
 
-    const teamDefault = await withLedgerScope(LB_A, (tx) => getAccountPreferenceTx(tx, ''));
-    const personal = await withLedgerScope(LB_A, (tx) => getAccountPreferenceTx(tx, 'u1'));
+    const teamDefault = await withLedgerScope(LB_A, (tx) => getAccountPreferenceTx(tx, LB_A, ''));
+    const personal = await withLedgerScope(LB_A, (tx) => getAccountPreferenceTx(tx, LB_A, 'u1'));
     expect(teamDefault?.recommended).toEqual(['1001', '100201', '6602']);
     expect(teamDefault?.pinned).toEqual([]);
     expect(personal?.pinned).toEqual(['660204']);
@@ -74,8 +74,10 @@ describe.skipIf(!PG_AVAILABLE)('Postgres RLS — account_preference (ledger-scop
     expect(updated.hidden).toEqual(['1501', '1511']);
   });
 
-  it('isolates preferences by ledger (RLS)', async () => {
-    expect(await withLedgerScope(LB_B, (tx) => getAccountPreferenceTx(tx, ''))).toBeNull();
-    expect(await withLedgerScope(LB_B, (tx) => getAccountPreferenceTx(tx, 'u1'))).toBeNull();
+  it('isolates preferences by ledger (RLS + explicit ledger filter)', async () => {
+    expect(await withLedgerScope(LB_B, (tx) => getAccountPreferenceTx(tx, LB_B, ''))).toBeNull();
+    expect(await withLedgerScope(LB_B, (tx) => getAccountPreferenceTx(tx, LB_B, 'u1'))).toBeNull();
+    // Even when asking for LB_A's row, the B scope + explicit filter yields nothing.
+    expect(await withLedgerScope(LB_B, (tx) => getAccountPreferenceTx(tx, LB_A, 'u1'))).toBeNull();
   });
 });

@@ -1,5 +1,7 @@
 'use server';
 
+import { classifyActionFailure } from '@/lib/finance/action-failure';
+
 /**
  * Server actions for 我的工作台 (T-009, restoring T-003 R2-UI) against the `/v1`
  * work-item kernel. The backend recomputes visibility/actionability, re-checks SoD
@@ -17,13 +19,7 @@ export type TaskActionResult =
     };
 
 function toFailure(err: unknown): TaskActionResult {
-  const message = err instanceof Error ? err.message : String(err);
-  const reason = message.includes('not configured')
-    ? 'unconfigured'
-    : /API (403|409)|conflict|stale|已变化|no longer/i.test(message)
-      ? 'conflict'
-      : 'error';
-  return { ok: false, reason, message };
+  return { ok: false, ...classifyActionFailure(err) };
 }
 
 export async function claimTaskAction(

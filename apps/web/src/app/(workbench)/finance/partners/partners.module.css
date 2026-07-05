@@ -1,44 +1,6 @@
-.navActions {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  flex-wrap: wrap;
-}
-
-.navActions :global(.wb-segmented) {
-  max-width: 100%;
-  flex-wrap: wrap;
-}
-
 .searchInput {
   width: 220px;
   max-width: 100%;
-}
-
-.entryPanel {
-  position: relative;
-  display: grid;
-  grid-template-rows: 0fr;
-  margin-bottom: 0;
-  transition:
-    grid-template-rows 200ms var(--ease-out, ease),
-    margin-bottom 200ms var(--ease-out, ease);
-}
-
-.entryPanelOpen {
-  z-index: 20;
-  grid-template-rows: 1fr;
-  margin-bottom: var(--sp-5, 20px);
-}
-
-.entryPanelInner {
-  overflow: hidden;
-  min-height: 0;
-}
-
-.queueScope {
-  position: relative;
-  z-index: 1;
 }
 
 .formGrid {

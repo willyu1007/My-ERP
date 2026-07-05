@@ -27,7 +27,12 @@ import {
   type PaymentDocEntity,
   type TxClient,
 } from '@my-erp/db';
-import { buildSettlementEntry, isCashAccountCode, Money } from '@my-erp/finance-domain';
+import {
+  buildSettlementEntry,
+  CASH_ACCOUNT_ROOT_CODES,
+  isCashAccountCode,
+  Money,
+} from '@my-erp/finance-domain';
 import type { Identity } from '@my-erp/platform';
 import { appendWorkItemOutboxEventTx } from '../work-items/voucher-workflow';
 import {
@@ -159,7 +164,9 @@ export class PaymentsService {
     if (input.cashAccountCode === input.contraAccountCode)
       throw new BadRequestException('现金科目与对方科目不能相同');
     if (!isCashAccountCode(input.cashAccountCode))
-      throw new BadRequestException('现金科目必须是货币资金类（1001/1002/1012）');
+      throw new BadRequestException(
+        `现金科目必须是货币资金类（${CASH_ACCOUNT_ROOT_CODES.join('/')}）`,
+      );
     if (input.contractId != null && input.contractId !== '' && !UUID_RE.test(input.contractId))
       throw new BadRequestException('contractId must be a uuid');
     const period = input.date.slice(0, 7);

@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-05T07:07:12.238Z",
+  "generatedAt": "2026-07-05T14:15:49.346Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "15ef119736104b0ffaa0514d47bf7b4872de093ca0d982b8db725423b64c7d87",
+  "sourceChecksumSha256": "c4569a18310f359dbabba90b7e002a59c2285481bd731fbc6781071825ab39ea",
   "stats": {
     "totalEndpoints": 67,
     "byTag": {
@@ -521,7 +521,9 @@
       "output": {
         "successStatus": 201,
         "coreFields": [
-          "seeded"
+          "seeded",
+          "convertedParents",
+          "conflicts"
         ]
       },
       "errors": [
