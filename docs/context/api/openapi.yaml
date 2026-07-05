@@ -313,7 +313,7 @@ paths:
   /v1/accounts/seed-standard:
     post:
       operationId: seedStandardChart
-      summary: Seed the 《小企业准则》 standard chart (idempotent)
+      summary: Seed the standard chart v2 (idempotent; non-empty ledgers go through the safe diff engine)
       tags: [accounts]
       security: [{ bearerAuth: [] }]
       responses:
@@ -327,6 +327,85 @@ paths:
                 properties: { seeded: { type: integer } }
         '401': { description: Missing or invalid bearer token }
         '403': { description: Lacks create permission }
+  /v1/accounts/standard-diff:
+    get:
+      operationId: getStandardChartDiff
+      summary: Preview standard chart v2 additions for this ledger (T-012 D6; no changes applied)
+      tags: [accounts]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Diff between the v2 template and the ledger's chart
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StandardChartDiff' }
+  /v1/accounts/import-standard:
+    post:
+      operationId: importStandardChart
+      summary: Explicit additive import of standard chart v2 (adds missing; flips activity-free leaf parents; reports posted-leaf conflicts untouched)
+      tags: [accounts]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '201':
+          description: Import result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StandardChartImportResult' }
+        '403': { description: Lacks create permission }
+  /v1/account-preferences:
+    get:
+      operationId: getAccountPreferences
+      summary: Merged account display preferences — ledger default + the caller's personal (T-012 D5; display-only)
+      tags: [accounts]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Preferences
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccountPreferences' }
+    patch:
+      operationId: updateAccountPreferences
+      summary: Update the caller's personal pinned/hidden account lists
+      tags: [accounts]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pinned: { type: array, items: { type: string } }
+                hidden: { type: array, items: { type: string } }
+      responses:
+        '200':
+          description: Updated preferences (merged view)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccountPreferences' }
+  /v1/account-preferences/ledger-default:
+    patch:
+      operationId: updateLedgerAccountDefaults
+      summary: Update the team's recommended account list (accounting/admin)
+      tags: [accounts]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recommended]
+              properties:
+                recommended: { type: array, items: { type: string } }
+      responses:
+        '200':
+          description: Updated preferences (merged view)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccountPreferences' }
+        '403': { description: Lacks account update permission }
   /v1/accounts/{code}:
     patch:
       operationId: updateAccount
@@ -1119,6 +1198,60 @@ components:
         active: { type: boolean }
         defaultCashFlowItem: { type: string, nullable: true }
         createdAt: { type: string, format: date-time }
+    ChartTemplateAccount:
+      type: object
+      required: [code, name, category, direction, parentCode, level, isLeaf]
+      properties:
+        code: { type: string }
+        name: { type: string }
+        category: { type: string, enum: [asset, liability, equity, cost, profitLoss] }
+        direction: { type: string, enum: [debit, credit] }
+        parentCode: { type: string, nullable: true }
+        level: { type: integer }
+        isLeaf: { type: boolean }
+        auxTypes: { type: array, items: { type: string, enum: [customer, supplier, department, project] } }
+    StandardChartDiff:
+      type: object
+      required: [chartVersion, additions, parentConversions, conflicts, present]
+      properties:
+        chartVersion: { type: integer }
+        additions: { type: array, items: { $ref: '#/components/schemas/ChartTemplateAccount' } }
+        parentConversions:
+          type: array
+          description: Existing activity-free leaves that would become branches
+          items:
+            type: object
+            required: [code, name]
+            properties: { code: { type: string }, name: { type: string } }
+        conflicts:
+          type: array
+          description: Template accounts skipped because their parent is a posted leaf
+          items:
+            type: object
+            required: [code, name, reason]
+            properties: { code: { type: string }, name: { type: string }, reason: { type: string } }
+        present: { type: integer }
+    StandardChartImportResult:
+      type: object
+      required: [chartVersion, added, convertedParents, conflicts]
+      properties:
+        chartVersion: { type: integer }
+        added: { type: integer }
+        convertedParents: { type: integer }
+        conflicts:
+          type: array
+          items:
+            type: object
+            required: [code, name, reason]
+            properties: { code: { type: string }, name: { type: string }, reason: { type: string } }
+    AccountPreferences:
+      type: object
+      required: [recommended, pinned, hidden]
+      description: Display-only picker preferences (T-012 D5) — never affect account validity or posting
+      properties:
+        recommended: { type: array, items: { type: string }, description: Ledger default (team) }
+        pinned: { type: array, items: { type: string }, description: Personal favorites }
+        hidden: { type: array, items: { type: string }, description: Personal less-shown (still searchable) }
     CreateAccount:
       type: object
       required: [code, name, category, direction]

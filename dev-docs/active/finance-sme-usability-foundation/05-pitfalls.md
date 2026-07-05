@@ -13,6 +13,14 @@ This file exists to prevent repeating mistakes within this task.
 
 ## Pitfall log (append-only)
 
+### 2026-07-05 - dev API connects as the table owner, so RLS is OFF in dev
+- Symptom: `/v1/accounts` returned rows from TWO ledgers (duplicate codes with conflicting isLeaf), which surfaced visibly once the progressive picker rendered the whole chart.
+- Context: T-012 Phase 2 browser verification against the long-lived dev DB.
+- Why: the dev `DATABASE_URL` user owns the tables and Postgres owners bypass RLS (documented in `scripts/dev-seed.mjs`); a leftover ledger from an old e2e session leaked into every unscoped-looking list. Production/test paths use the app role where RLS is enforced (covered by integration tests).
+- Fix / workaround: reset the dev DB (drop schema + `pnpm db:deploy` + `pnpm dev:seed`) before browser walkthroughs.
+- Prevention: treat cross-ledger rows in dev UI as stale-dev-data first, not as an RLS bug; keep using a fresh DB for live verification (see also the stale-dist rule).
+- References: `scripts/dev-seed.mjs` header comment; T-012 04-verification 2026-07-05 Phase 2 log.
+
 ### 2026-07-05 - vitest filter must run from the repo root
 - Symptom: `pnpm --filter @my-erp/db test -- --run <file>` and running vitest from `packages/db` both exit with "No test files found".
 - Context: T-012 Phase 1, running the new business-partner integration test.

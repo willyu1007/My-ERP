@@ -107,3 +107,18 @@
     - 往来单位 nav entry + list page render with live data; queue counts and name search work.
     - Payments page `?partnerId=` shows the filter chip (current partner name) over the snapshot-labelled rows.
     - PartnerPicker popover lists partners with roles/微信/单位-个人 badges; selected 王五 and created 收-2026-07-001 via UI; API confirms `partnerId` stored + snapshot correct.
+- 2026-07-05 (Phase 2 implementation):
+  - Online research: official 《小企业会计准则》科目表 (财会〔2011〕17 号 appendix) retrieved (Xiamen University CAS mirror) — confirmed the official numbering (equity 3xxx / P&L 5xxx) DIFFERS from the repo convention (equity 4xxx / P&L 6xxx, which period-close 4103 and the report prefixes depend on); v2 therefore uses the official account SET with the repo's code convention, per the resolved roadmap question.
+  - `pnpm exec prisma validate/format/generate` -> passed; `ctl-db-ssot sync-to-context` -> refreshed (migration `20260705150000_t012_account_preference`).
+  - `pnpm vitest run packages/platform/src/account.test.ts` -> 5/5 (v2 shape invariants: ascending pre-order, derived tree consistency, v1 codes stable, counterparties stay out of the tree).
+  - `pnpm vitest run apps/api/src/accounts/standard-chart-import.integration.test.ts` -> 4/4 (empty-ledger full seed; additive import converts activity-free leaf parents; posted-leaf children skipped as conflicts with the leaf untouched; idempotent re-import).
+  - `pnpm vitest run packages/db/src/account-preference.integration.test.ts` -> 2/2 (ledger-default vs personal rows, partial upsert, RLS isolation).
+  - `pnpm typecheck` / `pnpm lint` / `pnpm lint:css` -> passed. `pnpm test` -> 46 files / 180 tests passed.
+  - `pnpm --filter @my-erp/api-client codegen` + `ctl-api-index generate --touch` -> API context refreshed.
+  - Live `/v1` smoke (packages rebuilt; dev DB reset to a clean schema after discovering cross-ledger leftovers — see 05-pitfalls):
+    - `standard-diff` on a 9-account ledger -> 83 additions, 2 parent conversions (6601/6602), 0 conflicts; `import-standard` -> applied; re-diff -> 0 additions (idempotent); chart total 92, zero duplicate codes; 222103/660204/221102 present, 6602 isLeaf=false.
+    - Preferences: `PATCH ledger-default {recommended}` + `PATCH personal {pinned, hidden}` + merged `GET` round-trip correct. (First attempt 500'd on stale @my-erp/db dist — rebuilt packages, the known pitfall.)
+  - Browser walkthrough (web :3200 against live API):
+    - 对方科目 picker: 常用 chips show pinned 660205 (outlined) + recommended 660202/660204 — recommended 100201 correctly absent because the contra picker excludes cash accounts; category tabs 资产→损益; 6602 drill-down lists its 11 children with 660205 starred; hidden 1501/1511 absent from browse with an 已少展示 note; searching "1501" surfaces it with an 已隐藏 tag and it stays selectable; no native browser suggestion popover.
+    - 科目设置 page renders the chart table; the import review card appears only while the diff has additions (verified via API before/after import).
+    - Note: daily-accounting's inline entry panel is skipped by the ListView empty state on a voucher-less ledger (pre-existing page behavior, unrelated to the picker).

@@ -1,4 +1,5 @@
 import {
+  getAccountPreferences,
   listAccounts,
   listCashFlowItems,
   listContracts,
@@ -9,11 +10,12 @@ import { DailyAccountingClient } from './daily-accounting-client';
 export const dynamic = 'force-dynamic';
 
 export default async function DailyAccountingPage() {
-  const [vouchers, accounts, cashFlowItems, contracts] = await Promise.all([
+  const [vouchers, accounts, cashFlowItems, contracts, accountPreferences] = await Promise.all([
     listVouchers(),
     listAccounts(),
     listCashFlowItems(),
     listContracts(),
+    getAccountPreferences(),
   ]);
   const today = new Date().toISOString().slice(0, 10);
   return (
@@ -22,6 +24,7 @@ export default async function DailyAccountingPage() {
       accounts={accounts}
       cashFlowItems={cashFlowItems}
       contracts={contracts}
+      accountPreferences={accountPreferences}
       initialDate={today}
     />
   );

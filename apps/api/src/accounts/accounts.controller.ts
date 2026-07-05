@@ -27,9 +27,14 @@ import {
   isAccountDirection,
   isAuxType,
   STANDARD_CHART,
+  STANDARD_CHART_VERSION,
   withSpan,
   type Identity,
 } from '@my-erp/platform';
+import {
+  applyStandardChartDiffTx,
+  computeStandardChartDiffTx,
+} from './standard-chart-import';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentIdentity } from '../auth/current-identity.decorator';
 import { LedgerBookId } from '../auth/ledger-book-id.decorator';
@@ -95,19 +100,96 @@ export class AccountsController {
     );
   }
 
-  /** Idempotent: seed the 《小企业准则》 standard chart (skips existing codes). */
+  /**
+   * Idempotent: seed the standard chart. An empty ledger receives the full v2
+   * template; a non-empty ledger goes through the same safe diff engine as
+   * import-standard (additions only; posted-leaf conflicts are skipped, never
+   * silently mutated — T-012 D6).
+   */
   @Post('seed-standard')
   @RequirePermission('create', 'Account')
   async seedStandard(@LedgerBookId() ledgerBookId: string, @CurrentIdentity() identity: Identity) {
     return withLedgerScope(ledgerBookId, async (tx) => {
-      const seeded = await seedAccountsTx(tx, ledgerBookId, STANDARD_CHART);
+      const existing = await listAccountsTx(tx);
+      if (existing.length === 0) {
+        const seeded = await seedAccountsTx(tx, ledgerBookId, STANDARD_CHART);
+        await appendAuditRecordTx(tx, {
+          actorId: identity.userId,
+          action: 'SEED_STANDARD_CHART',
+          entityType: 'Account',
+          ledgerBookId,
+          metadata: { chartVersion: STANDARD_CHART_VERSION, seeded },
+        });
+        return { seeded };
+      }
+      const diff = await computeStandardChartDiffTx(tx, STANDARD_CHART, existing);
+      const result = await applyStandardChartDiffTx(tx, ledgerBookId, diff);
       await appendAuditRecordTx(tx, {
         actorId: identity.userId,
         action: 'SEED_STANDARD_CHART',
         entityType: 'Account',
         ledgerBookId,
+        metadata: {
+          chartVersion: STANDARD_CHART_VERSION,
+          seeded: result.added,
+          convertedParents: result.convertedParents,
+          conflicts: result.conflicts.length,
+        },
       });
-      return { seeded };
+      return { seeded: result.added };
+    });
+  }
+
+  /** Preview the standard-chart v2 additions for this ledger — no changes applied. */
+  @Get('standard-diff')
+  @RequirePermission('read', 'Account')
+  async standardDiff(@LedgerBookId() ledgerBookId: string) {
+    return withLedgerScope(ledgerBookId, async (tx) => {
+      const existing = await listAccountsTx(tx);
+      const diff = await computeStandardChartDiffTx(tx, STANDARD_CHART, existing);
+      return {
+        chartVersion: STANDARD_CHART_VERSION,
+        additions: diff.additions,
+        parentConversions: diff.parentConversions,
+        conflicts: diff.conflicts,
+        present: diff.present,
+      };
+    });
+  }
+
+  /**
+   * Explicit additive import of the standard chart v2 (T-012 D6): adds missing
+   * accounts, flips activity-free leaf parents to branches, and reports conflicts
+   * (posted leaves) without touching them. Audited.
+   */
+  @Post('import-standard')
+  @RequirePermission('create', 'Account')
+  async importStandard(
+    @LedgerBookId() ledgerBookId: string,
+    @CurrentIdentity() identity: Identity,
+  ) {
+    return withLedgerScope(ledgerBookId, async (tx) => {
+      const existing = await listAccountsTx(tx);
+      const diff = await computeStandardChartDiffTx(tx, STANDARD_CHART, existing);
+      const result = await applyStandardChartDiffTx(tx, ledgerBookId, diff);
+      await appendAuditRecordTx(tx, {
+        actorId: identity.userId,
+        action: 'IMPORT_STANDARD_CHART',
+        entityType: 'Account',
+        ledgerBookId,
+        metadata: {
+          chartVersion: STANDARD_CHART_VERSION,
+          added: result.added,
+          convertedParents: result.convertedParents,
+          conflicts: result.conflicts.length,
+        },
+      });
+      return {
+        chartVersion: STANDARD_CHART_VERSION,
+        added: result.added,
+        convertedParents: result.convertedParents,
+        conflicts: result.conflicts,
+      };
     });
   }
 

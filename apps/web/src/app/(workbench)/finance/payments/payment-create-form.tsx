@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@my-erp/ui/feedback';
-import type { BusinessPartner, Contract } from '@my-erp/api-client';
+import type { AccountPreferences, BusinessPartner, Contract } from '@my-erp/api-client';
 import type { AccountVM } from '@/lib/finance/types';
 import { isCashAccountCode } from '@/lib/finance/account';
 import { PAYMENT_DIRECTION } from '@/lib/finance/payment-display';
 import { AccountPicker } from '../_components/account-picker';
 import { ContractPicker } from '../_components/contract-picker';
 import { PartnerPicker } from '../_components/partner-picker';
+import { useAccountPreferences } from '../_components/use-account-preferences';
 import { createAndSubmitPaymentAction, createPaymentAction } from './actions';
 import styles from './payments.module.css';
 
@@ -97,11 +98,13 @@ export function PaymentCreateForm({
   accounts,
   contracts,
   partners,
+  accountPreferences,
   initialDate,
 }: {
   readonly accounts: readonly AccountVM[];
   readonly contracts: readonly Contract[];
   readonly partners: readonly BusinessPartner[];
+  readonly accountPreferences?: AccountPreferences;
   readonly initialDate: string;
 }) {
   const router = useRouter();
@@ -120,9 +123,11 @@ export function PaymentCreateForm({
   const [contractId, setContractId] = useState('');
   const openContracts = contracts.filter((c) => c.status !== 'closed');
 
+  const { preferences, togglePin } = useAccountPreferences(accountPreferences);
   const postable = accounts.filter((a) => a.isLeaf && a.active);
   const cashAccounts = postable.filter((a) => isCashAccountCode(a.code));
-  const contraAccounts = postable.filter((a) => !isCashAccountCode(a.code));
+  // The contra picker browses the subtree (branches included); only leaves select.
+  const contraAccounts = accounts.filter((a) => a.active && !isCashAccountCode(a.code));
   const selectedCashAccount = cashAccounts.find((a) => a.code === cashAccountCode);
   const selectedContraAccount = contraAccounts.find((a) => a.code === contraAccountCode);
 
@@ -292,6 +297,9 @@ export function PaymentCreateForm({
             onClear={() => setContraAccountCode('')}
             ariaLabel="对方科目"
             name="contraAccountCode"
+            preferences={preferences}
+            onTogglePin={togglePin}
+            recentKey="myerp.recentAccounts.payments"
           />
         </div>
         <div className="mt-field">

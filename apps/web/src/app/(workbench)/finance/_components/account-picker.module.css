@@ -134,6 +134,154 @@
   font-size: var(--small-size);
 }
 
+/* ---- Progressive browse (T-012 Phase 2): 常用 chips + 分类 → 主科目 → 明细 ---- */
+
+.browse {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.chipsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--border-1);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 10px;
+  background: var(--bg-2, #f4f5f7);
+  border: 1px solid var(--border-1);
+  border-radius: 999px;
+  cursor: pointer;
+  color: var(--fg-2);
+  font-size: var(--small-size);
+}
+
+.chip:hover {
+  background: var(--bg-hover);
+  color: var(--fg-1);
+}
+
+.chipPinned {
+  border-color: var(--mt-navy);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1.1fr) minmax(0, 1.4fr);
+  gap: var(--sp-2);
+  align-items: start;
+}
+
+.colCats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.catBtn {
+  padding: 6px var(--sp-2);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--fg-2);
+  font-size: var(--small-size);
+  text-align: left;
+}
+
+.catBtn:hover {
+  background: var(--bg-hover);
+}
+
+.catBtnActive {
+  background: var(--bg-hover);
+  color: var(--mt-navy);
+  font-weight: var(--medium-weight, 500);
+}
+
+.colPrimary,
+.colDetail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-left: var(--sp-2);
+  border-left: 1px solid var(--border-1);
+}
+
+.optionName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.branchOption {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.branchOptionActive {
+  border-color: var(--mt-navy);
+  color: var(--fg-1);
+}
+
+.chevron {
+  color: var(--fg-3);
+  font-size: var(--body-size);
+  line-height: 1;
+}
+
+.detailHint {
+  padding: var(--sp-2);
+  color: var(--fg-3);
+  font-size: var(--caption-size);
+}
+
+.hiddenNote {
+  padding: 4px var(--sp-2);
+  color: var(--fg-3);
+  font-size: var(--caption-size);
+}
+
+.hiddenTag {
+  padding: 1px 6px;
+  background: var(--bg-2, #f4f5f7);
+  border-radius: 999px;
+  color: var(--fg-3);
+  font-size: var(--caption-size);
+  white-space: nowrap;
+}
+
+.pinBtn {
+  margin-left: auto;
+  padding: 0 2px;
+  color: var(--fg-3);
+  font-size: var(--body-size);
+  line-height: 1;
+  visibility: hidden;
+}
+
+.option:hover .pinBtn,
+.optionActive .pinBtn,
+.pinBtnOn {
+  visibility: visible;
+}
+
+.pinBtn:hover {
+  color: var(--mt-navy);
+}
+
+.pinBtnOn {
+  color: var(--mt-navy);
+}
+
 @media (max-width: 720px) {
   .options {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -141,5 +289,17 @@
 
   .section {
     grid-template-columns: 1fr;
+  }
+
+  .columns {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
+  .colDetail {
+    grid-column: 1 / -1;
+    border-left: 0;
+    border-top: 1px solid var(--border-1);
+    padding-left: 0;
+    padding-top: var(--sp-2);
   }
 }

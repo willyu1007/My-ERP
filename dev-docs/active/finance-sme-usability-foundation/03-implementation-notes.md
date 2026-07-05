@@ -1,7 +1,7 @@
 # 03 — Implementation Notes
 
 ## Status
-- Current status: `in-progress` — Phase 1 (BusinessPartner foundation) implemented and verified 2026-07-05; Phase 2 next.
+- Current status: `in-progress` — Phase 1 (BusinessPartner) and Phase 2 (chart v2 + progressive picker + preferences) implemented and verified 2026-07-05; Phase 3 (cashier-to-accountant enrichment) next.
 - Last updated: 2026-07-05
 
 ## What changed
@@ -12,6 +12,15 @@
   - `apps/api`: `/v1/business-partners` (list/create/get/patch; D2 non-member confirmation guard, member-link validation, audit); payments/contracts create accept `partnerId` (active + in-scope check, counterparty snapshot auto-filled from partner name when blank); list endpoints gain `partnerId` filter.
   - OpenAPI + `packages/api-client`: BusinessPartner schemas/methods, `listMembers`, partner filter params.
   - `apps/web`: `/finance/partners` page (queues 客户/供应商/员工个人/已停用/全部, name/wechat/tag search, create form with member quick-select + D2 confirm checkbox + 微信号, drawer with 停用/启用 and D9 filter links); shared `PartnerPicker` (select-or-free-text) replacing the counterparty text inputs in payment/contract create forms; `?partnerId=` filter + chip on payments/contracts lists; nav entry 往来单位.
+
+- Phase 2 (2026-07-05): standard chart v2 + import/diff, tree-based cash identification, display preferences, progressive picker.
+  - `STANDARD_CHART` v2 (92 accounts, table-driven with derived parent/level/isLeaf): the account SET follows the official 《小企业会计准则》 appendix (财会〔2011〕17 号, researched online), the CODES follow the repo's existing convention (assets/liabilities match the official list; equity 4xxx / P&L 6xxx match the report engine + period-close prefixes). Industry-specific accounts (biological assets, 工程施工/机械作业, planned-cost-method materials) intentionally excluded. Common second-level details for 应付职工薪酬 (4), 应交税费 (8), 销售费用 (7), 管理费用 (11), 财务费用 (4).
+  - Diff/import engine: `GET /v1/accounts/standard-diff` (preview) + `POST /v1/accounts/import-standard` (explicit additive apply). Only additions plus the leaf→branch flip of ACTIVITY-FREE parents; a posted/opened leaf is never mutated — its template children are reported as conflicts. `seed-standard` reworked: empty ledger = full v2 seed, non-empty ledger = the same safe engine.
+  - Report engine: 无形资产 BS line now nets 1702 累计摊销 alongside 1701.
+  - Cash identification: `CASH_ACCOUNT_ROOT_CODES` (1001/1002/1012) + tree-prefix ancestor test in finance-domain (web keeps a synced mirror); child codes extend parent codes (API-enforced), so the root-prefix match IS the tree test and new bank/monetary subaccounts are covered automatically.
+  - `AccountPreference` table (ledger-scoped RLS; userId '' sentinel = ledger default because Postgres unique treats NULLs as distinct): team `recommended` + personal `pinned`/`hidden`. `GET/PATCH /v1/account-preferences` (personal; read-Account permission) + `PATCH /v1/account-preferences/ledger-default` (update-Account permission). Codes sanitized against the ledger chart at write time.
+  - AccountPicker progressive rework (grouped variant): browse mode = 常用 chips (pinned → recommended → device recents) + 分类 → 主科目(带 › 下钻) → 明细 columns; hidden accounts drop out of browse with an "已少展示 n 项" note but stay searchable (tagged 已隐藏); ★ pin toggle persists via server action with optimistic state; recents in localStorage (per device — cheap, no per-click API chatter); native autocomplete/autocorrect/spellcheck suppressed. Compact variant unchanged. Call sites now pass the active subtree (branches included) — only active leaves are selectable.
+  - 科目设置 page: explicit chart-v2 import review card (diff counts + expandable addition list + 导入 button); card disappears once the ledger is up to date.
 
 ## Files/modules touched (high level)
 - `prisma/schema.prisma` + `prisma/migrations/20260705120000_t012_business_partner/`
@@ -81,8 +90,11 @@
 - None yet.
 
 ## Known issues / follow-ups
-- Define the exact standard chart v2 account-code list during implementation.
-- Design explicit import/diff review for applying standard chart v2 additions to existing ledgers.
+- ~~Define the exact standard chart v2 account-code list during implementation.~~ Done 2026-07-05 (92 accounts; see Phase 2 notes).
+- ~~Design explicit import/diff review for applying standard chart v2 additions to existing ledgers.~~ Done 2026-07-05 (`standard-diff`/`import-standard` + 科目设置 review card).
+- Ledger-default recommended list is API-complete (`PATCH /v1/account-preferences/ledger-default`, permission-gated) but has no settings UI yet — small follow-up.
+- Pre-existing report gap (not introduced here): 生产成本 5001 / 制造费用 5101 balances have no BS 在产品 mapping (the line exists without terms). Worth fixing when reports are next touched.
+- Aux-dimension vocabulary still `customer/supplier/department/project`; a unified `partner` dimension (wired to BusinessPartner) is a Phase 3/4 concern.
 
 ## Pitfalls / dead ends (do not repeat)
 - Keep the detailed log in `05-pitfalls.md` (append-only).

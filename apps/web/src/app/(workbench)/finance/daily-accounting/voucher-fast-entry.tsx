@@ -11,12 +11,18 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@my-erp/ui/feedback';
 import { IconMore, Menu, Select } from '@my-erp/ui/primitives';
-import type { CashFlowItem, Contract, CreateVoucher } from '@my-erp/api-client';
+import type {
+  AccountPreferences,
+  CashFlowItem,
+  Contract,
+  CreateVoucher,
+} from '@my-erp/api-client';
 import { isCashAccountCode } from '@/lib/finance/account';
 import { centsToString, sumCents, toCents } from '@/lib/finance/money';
 import { formatMoney, formatPeriod } from '@/lib/finance/format';
 import type { AccountVM } from '@/lib/finance/types';
 import { AccountPicker } from '../_components/account-picker';
+import { useAccountPreferences } from '../_components/use-account-preferences';
 import {
   confirmAction,
   stashDraftAction,
@@ -238,6 +244,7 @@ export function VoucherFastEntry({
   initial,
   headerAction,
   cashFlowItems = [],
+  accountPreferences,
 }: {
   readonly accounts: readonly AccountVM[];
   readonly initialDate: string;
@@ -251,6 +258,8 @@ export function VoucherFastEntry({
   readonly cashFlowItems?: readonly CashFlowItem[];
   /** 合同主数据 — 录入时可关联（T-005 entry-time linking；空则不显示）。 */
   readonly contracts?: readonly Contract[];
+  /** 科目展示偏好 (T-012 D5) — 常用/收藏/少展示，仅影响选择器展示。 */
+  readonly accountPreferences?: AccountPreferences;
 }) {
   const toast = useToast();
   const router = useRouter();
@@ -277,8 +286,10 @@ export function VoucherFastEntry({
   const [pendingFocus, setPendingFocus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // Only leaf + active accounts can carry postings.
-  const postable = useMemo(() => accounts.filter((a) => a.isLeaf && a.active), [accounts]);
+  // The picker browses the active subtree (branches included); only leaf + active
+  // accounts are selectable (leaf-only posting is enforced by the picker + backend).
+  const browsable = useMemo(() => accounts.filter((a) => a.active), [accounts]);
+  const { preferences, togglePin } = useAccountPreferences(accountPreferences);
   const cashFlowOptions = useMemo(
     () => [
       { value: '', label: '未指定' },
@@ -583,7 +594,7 @@ export function VoucherFastEntry({
               <div className={styles.row}>
                 <div className={styles.cell}>
                   <AccountPicker
-                    accounts={postable}
+                    accounts={browsable}
                     value={l.accountCode}
                     displayName={l.accountName}
                     invalid={accountMissing}
@@ -593,6 +604,9 @@ export function VoucherFastEntry({
                       updateLine(l.key, { accountCode: '', accountName: '', cashFlowItem: '' })
                     }
                     onEnterEmpty={() => setPendingFocus(`${l.key}:summary`)}
+                    preferences={preferences}
+                    onTogglePin={togglePin}
+                    recentKey="myerp.recentAccounts.fastEntry"
                   />
                 </div>
                 <div className={styles.cell}>

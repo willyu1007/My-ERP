@@ -6,7 +6,7 @@ import type { RowModel } from '@my-erp/ui/contracts';
 import { ListView } from '@my-erp/ui/list';
 import { ActionButton, StatusBadge } from '@my-erp/ui/primitives';
 import { Queue } from '@my-erp/ui/queue';
-import type { CashFlowItem, Contract } from '@my-erp/api-client';
+import type { AccountPreferences, CashFlowItem, Contract } from '@my-erp/api-client';
 import { formatDate, formatMoney } from '@/lib/finance/format';
 import { VOUCHER_STATUS_LABELS, voucherStatusTone } from '@/lib/finance/types';
 import type { AccountVM, VoucherStatus, VoucherVM } from '@/lib/finance/types';
@@ -121,12 +121,14 @@ export function DailyAccountingClient({
   accounts,
   cashFlowItems,
   contracts,
+  accountPreferences,
   initialDate,
 }: {
   readonly vouchers: readonly VoucherVM[];
   readonly accounts: readonly AccountVM[];
   readonly cashFlowItems: readonly CashFlowItem[];
   readonly contracts: readonly Contract[];
+  readonly accountPreferences?: AccountPreferences;
   readonly initialDate: string;
 }) {
   const [queue, setQueue] = useState<QueueKey>('open');
@@ -173,6 +175,7 @@ export function DailyAccountingClient({
                   accounts={accounts}
                   cashFlowItems={cashFlowItems}
                   contracts={contracts}
+                  accountPreferences={accountPreferences}
                   initialDate={initialDate}
                   headerAction={<CaptureButton />}
                 />

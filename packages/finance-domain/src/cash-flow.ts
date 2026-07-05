@@ -7,9 +7,18 @@ import type { PostedLine } from './ledger';
  * Pure + exact (Decimal). Cash accounts are identified by code prefix.
  */
 
-/** 库存现金 / 银行存款 / 其他货币资金. */
+/** 货币资金 root accounts: 库存现金 / 银行存款 / 其他货币资金. */
+export const CASH_ACCOUNT_ROOT_CODES: readonly string[] = ['1001', '1002', '1012'];
+
+/**
+ * Tree-based cash/bank identification (T-012 Phase 2): child account codes extend
+ * their parent's code (enforced by the accounts API), so a prefix match on the 货币
+ * 资金 roots IS the ancestor test — any bank/monetary subaccount added under these
+ * roots is covered automatically. Never extend this by adding more literals at call
+ * sites; add roots here if the chart ever grows a new monetary root.
+ */
 export function isCashAccountCode(code: string): boolean {
-  return code.startsWith('1001') || code.startsWith('1002') || code.startsWith('1012');
+  return CASH_ACCOUNT_ROOT_CODES.some((root) => code.startsWith(root));
 }
 
 export interface CashFlowTieOut {

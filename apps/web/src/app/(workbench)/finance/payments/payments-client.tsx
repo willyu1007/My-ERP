@@ -6,7 +6,13 @@ import type { RowModel } from '@my-erp/ui/contracts';
 import { ActionButton, Scene, StatusBadge } from '@my-erp/ui/primitives';
 import { Queue } from '@my-erp/ui/queue';
 import type { AccountVM } from '@/lib/finance/types';
-import type { BusinessPartner, Contract, PaymentDoc, PaymentStatus } from '@my-erp/api-client';
+import type {
+  AccountPreferences,
+  BusinessPartner,
+  Contract,
+  PaymentDoc,
+  PaymentStatus,
+} from '@my-erp/api-client';
 import { formatDate, formatMoney } from '@/lib/finance/format';
 import {
   PAYMENT_DIRECTION,
@@ -146,6 +152,7 @@ export function PaymentsClient({
   contracts,
   partners,
   filterPartner = null,
+  accountPreferences,
   initialDate,
   initialEntryOpen = false,
 }: {
@@ -154,6 +161,7 @@ export function PaymentsClient({
   readonly contracts: readonly Contract[];
   readonly partners: readonly BusinessPartner[];
   readonly filterPartner?: BusinessPartner | null;
+  readonly accountPreferences?: AccountPreferences;
   readonly initialDate: string;
   readonly initialEntryOpen?: boolean;
 }) {
@@ -203,6 +211,7 @@ export function PaymentsClient({
             accounts={accounts}
             contracts={contracts}
             partners={partners}
+            accountPreferences={accountPreferences}
             initialDate={initialDate}
           />
         </div>

@@ -52,6 +52,10 @@ export type UpdateBusinessPartner = components['schemas']['UpdateBusinessPartner
 export type PartnerPartyType = BusinessPartner['partyType'];
 export type PartnerRole = BusinessPartner['roles'][number];
 export type Membership = components['schemas']['Membership'];
+// Standard chart v2 + display preferences (T-012 Phase 2)
+export type StandardChartDiff = components['schemas']['StandardChartDiff'];
+export type StandardChartImportResult = components['schemas']['StandardChartImportResult'];
+export type AccountPreferences = components['schemas']['AccountPreferences'];
 /** Result of a work-item action: the updated item, plus the source entity for `complete`. */
 export interface WorkItemActionResult {
   readonly workItem: WorkItem;
@@ -182,6 +186,15 @@ export interface ApiClient {
   updateBusinessPartner(id: string, body: UpdateBusinessPartner): Promise<BusinessPartner>;
   /** Org roster — employee quick-select for individual partners (T-012 D2). */
   listMembers(): Promise<Membership[]>;
+  // Standard chart v2 + display preferences (T-012 Phase 2).
+  getStandardChartDiff(): Promise<StandardChartDiff>;
+  importStandardChart(): Promise<StandardChartImportResult>;
+  getAccountPreferences(): Promise<AccountPreferences>;
+  updateAccountPreferences(body: {
+    pinned?: string[];
+    hidden?: string[];
+  }): Promise<AccountPreferences>;
+  updateLedgerAccountDefaults(recommended: string[]): Promise<AccountPreferences>;
 }
 
 export function createApiClient(config: ApiClientConfig): ApiClient {
@@ -347,5 +360,15 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
     updateBusinessPartner: (id, body) =>
       request<BusinessPartner>('PATCH', `/v1/business-partners/${encodeURIComponent(id)}`, body),
     listMembers: () => request<Membership[]>('GET', '/v1/members'),
+    getStandardChartDiff: () => request<StandardChartDiff>('GET', '/v1/accounts/standard-diff'),
+    importStandardChart: () =>
+      request<StandardChartImportResult>('POST', '/v1/accounts/import-standard'),
+    getAccountPreferences: () => request<AccountPreferences>('GET', '/v1/account-preferences'),
+    updateAccountPreferences: (body) =>
+      request<AccountPreferences>('PATCH', '/v1/account-preferences', body),
+    updateLedgerAccountDefaults: (recommended) =>
+      request<AccountPreferences>('PATCH', '/v1/account-preferences/ledger-default', {
+        recommended,
+      }),
   };
 }

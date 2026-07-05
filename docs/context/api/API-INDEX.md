@@ -1,9 +1,9 @@
 # API Index
 
-> Auto-generated at 2026-07-05T04:19:51.245Z — do NOT hand-edit.
-> Source: `docs/context/api/openapi.yaml` (SHA-256: `aafad6f22f78...`)
+> Auto-generated at 2026-07-05T07:07:12.238Z — do NOT hand-edit.
+> Source: `docs/context/api/openapi.yaml` (SHA-256: `15ef11973610...`)
 
-Total endpoints: **62**
+Total endpoints: **67**
 
 | Method | Path | Summary | Auth | Input (required) | Output (core) | Errors |
 |--------|------|---------|------|------------------|---------------|--------|
@@ -21,7 +21,12 @@ Total endpoints: **62**
 | POST | /v1/work-items/{id}/actions/{actionKey} | Execute a backend-authorized work item action | bearer | expectedVersion | workItem, source | 400, 401, 403, 404, 409 |
 | GET | /v1/accounts | List chart of accounts (ledger-scoped, code order = tree pre-order) | bearer | — | — | 400, 401, 403 |
 | POST | /v1/accounts | Create an account (accountant/admin) | bearer | code, name, category, direction | id, ledgerBookId, code, name, category, direction, level, isLeaf, auxTypes, active, createdAt, parentCode, defaultCashFlowItem | 400, 401, 403 |
-| POST | /v1/accounts/seed-standard | Seed the 《小企业准则》 standard chart (idempotent) | bearer | — | seeded | 401, 403 |
+| POST | /v1/accounts/seed-standard | Seed the standard chart v2 (idempotent; non-empty ledgers go through the safe diff engine) | bearer | — | seeded | 401, 403 |
+| GET | /v1/accounts/standard-diff | Preview standard chart v2 additions for this ledger (T-012 D6; no changes applied) | bearer | — | chartVersion, additions, parentConversions, conflicts, present | — |
+| POST | /v1/accounts/import-standard | Explicit additive import of standard chart v2 (adds missing; flips activity-free leaf parents; reports posted-leaf conflicts untouched) | bearer | — | chartVersion, added, convertedParents, conflicts | 403 |
+| GET | /v1/account-preferences | Merged account display preferences — ledger default + the caller's personal (T-012 D5; display-only) | bearer | — | recommended, pinned, hidden | — |
+| PATCH | /v1/account-preferences | Update the caller's personal pinned/hidden account lists | bearer | — | recommended, pinned, hidden | — |
+| PATCH | /v1/account-preferences/ledger-default | Update the team's recommended account list (accounting/admin) | bearer | recommended | recommended, pinned, hidden | 403 |
 | PATCH | /v1/accounts/{code} | Update an account's name / aux types (accountant/admin) | bearer | code | id, ledgerBookId, code, name, category, direction, level, isLeaf, auxTypes, active, createdAt, parentCode, defaultCashFlowItem | 400, 404 |
 | POST | /v1/accounts/{code}/deactivate | Deactivate an account (blocked if it has active children) | bearer | code | id, ledgerBookId, code, name, category, direction, level, isLeaf, auxTypes, active, createdAt, parentCode, defaultCashFlowItem | 400, 404 |
 | GET | /v1/vouchers | List journal vouchers (ledger-scoped; optional status filter) | bearer | — | — | 401, 403 |

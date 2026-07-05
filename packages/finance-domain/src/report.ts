@@ -313,7 +313,11 @@ export const BALANCE_SHEET_TEMPLATE: readonly ReportLineDef[] = [
     key: 'intangible_assets',
     label: '无形资产',
     level: 1,
-    terms: [{ prefix: '1701', side: 'net', sign: 1 }],
+    // 1702 累计摊销 carries a credit balance, so its net (debit − credit) subtracts itself.
+    terms: [
+      { prefix: '1701', side: 'net', sign: 1 },
+      { prefix: '1702', side: 'net', sign: 1 },
+    ],
   },
   {
     key: 'development_expenditure',

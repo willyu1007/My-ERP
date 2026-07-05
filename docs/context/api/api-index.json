@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-05T04:19:51.245Z",
+  "generatedAt": "2026-07-05T07:07:12.238Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "aafad6f22f78d62d193c54b7fb05c96667df1bfd36049cf03ca43dd7c3d2da68",
+  "sourceChecksumSha256": "15ef119736104b0ffaa0514d47bf7b4872de093ca0d982b8db725423b64c7d87",
   "stats": {
-    "totalEndpoints": 62,
+    "totalEndpoints": 67,
     "byTag": {
       "system": 1,
       "organization": 1,
@@ -12,7 +12,7 @@
       "invitations": 4,
       "members": 1,
       "work-items": 3,
-      "accounts": 5,
+      "accounts": 10,
       "vouchers": 7,
       "intakes": 6,
       "ledger": 2,
@@ -510,7 +510,7 @@
       "method": "POST",
       "path": "/v1/accounts/seed-standard",
       "operationId": "seedStandardChart",
-      "summary": "Seed the 《小企业准则》 standard chart (idempotent)",
+      "summary": "Seed the standard chart v2 (idempotent; non-empty ledgers go through the safe diff engine)",
       "tag": "accounts",
       "auth": "bearer",
       "input": {
@@ -530,6 +530,149 @@
       ],
       "example": {
         "curl": "curl -X POST '/v1/accounts/seed-standard' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/accounts/standard-diff",
+      "operationId": "getStandardChartDiff",
+      "summary": "Preview standard chart v2 additions for this ledger (T-012 D6; no changes applied)",
+      "tag": "accounts",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "chartVersion",
+          "additions",
+          "parentConversions",
+          "conflicts",
+          "present"
+        ]
+      },
+      "errors": [],
+      "example": {
+        "curl": "curl -X GET '/v1/accounts/standard-diff' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/accounts/import-standard",
+      "operationId": "importStandardChart",
+      "summary": "Explicit additive import of standard chart v2 (adds missing; flips activity-free leaf parents; reports posted-leaf conflicts untouched)",
+      "tag": "accounts",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 201,
+        "coreFields": [
+          "chartVersion",
+          "added",
+          "convertedParents",
+          "conflicts"
+        ]
+      },
+      "errors": [
+        403
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/accounts/import-standard' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/account-preferences",
+      "operationId": "getAccountPreferences",
+      "summary": "Merged account display preferences — ledger default + the caller's personal (T-012 D5; display-only)",
+      "tag": "accounts",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "recommended",
+          "pinned",
+          "hidden"
+        ]
+      },
+      "errors": [],
+      "example": {
+        "curl": "curl -X GET '/v1/account-preferences' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/account-preferences",
+      "operationId": "updateAccountPreferences",
+      "summary": "Update the caller's personal pinned/hidden account lists",
+      "tag": "accounts",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": {
+          "required": [],
+          "optional": [
+            "pinned",
+            "hidden"
+          ]
+        }
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "recommended",
+          "pinned",
+          "hidden"
+        ]
+      },
+      "errors": [],
+      "example": {
+        "curl": "curl -X PATCH '/v1/account-preferences' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/account-preferences/ledger-default",
+      "operationId": "updateLedgerAccountDefaults",
+      "summary": "Update the team's recommended account list (accounting/admin)",
+      "tag": "accounts",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": {
+          "required": [
+            "recommended"
+          ],
+          "optional": []
+        }
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "recommended",
+          "pinned",
+          "hidden"
+        ]
+      },
+      "errors": [
+        403
+      ],
+      "example": {
+        "curl": "curl -X PATCH '/v1/account-preferences/ledger-default' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"recommended\":\"<recommended>\"}'"
       }
     },
     {

@@ -10,6 +10,7 @@
  */
 import {
   ApiError,
+  type AccountPreferences,
   type BalanceSheet,
   type BusinessPartner,
   type CaptureIntake,
@@ -35,6 +36,8 @@ import {
   type PeriodClose,
   type PeriodCloseReadiness,
   type PeriodCloseResult,
+  type StandardChartDiff,
+  type StandardChartImportResult,
   type TagCashFlow,
   type UntaggedCashLine,
   type UpdateBusinessPartner,
@@ -426,4 +429,42 @@ export async function listMembers(): Promise<readonly Membership[]> {
   const api = getFinanceApi();
   if (!api) return [];
   return api.listMembers();
+}
+
+// --- Account display preferences + standard chart v2 (T-012 Phase 2) ---
+
+const EMPTY_PREFERENCES: AccountPreferences = { recommended: [], pinned: [], hidden: [] };
+
+/** Merged picker preferences: ledger default + personal (empty in demo mode). */
+export async function getAccountPreferences(): Promise<AccountPreferences> {
+  const api = getFinanceApi();
+  if (!api) return EMPTY_PREFERENCES;
+  return api.getAccountPreferences();
+}
+
+/** Update the caller's personal pinned/hidden lists. Requires the backend. */
+export async function updateAccountPreferences(body: {
+  pinned?: string[];
+  hidden?: string[];
+}): Promise<AccountPreferences> {
+  return requireFinanceApi().updateAccountPreferences(body);
+}
+
+/** Update the team's recommended list (accounting/admin). Requires the backend. */
+export async function updateLedgerAccountDefaults(
+  recommended: string[],
+): Promise<AccountPreferences> {
+  return requireFinanceApi().updateLedgerAccountDefaults(recommended);
+}
+
+/** Preview standard chart v2 additions for this ledger (`null` in demo mode). */
+export async function getStandardChartDiff(): Promise<StandardChartDiff | null> {
+  const api = getFinanceApi();
+  if (!api) return null;
+  return api.getStandardChartDiff();
+}
+
+/** Apply the explicit additive standard-chart import (D6). Requires the backend. */
+export async function importStandardChart(): Promise<StandardChartImportResult> {
+  return requireFinanceApi().importStandardChart();
 }

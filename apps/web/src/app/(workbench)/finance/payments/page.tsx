@@ -1,4 +1,5 @@
 import {
+  getAccountPreferences,
   getBusinessPartner,
   listAccounts,
   listBusinessPartners,
@@ -24,13 +25,15 @@ export default async function PaymentsPage({
 }) {
   const sp = await searchParams;
   const partnerId = first(sp.partnerId);
-  const [payments, accounts, contracts, partners, filterPartner] = await Promise.all([
-    listPayments(partnerId ? { partnerId } : undefined),
-    listAccounts(),
-    listContracts(),
-    listBusinessPartners({ active: true }),
-    partnerId ? getBusinessPartner(partnerId) : Promise.resolve(null),
-  ]);
+  const [payments, accounts, contracts, partners, filterPartner, accountPreferences] =
+    await Promise.all([
+      listPayments(partnerId ? { partnerId } : undefined),
+      listAccounts(),
+      listContracts(),
+      listBusinessPartners({ active: true }),
+      partnerId ? getBusinessPartner(partnerId) : Promise.resolve(null),
+      getAccountPreferences(),
+    ]);
   const today = new Date().toISOString().slice(0, 10);
 
   return (
@@ -40,6 +43,7 @@ export default async function PaymentsPage({
       contracts={contracts}
       partners={partners}
       filterPartner={filterPartner}
+      accountPreferences={accountPreferences}
       initialDate={today}
       initialEntryOpen={first(sp.entry) === '1'}
     />

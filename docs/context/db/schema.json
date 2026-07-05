@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-07-05T04:12:07.968Z",
+  "updatedAt": "2026-07-05T07:05:05.107Z",
   "ssot": {
     "mode": "repo-prisma",
     "source": {
@@ -194,6 +194,127 @@
           "fields": [
             "ledgerBookId",
             "code"
+          ],
+          "name": null,
+          "map": null
+        }
+      ]
+    },
+    {
+      "name": "AccountPreference",
+      "dbName": "account_preference",
+      "schema": null,
+      "columns": [
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "created_at",
+          "dbType": "Timestamptz",
+          "default": "now()",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "hidden",
+          "type": "String",
+          "nullable": false,
+          "list": true,
+          "dbName": null,
+          "dbType": null,
+          "default": "[]",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "id",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": "Uuid",
+          "default": "uuid()",
+          "primaryKey": true,
+          "unique": false
+        },
+        {
+          "name": "ledgerBookId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "ledger_book_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "pinned",
+          "type": "String",
+          "nullable": false,
+          "list": true,
+          "dbName": null,
+          "dbType": null,
+          "default": "[]",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "recommended",
+          "type": "String",
+          "nullable": false,
+          "list": true,
+          "dbName": null,
+          "dbType": null,
+          "default": "[]",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "updated_at",
+          "dbType": "Timestamptz",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "userId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "user_id",
+          "dbType": null,
+          "default": "\"\"",
+          "primaryKey": false,
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "field": "ledgerBook",
+          "to": "LedgerBook",
+          "optional": false,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "ledgerBookId"
+          ],
+          "references": [
+            "id"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "type": "unique",
+          "fields": [
+            "ledgerBookId",
+            "userId"
           ],
           "name": null,
           "map": null
@@ -2004,6 +2125,15 @@
         }
       ],
       "relations": [
+        {
+          "field": "accountPreferences",
+          "to": "AccountPreference",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
+        },
         {
           "field": "accounts",
           "to": "Account",

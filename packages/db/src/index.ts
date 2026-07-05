@@ -568,6 +568,24 @@ export async function countActiveChildrenTx(tx: TxClient, parentCode: string): P
   return tx.account.count({ where: { parentCode, active: true } });
 }
 
+/**
+ * Whether an account code carries any accounting activity in the current ledger
+ * scope — voucher lines or an opening balance. Used by the standard-chart import
+ * (T-012 Phase 2): a posted leaf must not silently become a branch.
+ */
+export async function accountHasActivityTx(tx: TxClient, code: string): Promise<boolean> {
+  const line = await tx.journalEntryLine.findFirst({
+    where: { accountCode: code },
+    select: { id: true },
+  });
+  if (line) return true;
+  const opening = await tx.openingBalance.findFirst({
+    where: { accountCode: code },
+    select: { id: true },
+  });
+  return opening !== null;
+}
+
 /** Idempotent chart seed: inserts only codes not already present in the ledger. */
 export async function seedAccountsTx(
   tx: TxClient,
@@ -2426,6 +2444,68 @@ export async function updateBusinessPartnerTx(
   });
   if (res.count === 0) return null;
   return getBusinessPartnerTx(tx, id);
+}
+
+/* ---- AccountPreference (科目展示偏好, T-012 D5) — ledger-scoped, display-only ---- */
+
+export interface AccountPreferenceEntity {
+  ledgerBookId: string;
+  /** '' = the ledger default (team recommended); else a member's personal prefs. */
+  userId: string;
+  recommended: string[];
+  pinned: string[];
+  hidden: string[];
+}
+
+export async function getAccountPreferenceTx(
+  tx: TxClient,
+  userId: string,
+): Promise<AccountPreferenceEntity | null> {
+  const row = await tx.accountPreference.findFirst({ where: { userId } });
+  if (!row) return null;
+  return {
+    ledgerBookId: row.ledgerBookId,
+    userId: row.userId,
+    recommended: row.recommended,
+    pinned: row.pinned,
+    hidden: row.hidden,
+  };
+}
+
+export interface UpsertAccountPreferenceInput {
+  ledgerBookId: string;
+  userId: string;
+  recommended?: string[];
+  pinned?: string[];
+  hidden?: string[];
+}
+
+export async function upsertAccountPreferenceTx(
+  tx: TxClient,
+  input: UpsertAccountPreferenceInput,
+): Promise<AccountPreferenceEntity> {
+  const update: { recommended?: string[]; pinned?: string[]; hidden?: string[] } = {};
+  if (input.recommended !== undefined) update.recommended = input.recommended;
+  if (input.pinned !== undefined) update.pinned = input.pinned;
+  if (input.hidden !== undefined) update.hidden = input.hidden;
+  const row = await tx.accountPreference.upsert({
+    where: { ledgerBookId_userId: { ledgerBookId: input.ledgerBookId, userId: input.userId } },
+    update,
+    create: {
+      ledgerBookId: input.ledgerBookId,
+      userId: input.userId,
+      recommended: input.recommended ?? [],
+      pinned: input.pinned ?? [],
+      hidden: input.hidden ?? [],
+    },
+  });
+  return {
+    ledgerBookId: row.ledgerBookId,
+    userId: row.userId,
+    recommended: row.recommended,
+    pinned: row.pinned,
+    hidden: row.hidden,
+  };
 }
 
 export { Prisma } from '@prisma/client';

@@ -113,23 +113,48 @@ model LedgerBook {
   openingPeriod    String?  @map("opening_period")
   createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  organization     Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  accounts         Account[]
-  vouchers         JournalVoucher[]
-  openingBalances  OpeningBalance[]
-  workItems        WorkItem[]
-  workItemEvents   WorkItemEvent[]
-  outboxEvents     OutboxEvent[]
-  intakes          Intake[]
-  attachments      Attachment[]
-  periodCloses     PeriodClose[]
-  cashFlowItems    CashFlowItem[]
-  paymentDocs      PaymentDoc[]
-  contracts        Contract[]
-  businessPartners BusinessPartner[]
+  organization       Organization        @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  accounts           Account[]
+  vouchers           JournalVoucher[]
+  openingBalances    OpeningBalance[]
+  workItems          WorkItem[]
+  workItemEvents     WorkItemEvent[]
+  outboxEvents       OutboxEvent[]
+  intakes            Intake[]
+  attachments        Attachment[]
+  periodCloses       PeriodClose[]
+  cashFlowItems      CashFlowItem[]
+  paymentDocs        PaymentDoc[]
+  contracts          Contract[]
+  businessPartners   BusinessPartner[]
+  accountPreferences AccountPreference[]
 
   @@index([orgId])
   @@map("ledger_book")
+}
+
+/// 科目展示偏好 (T-012 D5). Display/ranking only — never affects account validity,
+/// hierarchy, leaf-only posting, or permissions; hidden accounts stay searchable.
+/// One row per (ledger, scope): userId '' = the ledger default (team recommended
+/// list, maintained by accounting/admin); otherwise a member's personal prefs.
+model AccountPreference {
+  id           String   @id @default(uuid()) @db.Uuid
+  ledgerBookId String   @map("ledger_book_id") @db.Uuid
+  /// '' = ledger default; else the member's userId.
+  userId       String   @default("") @map("user_id")
+  /// Ledger default: recommended/common account codes (ordered).
+  recommended  String[] @default([])
+  /// Personal: pinned/favorite account codes (ordered).
+  pinned       String[] @default([])
+  /// Personal: hidden/less-shown account codes.
+  hidden       String[] @default([])
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  ledgerBook LedgerBook @relation(fields: [ledgerBookId], references: [id], onDelete: Cascade)
+
+  @@unique([ledgerBookId, userId])
+  @@map("account_preference")
 }
 
 /// A platform work item (待办/工作项). Current queue state only; source business

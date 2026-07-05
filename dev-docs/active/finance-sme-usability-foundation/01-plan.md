@@ -84,12 +84,13 @@
   - [x] Partners are found by typing a person/company name; individual entry supports an optional WeChat ID.
   - [x] Payment and contract lists can be filtered by partner (`partnerId` param + web filter chip).
   - [x] Existing text-only rows remain readable; snapshots stay stable after partner rename/deactivate.
-- Standard chart v2 and account picker:
-  - [ ] User can pick a leaf account through progressive selection.
-  - [ ] Browser-native suggestion popover no longer appears over the picker.
-  - [ ] Broad common SME second-level accounts are available without requiring per-partner account children.
-  - [ ] Existing ledgers only receive chart additions through explicit import/diff review.
-  - [ ] Cash/bank account identification is tree/metadata-based, not a hardcoded list.
+- Standard chart v2 and account picker (Phase 2 done 2026-07-05):
+  - [x] User can pick a leaf account through progressive selection (常用 chips + 分类 → 主科目 → 明细).
+  - [x] Browser-native suggestion popover no longer appears over the picker (autoComplete/autoCorrect/spellCheck suppressed on picker inputs).
+  - [x] Broad common SME second-level accounts are available without requiring per-partner account children (92-account v2 template).
+  - [x] Existing ledgers only receive chart additions through explicit import/diff review (`standard-diff` preview + `import-standard`; posted-leaf conflicts skipped).
+  - [x] Cash/bank account identification is tree/metadata-based (`CASH_ACCOUNT_ROOT_CODES` + tree-prefix ancestor test), not a scattered hardcoded list.
+  - [x] Ledger-default + personal display preferences affect picker ranking/visibility only; hidden accounts stay searchable/selectable.
 - Cashier-to-accountant enrichment:
   - [ ] Cashier simple doc -> accountant enrichment -> approval/confirmation -> voucher flow works.
   - [ ] Cashier form has no account-subject fields; un-enriched docs cannot be approved/confirmed.

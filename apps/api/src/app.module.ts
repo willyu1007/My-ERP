@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AccountPreferencesController } from './account-preferences/account-preferences.controller';
 import { AccountsController } from './accounts/accounts.controller';
 import { AuthModule } from './auth/auth.module';
 import { BusinessPartnersController } from './business-partners/business-partners.controller';
@@ -40,6 +41,7 @@ import { WorkItemsService } from './work-items/work-items.service';
     InvitationsController,
     MembersController,
     AccountsController,
+    AccountPreferencesController,
     VouchersController,
     WorkItemsController,
     IntakesController,
