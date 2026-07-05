@@ -93,3 +93,17 @@ tasks:
     feature_id: F-000
     dev_docs_path: dev-docs/active/fast-entry-stash-drafts
     updated: 2026-06-26
+  - id: T-011
+    slug: web-workbench-split-imports
+    status: archived
+    milestone_id: M-000
+    feature_id: F-000
+    dev_docs_path: dev-docs/archive/web-workbench-split-imports
+    updated: 2026-07-04
+  - id: T-012
+    slug: finance-sme-usability-foundation
+    status: planned
+    milestone_id: M-000
+    feature_id: F-000
+    dev_docs_path: dev-docs/active/finance-sme-usability-foundation
+    updated: 2026-07-04

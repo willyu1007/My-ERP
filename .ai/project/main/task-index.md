@@ -20,4 +20,6 @@ Project: `main`
 | T-008 erp-multi-workflow-compat | done | F-000 | dev-docs/active/erp-multi-workflow-compat |
 | T-009 finance-workbench-kernel-rewire | in-progress | F-000 | dev-docs/active/finance-workbench-kernel-rewire |
 | T-010 fast-entry-stash-drafts | done | F-000 | dev-docs/active/fast-entry-stash-drafts |
+| T-011 web-workbench-split-imports | archived | F-000 | dev-docs/archive/web-workbench-split-imports |
+| T-012 finance-sme-usability-foundation | planned | F-000 | dev-docs/active/finance-sme-usability-foundation |
 <!-- AUTO-GENERATED:END task-index -->
