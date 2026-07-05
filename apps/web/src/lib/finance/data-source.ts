@@ -11,9 +11,11 @@
 import {
   ApiError,
   type BalanceSheet,
+  type BusinessPartner,
   type CaptureIntake,
   type CashFlowItem,
   type CashFlowStatement,
+  type CreateBusinessPartner,
   type CreateVoucher,
   type Contract,
   type ContractStatus,
@@ -23,6 +25,9 @@ import {
   type CreatePayment,
   type IncomeStatement,
   type Intake,
+  type Membership,
+  type PartnerPartyType,
+  type PartnerRole,
   type PaymentConfirmResult,
   type PaymentDirection,
   type PaymentDoc,
@@ -32,6 +37,7 @@ import {
   type PeriodCloseResult,
   type TagCashFlow,
   type UntaggedCashLine,
+  type UpdateBusinessPartner,
   type WorkItem,
   type WorkItemAction,
   type WorkItemActionRequest,
@@ -280,6 +286,7 @@ export async function actOnWorkItem(
 export async function listPayments(filters?: {
   status?: PaymentStatus;
   direction?: PaymentDirection;
+  partnerId?: string;
 }): Promise<readonly PaymentDoc[]> {
   const api = getFinanceApi();
   if (!api) return [];
@@ -331,6 +338,7 @@ export async function voidPayment(
 export async function listContracts(filters?: {
   status?: ContractStatus;
   type?: ContractType;
+  partnerId?: string;
 }): Promise<readonly Contract[]> {
   const api = getFinanceApi();
   if (!api) return [];
@@ -372,4 +380,50 @@ export async function updateContract(
   input: { expectedVersion: number; status?: ContractStatus },
 ): Promise<Contract> {
   return requireFinanceApi().updateContract(id, input);
+}
+
+// --- Business partners / 往来单位 (T-012) ---
+
+/** Partner master for pickers/lists (empty in demo mode). */
+export async function listBusinessPartners(filters?: {
+  active?: boolean;
+  partyType?: PartnerPartyType;
+  role?: PartnerRole;
+  q?: string;
+}): Promise<readonly BusinessPartner[]> {
+  const api = getFinanceApi();
+  if (!api) return [];
+  return api.listBusinessPartners(filters);
+}
+
+/** A single partner, or `null` (not found / demo mode). */
+export async function getBusinessPartner(id: string): Promise<BusinessPartner | null> {
+  const api = getFinanceApi();
+  if (!api) return null;
+  try {
+    return await api.getBusinessPartner(id);
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return null;
+    throw err;
+  }
+}
+
+/** Create a partner (org-entered; D2 confirmation applies). Requires the backend. */
+export async function createBusinessPartner(input: CreateBusinessPartner): Promise<BusinessPartner> {
+  return requireFinanceApi().createBusinessPartner(input);
+}
+
+/** Update / deactivate a partner (version-guarded). Requires the backend. */
+export async function updateBusinessPartner(
+  id: string,
+  input: UpdateBusinessPartner,
+): Promise<BusinessPartner> {
+  return requireFinanceApi().updateBusinessPartner(id, input);
+}
+
+/** Org roster — employee quick-select for individual partners (empty in demo mode). */
+export async function listMembers(): Promise<readonly Membership[]> {
+  const api = getFinanceApi();
+  if (!api) return [];
+  return api.listMembers();
 }

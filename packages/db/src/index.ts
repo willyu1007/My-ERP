@@ -1947,6 +1947,7 @@ export interface PaymentDocEntity {
   date: string;
   period: string;
   counterparty: string;
+  partnerId: string | null;
   summary: string;
   /** 2dp string */
   amount: string;
@@ -1971,6 +1972,7 @@ function toPaymentDoc(p: {
   date: Date;
   period: string;
   counterparty: string;
+  partnerId: string | null;
   summary: string;
   amount: Prisma.Decimal;
   cashAccountCode: string;
@@ -1993,6 +1995,7 @@ function toPaymentDoc(p: {
     date: p.date.toISOString().slice(0, 10),
     period: p.period,
     counterparty: p.counterparty,
+    partnerId: p.partnerId,
     summary: p.summary,
     amount: p.amount.toFixed(2),
     cashAccountCode: p.cashAccountCode,
@@ -2016,6 +2019,7 @@ export interface CreatePaymentDocInput {
   date: string;
   period: string;
   counterparty: string;
+  partnerId?: string | null;
   summary: string;
   amount: string;
   cashAccountCode: string;
@@ -2036,6 +2040,7 @@ export async function createPaymentDocTx(
       date: new Date(input.date),
       period: input.period,
       counterparty: input.counterparty,
+      partnerId: input.partnerId ?? null,
       summary: input.summary,
       amount: input.amount,
       cashAccountCode: input.cashAccountCode,
@@ -2055,12 +2060,13 @@ export async function getPaymentDocTx(tx: TxClient, id: string): Promise<Payment
 
 export async function listPaymentDocsTx(
   tx: TxClient,
-  filters?: { status?: string; direction?: string },
+  filters?: { status?: string; direction?: string; partnerId?: string },
 ): Promise<PaymentDocEntity[]> {
   const rows = await tx.paymentDoc.findMany({
     where: {
       ...(filters?.status ? { status: filters.status } : {}),
       ...(filters?.direction ? { direction: filters.direction } : {}),
+      ...(filters?.partnerId ? { partnerId: filters.partnerId } : {}),
     },
     orderBy: [{ date: 'desc' }, { no: 'desc' }],
   });
@@ -2128,6 +2134,7 @@ export interface ContractEntity {
   title: string;
   type: string;
   counterparty: string;
+  partnerId: string | null;
   amount: string | null;
   currency: string;
   status: string;
@@ -2147,6 +2154,7 @@ function toContract(c: {
   title: string;
   type: string;
   counterparty: string;
+  partnerId: string | null;
   amount: Prisma.Decimal | null;
   currency: string;
   status: string;
@@ -2165,6 +2173,7 @@ function toContract(c: {
     title: c.title,
     type: c.type,
     counterparty: c.counterparty,
+    partnerId: c.partnerId,
     amount: c.amount ? c.amount.toFixed(2) : null,
     currency: c.currency,
     status: c.status,
@@ -2184,6 +2193,7 @@ export interface CreateContractInput {
   title: string;
   type: string;
   counterparty: string;
+  partnerId?: string | null;
   amount?: string | null;
   currency?: string;
   startDate?: string | null;
@@ -2203,6 +2213,7 @@ export async function createContractTx(
       title: input.title,
       type: input.type,
       counterparty: input.counterparty,
+      partnerId: input.partnerId ?? null,
       amount: input.amount ?? null,
       currency: input.currency ?? 'CNY',
       status: 'draft',
@@ -2222,12 +2233,13 @@ export async function getContractTx(tx: TxClient, id: string): Promise<ContractE
 
 export async function listContractsTx(
   tx: TxClient,
-  filters?: { status?: string; type?: string },
+  filters?: { status?: string; type?: string; partnerId?: string },
 ): Promise<ContractEntity[]> {
   const rows = await tx.contract.findMany({
     where: {
       ...(filters?.status ? { status: filters.status } : {}),
       ...(filters?.type ? { type: filters.type } : {}),
+      ...(filters?.partnerId ? { partnerId: filters.partnerId } : {}),
     },
     orderBy: [{ createdAt: 'desc' }, { code: 'desc' }],
   });
@@ -2243,6 +2255,7 @@ export interface UpdateContractInput {
   title?: string;
   type?: string;
   counterparty?: string;
+  partnerId?: string | null;
   amount?: string | null;
   currency?: string;
   status?: string;
@@ -2261,6 +2274,7 @@ export async function updateContractTx(
   if (input.title !== undefined) data.title = input.title;
   if (input.type !== undefined) data.type = input.type;
   if (input.counterparty !== undefined) data.counterparty = input.counterparty;
+  if (input.partnerId !== undefined) data.partnerId = input.partnerId;
   if (input.amount !== undefined) data.amount = input.amount;
   if (input.currency !== undefined) data.currency = input.currency;
   if (input.status !== undefined) data.status = input.status;
@@ -2295,6 +2309,123 @@ export async function listPaymentDocsByContractTx(
     orderBy: [{ date: 'asc' }, { no: 'asc' }],
   });
   return rows.map(toPaymentDoc);
+}
+
+/* ---- BusinessPartner (往来单位, T-012) — ledger-scoped ---- */
+
+export interface BusinessPartnerEntity {
+  id: string;
+  ledgerBookId: string;
+  /** organization | individual */
+  partyType: string;
+  name: string;
+  roles: string[];
+  tags: string[];
+  memberUserId: string | null;
+  wechat: string;
+  remark: string;
+  active: boolean;
+  createdBy: string;
+  version: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateBusinessPartnerInput {
+  ledgerBookId: string;
+  partyType: string;
+  name: string;
+  roles?: string[];
+  tags?: string[];
+  memberUserId?: string | null;
+  wechat?: string;
+  remark?: string;
+  createdBy: string;
+}
+
+export async function createBusinessPartnerTx(
+  tx: TxClient,
+  input: CreateBusinessPartnerInput,
+): Promise<BusinessPartnerEntity> {
+  return tx.businessPartner.create({
+    data: {
+      ledgerBookId: input.ledgerBookId,
+      partyType: input.partyType,
+      name: input.name,
+      roles: input.roles ?? [],
+      tags: input.tags ?? [],
+      memberUserId: input.memberUserId ?? null,
+      wechat: input.wechat ?? '',
+      remark: input.remark ?? '',
+      createdBy: input.createdBy,
+    },
+  });
+}
+
+export async function getBusinessPartnerTx(
+  tx: TxClient,
+  id: string,
+): Promise<BusinessPartnerEntity | null> {
+  return tx.businessPartner.findUnique({ where: { id } });
+}
+
+export async function listBusinessPartnersTx(
+  tx: TxClient,
+  filters?: { active?: boolean; partyType?: string; role?: string; q?: string },
+): Promise<BusinessPartnerEntity[]> {
+  const rows = await tx.businessPartner.findMany({
+    where: {
+      ...(filters?.active !== undefined ? { active: filters.active } : {}),
+      ...(filters?.partyType ? { partyType: filters.partyType } : {}),
+      ...(filters?.role ? { roles: { has: filters.role } } : {}),
+      ...(filters?.q
+        ? {
+            OR: [
+              { name: { contains: filters.q, mode: 'insensitive' } },
+              { wechat: { contains: filters.q, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+    },
+    orderBy: [{ active: 'desc' }, { name: 'asc' }],
+  });
+  return rows;
+}
+
+export interface UpdateBusinessPartnerInput {
+  expectedVersion: number;
+  partyType?: string;
+  name?: string;
+  roles?: string[];
+  tags?: string[];
+  memberUserId?: string | null;
+  wechat?: string;
+  remark?: string;
+  active?: boolean;
+}
+
+/** Optimistic update (version-guarded). Returns null on a version mismatch (conflict). */
+export async function updateBusinessPartnerTx(
+  tx: TxClient,
+  id: string,
+  input: UpdateBusinessPartnerInput,
+): Promise<BusinessPartnerEntity | null> {
+  const data: Prisma.BusinessPartnerUpdateManyMutationInput = { version: { increment: 1 } };
+  if (input.partyType !== undefined) data.partyType = input.partyType;
+  if (input.name !== undefined) data.name = input.name;
+  if (input.roles !== undefined) data.roles = input.roles;
+  if (input.tags !== undefined) data.tags = input.tags;
+  if (input.memberUserId !== undefined) data.memberUserId = input.memberUserId;
+  if (input.wechat !== undefined) data.wechat = input.wechat;
+  if (input.remark !== undefined) data.remark = input.remark;
+  if (input.active !== undefined) data.active = input.active;
+
+  const res = await tx.businessPartner.updateMany({
+    where: { id, version: input.expectedVersion },
+    data,
+  });
+  if (res.count === 0) return null;
+  return getBusinessPartnerTx(tx, id);
 }
 
 export { Prisma } from '@prisma/client';

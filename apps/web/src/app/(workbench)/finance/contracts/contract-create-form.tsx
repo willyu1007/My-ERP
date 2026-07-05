@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@my-erp/ui/feedback';
+import type { BusinessPartner } from '@my-erp/api-client';
 import {
   DateButton,
   ExpandableTextField,
@@ -12,6 +13,7 @@ import {
   Select,
 } from '@my-erp/ui/primitives';
 import { CONTRACT_TYPE } from '@/lib/finance/contract-display';
+import { PartnerPicker } from '../_components/partner-picker';
 import { createContractAction } from './actions';
 import styles from './contracts.module.css';
 
@@ -158,13 +160,18 @@ function buildSummary(terms: TermValues): string {
 }
 
 /** 新建合同 — drafts a Contract (code auto-assigned), then routes to its detail/timeline. */
-export function ContractCreateForm() {
+export function ContractCreateForm({
+  partners,
+}: {
+  readonly partners: readonly BusinessPartner[];
+}) {
   const router = useRouter();
   const toast = useToast();
   const [pending, start] = useTransition();
   const [title, setTitle] = useState('');
   const [type, setType] = useState<'sales' | 'purchase' | 'service' | 'other'>('sales');
   const [counterparty, setCounterparty] = useState('');
+  const [partnerId, setPartnerId] = useState('');
   const [amount, setAmount] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -217,6 +224,7 @@ export function ContractCreateForm() {
         title: title.trim(),
         type,
         counterparty: counterparty.trim(),
+        ...(partnerId ? { partnerId } : {}),
         amount: amount === '' ? null : amount,
         startDate: startDate || null,
         endDate: endDate || null,
@@ -260,17 +268,24 @@ export function ContractCreateForm() {
             onChange={(e) => setTitle(e.target.value)}
           />
         </label>
-        <label className="mt-field">
+        <div className="mt-field">
           <span className="mt-label">对方单位</span>
-          <input
-            id="contract-counterparty"
-            name="counterparty"
-            className="mt-input"
-            value={counterparty}
-            placeholder="客户 / 供应商"
-            onChange={(e) => setCounterparty(e.target.value)}
+          <PartnerPicker
+            partners={partners}
+            partnerId={partnerId}
+            text={counterparty}
+            onSelect={(partner) => {
+              setPartnerId(partner.id);
+              setCounterparty(partner.name);
+            }}
+            onTextChange={(text) => {
+              setPartnerId('');
+              setCounterparty(text);
+            }}
+            ariaLabel="对方单位"
+            placeholder="搜索或输入客户 / 供应商"
           />
-        </label>
+        </div>
         <label className="mt-field">
           <span className="mt-label">合同金额（可选）</span>
           <input

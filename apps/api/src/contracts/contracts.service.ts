@@ -8,6 +8,7 @@ import {
   appendAuditRecordTx,
   countContractsTx,
   createContractTx,
+  getBusinessPartnerTx,
   getContractTx,
   getLedgerBookByIdTx,
   listContractsTx,
@@ -26,11 +27,14 @@ const TYPES = new Set(['sales', 'purchase', 'service', 'other']);
 const STATUSES = new Set(['draft', 'active', 'closed']);
 const DATE_RE = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 const AMOUNT_RE = /^\d+(\.\d{1,2})?$/;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export interface CreateContractDto {
   title: string;
   type?: string;
   counterparty?: string;
+  /** Optional BusinessPartner link (T-012); must be an active in-scope partner. */
+  partnerId?: string | null;
   amount?: string | null;
   startDate?: string | null;
   endDate?: string | null;
@@ -41,6 +45,7 @@ export interface UpdateContractDto {
   title?: string;
   type?: string;
   counterparty?: string;
+  partnerId?: string | null;
   amount?: string | null;
   status?: string;
   startDate?: string | null;
@@ -88,8 +93,10 @@ export class ContractsService {
   async list(
     identity: Identity,
     ledgerBookId: string,
-    filters: { status?: string; type?: string },
+    filters: { status?: string; type?: string; partnerId?: string },
   ) {
+    if (filters.partnerId && !UUID_RE.test(filters.partnerId))
+      throw new BadRequestException('partnerId must be a uuid');
     return withScope(identity.orgId, ledgerBookId, async (tx) =>
       (await listContractsTx(tx, filters)).map(toDto),
     );
@@ -141,10 +148,21 @@ export class ContractsService {
     const amount = normalizeAmount(input.amount);
     assertDate(input.startDate, 'startDate');
     assertDate(input.endDate, 'endDate');
+    const partnerId = input.partnerId || null;
+    if (partnerId && !UUID_RE.test(partnerId))
+      throw new BadRequestException('partnerId must be a uuid');
 
     return withScope(identity.orgId, ledgerBookId, async (tx) => {
       const book = await getLedgerBookByIdTx(tx, ledgerBookId);
       if (!book) throw new NotFoundException('ledger book not found in your organization');
+      // T-012: resolve the partner link in-scope; the contract keeps its own text snapshot.
+      let counterparty = input.counterparty?.trim() ?? '';
+      if (partnerId) {
+        const partner = await getBusinessPartnerTx(tx, partnerId);
+        if (!partner) throw new BadRequestException('往来单位不存在');
+        if (!partner.active) throw new BadRequestException('往来单位已停用');
+        if (!counterparty) counterparty = partner.name;
+      }
       const seq = (await countContractsTx(tx)) + 1;
       const code = `HT-${book.fiscalYear}-${String(seq).padStart(3, '0')}`;
       const c = await createContractTx(tx, {
@@ -152,7 +170,8 @@ export class ContractsService {
         code,
         title: input.title.trim(),
         type,
-        counterparty: input.counterparty?.trim() ?? '',
+        counterparty,
+        partnerId,
         amount,
         startDate: input.startDate || null,
         endDate: input.endDate || null,
@@ -172,16 +191,30 @@ export class ContractsService {
     assertDate(input.startDate, 'startDate');
     assertDate(input.endDate, 'endDate');
 
+    const partnerId = input.partnerId === undefined ? undefined : input.partnerId || null;
+    if (partnerId && !UUID_RE.test(partnerId))
+      throw new BadRequestException('partnerId must be a uuid');
+
     return withScope(identity.orgId, ledgerBookId, async (tx) => {
       const existing = await getContractTx(tx, id);
       if (!existing) throw new NotFoundException('contract not found');
       if (existing.status === 'closed') throw new BadRequestException('已归档合同不可修改');
 
+      // T-012: linking a partner refreshes the snapshot unless the caller sets it explicitly.
+      let counterparty = input.counterparty?.trim();
+      if (partnerId) {
+        const partner = await getBusinessPartnerTx(tx, partnerId);
+        if (!partner) throw new BadRequestException('往来单位不存在');
+        if (!partner.active) throw new BadRequestException('往来单位已停用');
+        if (counterparty === undefined) counterparty = partner.name;
+      }
+
       const updated = await updateContractTx(tx, id, {
         expectedVersion: input.expectedVersion,
         title: input.title?.trim(),
         type: input.type,
-        counterparty: input.counterparty?.trim(),
+        counterparty,
+        partnerId,
         amount,
         status: input.status,
         startDate: input.startDate !== undefined ? input.startDate || null : undefined,

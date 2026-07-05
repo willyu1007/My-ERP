@@ -10,6 +10,29 @@
   flex-wrap: wrap;
 }
 
+.filterChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--bg-2, #f4f5f7);
+  border: 1px solid var(--border-1);
+  border-radius: 999px;
+  color: var(--fg-2);
+  font-size: var(--small-size);
+}
+
+.filterChip a {
+  color: var(--fg-3);
+  text-decoration: none;
+  font-size: var(--body-size);
+  line-height: 1;
+}
+
+.filterChip a:hover {
+  color: var(--fg-1);
+}
+
 .entryPanel {
   position: relative;
   display: grid;

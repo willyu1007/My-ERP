@@ -25,14 +25,14 @@ Project: `main`
 <!-- AUTO-GENERATED:START dashboard -->
 ## Summary
 
-- Tasks: 12 (planned: 1, in-progress: 1, blocked: 0, done: 9, archived: 1)
+- Tasks: 12 (planned: 0, in-progress: 2, blocked: 0, done: 9, archived: 1)
 
 ## Recent tasks
 
 | Task | Status | Feature | Dev Docs |
 | --- | --- | --- | --- |
+| T-012 finance-sme-usability-foundation | in-progress | F-000 | dev-docs/active/finance-sme-usability-foundation |
 | T-011 web-workbench-split-imports | archived | F-000 | dev-docs/archive/web-workbench-split-imports |
-| T-012 finance-sme-usability-foundation | planned | F-000 | dev-docs/active/finance-sme-usability-foundation |
 | T-010 fast-entry-stash-drafts | done | F-000 | dev-docs/active/fast-entry-stash-drafts |
 | T-009 finance-workbench-kernel-rewire | in-progress | F-000 | dev-docs/active/finance-workbench-kernel-rewire |
 | T-002 web-workbench-foundation | done | F-000 | dev-docs/active/web-workbench-foundation |

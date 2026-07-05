@@ -113,19 +113,20 @@ model LedgerBook {
   openingPeriod    String?  @map("opening_period")
   createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  organization    Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  accounts        Account[]
-  vouchers        JournalVoucher[]
-  openingBalances OpeningBalance[]
-  workItems       WorkItem[]
-  workItemEvents  WorkItemEvent[]
-  outboxEvents    OutboxEvent[]
-  intakes         Intake[]
-  attachments     Attachment[]
-  periodCloses    PeriodClose[]
-  cashFlowItems   CashFlowItem[]
-  paymentDocs     PaymentDoc[]
-  contracts       Contract[]
+  organization     Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  accounts         Account[]
+  vouchers         JournalVoucher[]
+  openingBalances  OpeningBalance[]
+  workItems        WorkItem[]
+  workItemEvents   WorkItemEvent[]
+  outboxEvents     OutboxEvent[]
+  intakes          Intake[]
+  attachments      Attachment[]
+  periodCloses     PeriodClose[]
+  cashFlowItems    CashFlowItem[]
+  paymentDocs      PaymentDoc[]
+  contracts        Contract[]
+  businessPartners BusinessPartner[]
 
   @@index([orgId])
   @@map("ledger_book")
@@ -446,7 +447,11 @@ model PaymentDoc {
   direction           String
   date                DateTime @db.Date
   period              String
+  /// Immutable display snapshot of the counterparty at document time (T-012: kept
+  /// even when partnerId is set — history never depends on live partner master).
   counterparty        String
+  /// Optional BusinessPartner link (T-012). Plain UUID like contractId; no FK relation.
+  partnerId           String?  @map("partner_id") @db.Uuid
   summary             String
   amount              Decimal  @db.Decimal(18, 2)
   /// 现金/银行存款科目 (1001/1002…); reused chart account, no FundAccount master in MVP.
@@ -470,6 +475,7 @@ model PaymentDoc {
 
   @@unique([ledgerBookId, no])
   @@index([ledgerBookId, status])
+  @@index([ledgerBookId, partnerId])
   @@map("payment_doc")
 }
 
@@ -484,7 +490,10 @@ model Contract {
   title        String
   /// sales | purchase | service | other — a finance label, not an order/fulfilment driver.
   type         String    @default("other")
+  /// Immutable display snapshot of the counterparty at contract time (T-012).
   counterparty String    @default("")
+  /// Optional BusinessPartner link (T-012). Plain UUID like voucher contractId; no FK relation.
+  partnerId    String?   @map("partner_id") @db.Uuid
   amount       Decimal?  @db.Decimal(18, 2)
   currency     String    @default("CNY")
   /// draft | active | closed
@@ -501,5 +510,43 @@ model Contract {
 
   @@unique([ledgerBookId, code])
   @@index([ledgerBookId, status])
+  @@index([ledgerBookId, partnerId])
   @@map("contract")
+}
+
+/// 往来单位 (T-012 Phase 1). Finance-owned, ledger-scoped master data for payment/
+/// contract/voucher counterparties — organizations and individuals (customer, supplier,
+/// employee, reimbursee…). `roles` are multi-select system hints for filtering and
+/// defaults; `tags` are user labels for display/search ONLY and must never drive
+/// accounting or workflow decisions (D1). Individuals may optionally link an org
+/// member (D2: convenience/dedup only — documents keep immutable counterparty
+/// snapshots and never depend on live membership). Display name is org-entered
+/// master data (D10); `wechat` is display/search-only contact PII and must never
+/// reach outbox metadata. Ledger-scoped (RLS), no physical delete — deactivate only.
+model BusinessPartner {
+  id           String   @id @default(uuid()) @db.Uuid
+  ledgerBookId String   @map("ledger_book_id") @db.Uuid
+  /// organization (公司/单位) | individual (个人)
+  partyType    String   @map("party_type")
+  name         String
+  /// customer | supplier | employee | reimbursee | contractor | shareholder | other
+  roles        String[] @default([])
+  /// Display/search-only labels; never business logic.
+  tags         String[] @default([])
+  /// Optional org-member link for individuals (Logto userId); null for non-members.
+  memberUserId String?  @map("member_user_id")
+  /// 微信号 — optional contact detail (display/search-only PII).
+  wechat       String   @default("")
+  remark       String   @default("")
+  active       Boolean  @default(true)
+  createdBy    String   @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  version      Int      @default(0)
+
+  ledgerBook LedgerBook @relation(fields: [ledgerBookId], references: [id], onDelete: Cascade)
+
+  @@index([ledgerBookId, active])
+  @@index([ledgerBookId, name])
+  @@map("business_partner")
 }

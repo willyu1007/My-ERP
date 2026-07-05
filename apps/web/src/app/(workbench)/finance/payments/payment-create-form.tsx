@@ -3,12 +3,13 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@my-erp/ui/feedback';
-import type { Contract } from '@my-erp/api-client';
+import type { BusinessPartner, Contract } from '@my-erp/api-client';
 import type { AccountVM } from '@/lib/finance/types';
 import { isCashAccountCode } from '@/lib/finance/account';
 import { PAYMENT_DIRECTION } from '@/lib/finance/payment-display';
 import { AccountPicker } from '../_components/account-picker';
 import { ContractPicker } from '../_components/contract-picker';
+import { PartnerPicker } from '../_components/partner-picker';
 import { createAndSubmitPaymentAction, createPaymentAction } from './actions';
 import styles from './payments.module.css';
 
@@ -95,10 +96,12 @@ function PaymentSummaryEditor({
 export function PaymentCreateForm({
   accounts,
   contracts,
+  partners,
   initialDate,
 }: {
   readonly accounts: readonly AccountVM[];
   readonly contracts: readonly Contract[];
+  readonly partners: readonly BusinessPartner[];
   readonly initialDate: string;
 }) {
   const router = useRouter();
@@ -109,6 +112,7 @@ export function PaymentCreateForm({
   const [direction, setDirection] = useState<'receipt' | 'payment'>('receipt');
   const [date, setDate] = useState(initialDate);
   const [counterparty, setCounterparty] = useState('');
+  const [partnerId, setPartnerId] = useState('');
   const [summary, setSummary] = useState('');
   const [amount, setAmount] = useState('');
   const [cashAccountCode, setCashAccountCode] = useState('');
@@ -127,7 +131,7 @@ export function PaymentCreateForm({
   const canSubmit =
     !busy &&
     amountOk &&
-    counterparty.trim() !== '' &&
+    (partnerId !== '' || counterparty.trim() !== '') &&
     summary.trim() !== '' &&
     cashAccountCode !== '' &&
     contraAccountCode !== '' &&
@@ -148,6 +152,7 @@ export function PaymentCreateForm({
           direction,
           date,
           counterparty: counterparty.trim(),
+          ...(partnerId ? { partnerId } : {}),
           summary: summary.trim(),
           amount,
           cashAccountCode,
@@ -243,15 +248,23 @@ export function PaymentCreateForm({
       </div>
 
       <div className={styles.formGrid}>
-        <label className="mt-field">
+        <div className="mt-field">
           <span className="mt-label">{direction === 'receipt' ? '付款方' : '收款方'}</span>
-          <input
-            className="mt-input"
-            value={counterparty}
-            placeholder="对方单位 / 个人"
-            onChange={(e) => setCounterparty(e.target.value)}
+          <PartnerPicker
+            partners={partners}
+            partnerId={partnerId}
+            text={counterparty}
+            onSelect={(partner) => {
+              setPartnerId(partner.id);
+              setCounterparty(partner.name);
+            }}
+            onTextChange={(text) => {
+              setPartnerId('');
+              setCounterparty(text);
+            }}
+            ariaLabel={direction === 'receipt' ? '付款方' : '收款方'}
           />
-        </label>
+        </div>
         <div className="mt-field">
           <span className="mt-label">
             {direction === 'receipt' ? '收款账户' : '付款账户'}（货币资金）

@@ -26,7 +26,8 @@ export type Subject =
   | 'Intake'
   | 'OutboxEvent'
   | 'AuditRecord'
-  | 'Membership';
+  | 'Membership'
+  | 'BusinessPartner';
 
 export type AppAbility = MongoAbility<[Action, Subject]>;
 
@@ -50,6 +51,7 @@ export function defineAbilityFor(identity: Identity): AppAbility {
       scope,
     );
     can('read', 'Intake', scope);
+    can('read', 'BusinessPartner', scope);
   }
   if (has('accountant')) {
     can(
@@ -62,12 +64,16 @@ export function defineAbilityFor(identity: Identity): AppAbility {
     can('reverse', 'Voucher', scope);
     can(['claim', 'complete', 'return'], 'WorkItem', scope);
     can(['create', 'read', 'update', 'cancel'], 'Intake', scope); // capture/draft/discard
+    can(['create', 'read', 'update'], 'BusinessPartner', scope); // org-entered master (T-012 D10)
+    can('read', 'Membership', scope); // roster for employee quick-select (T-012 D2)
   }
   if (has('cashier')) {
     can('read', ['Organization', 'LedgerBook', 'Account', 'Voucher', 'WorkItem'], scope);
     can(['create', 'update'], 'Voucher', scope);
     can(['claim', 'complete', 'return'], 'WorkItem', scope);
     can(['create', 'read', 'update', 'cancel'], 'Intake', scope);
+    can(['create', 'read', 'update'], 'BusinessPartner', scope); // cashier adds payees at entry time
+    can('read', 'Membership', scope); // roster for employee quick-select (T-012 D2)
   }
   if (has('supervisor')) {
     can(
@@ -81,6 +87,7 @@ export function defineAbilityFor(identity: Identity): AppAbility {
     can('approve', 'Voucher', scope);
     can('post', 'Voucher', scope);
     can(['claim', 'complete', 'return', 'assign', 'cancel'], 'WorkItem', scope);
+    can(['create', 'read', 'update'], 'BusinessPartner', scope);
   }
 
   return build();

@@ -6,7 +6,7 @@ import type { RowModel } from '@my-erp/ui/contracts';
 import { ActionButton, Scene, StatusBadge } from '@my-erp/ui/primitives';
 import { Queue } from '@my-erp/ui/queue';
 import type { AccountVM } from '@/lib/finance/types';
-import type { Contract, PaymentDoc, PaymentStatus } from '@my-erp/api-client';
+import type { BusinessPartner, Contract, PaymentDoc, PaymentStatus } from '@my-erp/api-client';
 import { formatDate, formatMoney } from '@/lib/finance/format';
 import {
   PAYMENT_DIRECTION,
@@ -144,12 +144,16 @@ export function PaymentsClient({
   payments,
   accounts,
   contracts,
+  partners,
+  filterPartner = null,
   initialDate,
   initialEntryOpen = false,
 }: {
   readonly payments: readonly PaymentDoc[];
   readonly accounts: readonly AccountVM[];
   readonly contracts: readonly Contract[];
+  readonly partners: readonly BusinessPartner[];
+  readonly filterPartner?: BusinessPartner | null;
   readonly initialDate: string;
   readonly initialEntryOpen?: boolean;
 }) {
@@ -162,6 +166,14 @@ export function PaymentsClient({
       <ActionButton kind="primary" onClick={() => setEntryOpen((value) => !value)}>
         {entryOpen ? '收起登记' : '登记收付'}
       </ActionButton>
+      {filterPartner ? (
+        <span className={styles.filterChip}>
+          对方：{filterPartner.name}
+          <Link href="/finance/payments" aria-label="清除往来单位筛选">
+            ×
+          </Link>
+        </span>
+      ) : null}
       <div className="wb-segmented" role="tablist" aria-label="出纳收付队列">
         {PAYMENT_QUEUES.map((item) => (
           <button
@@ -187,7 +199,12 @@ export function PaymentsClient({
         inert={!entryOpen}
       >
         <div className={styles.entryPanelInner}>
-          <PaymentCreateForm accounts={accounts} contracts={contracts} initialDate={initialDate} />
+          <PaymentCreateForm
+            accounts={accounts}
+            contracts={contracts}
+            partners={partners}
+            initialDate={initialDate}
+          />
         </div>
       </div>
       <div className={styles.queueScope}>

@@ -79,11 +79,11 @@
 ## Acceptance criteria by phase
 - Decision alignment:
   - [x] All open questions in `roadmap.md` are answered or converted into explicit assumptions (D1-D10).
-- BusinessPartner:
-  - [ ] Individual and organization partners can be created, searched, classified, and deactivated.
-  - [ ] Partners are found by typing a person/company name; individual entry supports an optional WeChat ID.
-  - [ ] Payment and contract lists can be filtered by partner.
-  - [ ] Existing text-only rows remain readable; snapshots stay stable after partner rename/deactivate.
+- BusinessPartner (Phase 1 done 2026-07-05):
+  - [x] Individual and organization partners can be created, searched, classified, and deactivated.
+  - [x] Partners are found by typing a person/company name; individual entry supports an optional WeChat ID.
+  - [x] Payment and contract lists can be filtered by partner (`partnerId` param + web filter chip).
+  - [x] Existing text-only rows remain readable; snapshots stay stable after partner rename/deactivate.
 - Standard chart v2 and account picker:
   - [ ] User can pick a leaf account through progressive selection.
   - [ ] Browser-native suggestion popover no longer appears over the picker.

@@ -1,16 +1,25 @@
 # 03 — Implementation Notes
 
 ## Status
-- Current status: `planned`
+- Current status: `in-progress` — Phase 1 (BusinessPartner foundation) implemented and verified 2026-07-05; Phase 2 next.
 - Last updated: 2026-07-05
 
 ## What changed
-- Created this task bundle to record the SME usability discussion before implementation.
-- No application/source/config files have been changed.
+- Phase 1 (2026-07-05): BusinessPartner master implemented end to end.
+  - Ledger-scoped `business_partner` table (RLS, no DELETE policy) + nullable `partner_id` on `payment_doc` / `contract` (migration `20260705120000_t012_business_partner`).
+  - `packages/db`: `BusinessPartnerEntity` + create/get/list(search q over name/wechat, role/partyType/active filters)/version-guarded update; `partnerId` on payment/contract entities, create inputs, and list filters.
+  - `packages/platform`: new `BusinessPartner` CASL subject (viewer read; accountant/cashier/supervisor create+read+update); accountant/cashier also gained `read Membership` for the D2 employee quick-select roster.
+  - `apps/api`: `/v1/business-partners` (list/create/get/patch; D2 non-member confirmation guard, member-link validation, audit); payments/contracts create accept `partnerId` (active + in-scope check, counterparty snapshot auto-filled from partner name when blank); list endpoints gain `partnerId` filter.
+  - OpenAPI + `packages/api-client`: BusinessPartner schemas/methods, `listMembers`, partner filter params.
+  - `apps/web`: `/finance/partners` page (queues 客户/供应商/员工个人/已停用/全部, name/wechat/tag search, create form with member quick-select + D2 confirm checkbox + 微信号, drawer with 停用/启用 and D9 filter links); shared `PartnerPicker` (select-or-free-text) replacing the counterparty text inputs in payment/contract create forms; `?partnerId=` filter + chip on payments/contracts lists; nav entry 往来单位.
 
 ## Files/modules touched (high level)
-- Documentation only:
-  - `dev-docs/active/finance-sme-usability-foundation/`
+- `prisma/schema.prisma` + `prisma/migrations/20260705120000_t012_business_partner/`
+- `packages/db` (repo + 2 new integration test files), `packages/platform` (ability), `packages/api-client`
+- `apps/api/src/business-partners/` (new), `apps/api/src/payments/`, `apps/api/src/contracts/`, `app.module.ts`
+- `apps/web`: `lib/finance/{data-source,partner-display}.ts`, `finance/partners/` (new), `finance/_components/partner-picker.*`, payments/contracts pages + forms, `components/workbench-shell.tsx`
+- `docs/context/api/openapi.yaml` (+ generated index), `docs/context/db/schema.json` (synced)
+- `dev-docs/active/finance-sme-usability-foundation/`
 
 ## Decisions & tradeoffs
 - Decision: Treat "付款对象" as the cashier label for the broader `BusinessPartner` / 往来单位 master.
@@ -60,6 +69,13 @@
 - Decision: Payment workbench vocabulary is simplified: business-facing action button copy and regrouped status tabs. Confirmed 2026-07-05 (D11).
   - Rationale: current labels (such as 「确认收付并过账」) expose accounting jargon to cashier users, and the payments list already has seven status tabs; adding the enrichment state without regrouping would make the queue harder to read, defeating the SME-simplicity goal.
   - Alternatives considered: Keep raw status tabs and only add an eighth for enrichment; rejected as more noise. Rename statuses in the state machine itself; rejected — wording is a display concern and the accounting state machine stays unchanged.
+
+- Decision: `partnerId` is a plain UUID column (indexed with ledgerBookId), not a Prisma FK relation. Implemented 2026-07-05.
+  - Rationale: matches the house pattern (`contractId` on vouchers/payments); RLS already guarantees same-ledger visibility and the service validates existence/active in-scope at write time.
+- Decision: PartnerPicker supports select-or-free-text. Implemented 2026-07-05.
+  - Rationale: legacy text-only counterparties must keep working (backward compatibility); typing detaches the link, selecting fills the snapshot from the master. Native autocomplete is suppressed on the picker input.
+- Decision: accountant/cashier gained `read Membership` in CASL. Implemented 2026-07-05.
+  - Rationale: D2 employee quick-select needs the org roster; previously only supervisor/admin could list members, which would 403 the partner create form for finance roles.
 
 ## Deviations from plan
 - None yet.

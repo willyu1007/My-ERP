@@ -12,6 +12,7 @@ import {
   createPaymentDocTx,
   createVoucherTx,
   completeActiveWorkItemsForSourceTx,
+  getBusinessPartnerTx,
   getLedgerBookByIdTx,
   getPaymentDocTx,
   getVoucherTx,
@@ -42,7 +43,10 @@ const AMOUNT_RE = /^\d+(\.\d{1,2})?$/;
 export interface CreatePaymentInput {
   direction: string;
   date: string;
-  counterparty: string;
+  /** Display snapshot; optional when partnerId resolves it (T-012). */
+  counterparty?: string;
+  /** Optional BusinessPartner link (T-012); must be an active in-scope partner. */
+  partnerId?: string | null;
   summary: string;
   amount: string;
   cashAccountCode: string;
@@ -63,6 +67,7 @@ function toDto(p: PaymentDocEntity) {
     date: p.date,
     period: p.period,
     counterparty: p.counterparty,
+    partnerId: p.partnerId,
     summary: p.summary,
     amount: p.amount,
     cashAccountCode: p.cashAccountCode,
@@ -123,8 +128,10 @@ export class PaymentsService {
   async list(
     identity: Identity,
     ledgerBookId: string,
-    filters: { status?: string; direction?: string },
+    filters: { status?: string; direction?: string; partnerId?: string },
   ) {
+    if (filters.partnerId && !UUID_RE.test(filters.partnerId))
+      throw new BadRequestException('partnerId must be a uuid');
     return withScope(identity.orgId, ledgerBookId, async (tx) =>
       (await listPaymentDocsTx(tx, filters)).map(toDto),
     );
@@ -143,7 +150,11 @@ export class PaymentsService {
       throw new BadRequestException('direction must be receipt | payment');
     assertDate(input.date);
     const amount = normalizeAmount(input.amount);
-    if (!input.counterparty?.trim()) throw new BadRequestException('counterparty is required');
+    const partnerId = input.partnerId || null;
+    if (partnerId && !UUID_RE.test(partnerId))
+      throw new BadRequestException('partnerId must be a uuid');
+    if (!partnerId && !input.counterparty?.trim())
+      throw new BadRequestException('counterparty is required');
     if (!input.summary?.trim()) throw new BadRequestException('summary is required');
     if (input.cashAccountCode === input.contraAccountCode)
       throw new BadRequestException('现金科目与对方科目不能相同');
@@ -156,6 +167,14 @@ export class PaymentsService {
     return withScope(identity.orgId, ledgerBookId, async (tx) => {
       if (await isPeriodClosedTx(tx, period))
         throw new BadRequestException('会计期间已结账，请先反结账');
+      // T-012: resolve the partner link in-scope; the doc keeps its own text snapshot.
+      let counterparty = input.counterparty?.trim() ?? '';
+      if (partnerId) {
+        const partner = await getBusinessPartnerTx(tx, partnerId);
+        if (!partner) throw new BadRequestException('往来单位不存在');
+        if (!partner.active) throw new BadRequestException('往来单位已停用');
+        if (!counterparty) counterparty = partner.name;
+      }
       const byCode = new Map((await listAccountsTx(tx)).map((a) => [a.code, a]));
       assertPostable(byCode.get(input.cashAccountCode), input.cashAccountCode, '现金');
       assertPostable(byCode.get(input.contraAccountCode), input.contraAccountCode, '对方');
@@ -168,7 +187,8 @@ export class PaymentsService {
         direction: input.direction,
         date: input.date,
         period,
-        counterparty: input.counterparty.trim(),
+        counterparty,
+        partnerId,
         summary: input.summary.trim(),
         amount,
         cashAccountCode: input.cashAccountCode,

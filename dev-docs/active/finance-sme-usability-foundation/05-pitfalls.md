@@ -13,6 +13,14 @@ This file exists to prevent repeating mistakes within this task.
 
 ## Pitfall log (append-only)
 
+### 2026-07-05 - vitest filter must run from the repo root
+- Symptom: `pnpm --filter @my-erp/db test -- --run <file>` and running vitest from `packages/db` both exit with "No test files found".
+- Context: T-012 Phase 1, running the new business-partner integration test.
+- Why: the vitest config lives at the repo root with include pattern `{apps,packages}/**/*.{test,spec}.ts`; from a package directory the relative pattern matches nothing.
+- Fix / workaround: run `pnpm vitest run <repo-relative-path>` from the repo root.
+- Prevention: always launch targeted vitest runs from the root with repo-relative paths.
+- References: `vitest.config.ts`
+
 ### 2026-07-04 - Planning baseline
 - Symptom: N/A.
 - Context: Task opened before implementation to preserve discussion and align roadmap decisions.

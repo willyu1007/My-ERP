@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { AccountsController } from './accounts/accounts.controller';
 import { AuthModule } from './auth/auth.module';
+import { BusinessPartnersController } from './business-partners/business-partners.controller';
+import { BusinessPartnersService } from './business-partners/business-partners.service';
 import { CashFlowController } from './cash-flow/cash-flow.controller';
 import { CashFlowService } from './cash-flow/cash-flow.service';
 import { ContractsController } from './contracts/contracts.controller';
@@ -48,6 +50,7 @@ import { WorkItemsService } from './work-items/work-items.service';
     ReportsController,
     PaymentsController,
     ContractsController,
+    BusinessPartnersController,
   ],
   providers: [
     HealthService,
@@ -59,6 +62,7 @@ import { WorkItemsService } from './work-items/work-items.service';
     ReportsService,
     PaymentsService,
     ContractsService,
+    BusinessPartnersService,
     { provide: OBJECT_STORE, useClass: LocalObjectStore },
     { provide: EXTRACTOR, useClass: MockExtractor },
   ],

@@ -89,3 +89,21 @@
   - D10 refined: partner search matches typed person/company names; individual entry gains an optional WeChat ID contact field (display/search-only PII, never in outbox metadata).
   - D11 recorded: payment action button copy uses business wording and payments list status tabs are simplified/regrouped (current state checked in code: seven tabs in `payments-client.tsx`; labels such as 「确认收付并过账」 in `payment-detail-actions.tsx`).
   - Ran `node .ai/scripts/ctl-project-governance.mjs sync --apply --project main` and `lint --check --project main` -> passed; no warning for `finance-sme-usability-foundation`.
+- 2026-07-05 (Phase 1 implementation):
+  - `pnpm exec prisma validate` + `prisma format` -> passed; `node .ai/scripts/ctl-db-ssot.mjs sync-to-context` -> DB context refreshed.
+  - New migration `20260705120000_t012_business_partner` applied cleanly to test DBs (integration harness) and the dev DB (`pnpm db:deploy`).
+  - `pnpm vitest run packages/db/src/business-partner.integration.test.ts` -> 4/4 passed (RLS isolation, name/wechat search + role/partyType/active filters, version-guarded update + deactivate-not-delete, partnerId dimension + snapshot stable after rename).
+  - `pnpm vitest run apps/api/src/business-partners/business-partners.integration.test.ts` -> 4/4 passed (org partner + name search, D2 non-member confirmation + member-link validation + individuals-only member link, role/name validation, version conflict + deactivate).
+  - `pnpm typecheck` -> passed (all packages/apps). `pnpm lint` -> passed. `pnpm lint:css` -> passed.
+  - `pnpm test` -> 43 files / 169 tests passed (T-007/T-005 suites unaffected by the nullable-partner changes).
+  - `pnpm --filter @my-erp/api-client codegen` + `node .ai/scripts/ctl-api-index.mjs generate --touch` -> API context refreshed.
+  - Live `/v1` smoke (packages rebuilt first; dockerized PG; `pnpm db:deploy` + `pnpm dev:seed`):
+    - POST /v1/business-partners: org partner created; unconfirmed non-member individual rejected 400 (D2); confirmed individual with 微信号 created; member-linked individual created.
+    - GET /v1/business-partners?q=王五 -> found by typed name (D10).
+    - POST /v1/payments with `partnerId` and no counterparty -> snapshot auto-filled from partner name; GET /v1/payments?partnerId= -> filtered (D9).
+    - PATCH partner rename -> existing payment `counterparty` snapshot unchanged (A2).
+    - POST /v1/contracts with `partnerId` -> linked + filterable.
+  - Browser walkthrough (web dev on :3200 against live API):
+    - 往来单位 nav entry + list page render with live data; queue counts and name search work.
+    - Payments page `?partnerId=` shows the filter chip (current partner name) over the snapshot-labelled rows.
+    - PartnerPicker popover lists partners with roles/微信/单位-个人 badges; selected 王五 and created 收-2026-07-001 via UI; API confirms `partnerId` stored + snapshot correct.

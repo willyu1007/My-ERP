@@ -1,0 +1,106 @@
+.navActions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.navActions :global(.wb-segmented) {
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.searchInput {
+  width: 220px;
+  max-width: 100%;
+}
+
+.entryPanel {
+  position: relative;
+  display: grid;
+  grid-template-rows: 0fr;
+  margin-bottom: 0;
+  transition:
+    grid-template-rows 200ms var(--ease-out, ease),
+    margin-bottom 200ms var(--ease-out, ease);
+}
+
+.entryPanelOpen {
+  z-index: 20;
+  grid-template-rows: 1fr;
+  margin-bottom: var(--sp-5, 20px);
+}
+
+.entryPanelInner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.queueScope {
+  position: relative;
+  z-index: 1;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-3);
+}
+
+.roleChecks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-3);
+  padding-top: 6px;
+}
+
+.roleCheck {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg-2);
+  font-size: var(--small-size);
+  cursor: pointer;
+}
+
+.confirmRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg-2);
+  font-size: var(--small-size);
+  cursor: pointer;
+}
+
+.actionGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  align-self: flex-start;
+  width: fit-content;
+}
+
+.primaryAction {
+  min-height: 34px;
+  padding: 0 var(--sp-3);
+}
+
+.drawerFlow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+  color: var(--fg-2);
+  font-size: var(--small-size);
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .searchInput {
+    width: 100%;
+  }
+}

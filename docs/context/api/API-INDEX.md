@@ -1,9 +1,9 @@
 # API Index
 
-> Auto-generated at 2026-07-01T23:51:22.778Z — do NOT hand-edit.
-> Source: `docs/context/api/openapi.yaml` (SHA-256: `974513925e8b...`)
+> Auto-generated at 2026-07-05T04:19:51.245Z — do NOT hand-edit.
+> Source: `docs/context/api/openapi.yaml` (SHA-256: `aafad6f22f78...`)
 
-Total endpoints: **58**
+Total endpoints: **62**
 
 | Method | Path | Summary | Auth | Input (required) | Output (core) | Errors |
 |--------|------|---------|------|------------------|---------------|--------|
@@ -52,16 +52,20 @@ Total endpoints: **58**
 | GET | /v1/reports/income-statement | 利润表 (range — 月/季/年/自定义) | bearer | — | from, to, lines, netProfit | 400 |
 | GET | /v1/reports/cash-flow | 现金流量表 (direct method, range) | bearer | — | from, to, activities, netCashFlow, beginningCash, endingCash, tied | 400 |
 | GET | /v1/payments | List 出纳收付款单 (PaymentDoc) | bearer | — | — | — |
-| POST | /v1/payments | Create a 收/付款单 draft | bearer | direction, date, counterparty, summary, amount, cashAccountCode, contraAccountCode | id, no, direction, date, period, counterparty, summary, amount, cashAccountCode, contraAccountCode, status, maker, version, createdAt, updatedAt, settlementVoucherId, contractId, approver, confirmer | 400 |
-| GET | /v1/payments/{id} | Get a payment doc | bearer | id | id, no, direction, date, period, counterparty, summary, amount, cashAccountCode, contraAccountCode, status, maker, version, createdAt, updatedAt, settlementVoucherId, contractId, approver, confirmer | 404 |
-| POST | /v1/payments/{id}/submit | draft → pending_approval (opens the approver task) | bearer | expectedVersion | id, no, direction, date, period, counterparty, summary, amount, cashAccountCode, contraAccountCode, status, maker, version, createdAt, updatedAt, settlementVoucherId, contractId, approver, confirmer | 400, 409 |
-| POST | /v1/payments/{id}/approve | pending_approval → approved (SoD; opens the cashier task) | bearer | expectedVersion | id, no, direction, date, period, counterparty, summary, amount, cashAccountCode, contraAccountCode, status, maker, version, createdAt, updatedAt, settlementVoucherId, contractId, approver, confirmer | 400, 403, 409 |
-| POST | /v1/payments/{id}/confirm | approved → confirmed — generate + post the settlement voucher | bearer | expectedVersion | id, no, direction, date, period, counterparty, summary, amount, cashAccountCode, contraAccountCode, status, maker, version, createdAt, updatedAt, settlementVoucherId, contractId, approver, confirmer, settlementVoucher | 400, 403, 409 |
-| POST | /v1/payments/{id}/void | 作废 a pre-confirmed payment doc | bearer | expectedVersion | id, no, direction, date, period, counterparty, summary, amount, cashAccountCode, contraAccountCode, status, maker, version, createdAt, updatedAt, settlementVoucherId, contractId, approver, confirmer | 400, 409 |
+| POST | /v1/payments | Create a 收/付款单 draft | bearer | direction, date, summary, amount, cashAccountCode, contraAccountCode | id, no, direction, date, period, counterparty, summary, amount, cashAccountCode, contraAccountCode, status, maker, version, createdAt, updatedAt, partnerId, settlementVoucherId, contractId, approver, confirmer | 400 |
+| GET | /v1/payments/{id} | Get a payment doc | bearer | id | id, no, direction, date, period, counterparty, summary, amount, cashAccountCode, contraAccountCode, status, maker, version, createdAt, updatedAt, partnerId, settlementVoucherId, contractId, approver, confirmer | 404 |
+| POST | /v1/payments/{id}/submit | draft → pending_approval (opens the approver task) | bearer | expectedVersion | id, no, direction, date, period, counterparty, summary, amount, cashAccountCode, contraAccountCode, status, maker, version, createdAt, updatedAt, partnerId, settlementVoucherId, contractId, approver, confirmer | 400, 409 |
+| POST | /v1/payments/{id}/approve | pending_approval → approved (SoD; opens the cashier task) | bearer | expectedVersion | id, no, direction, date, period, counterparty, summary, amount, cashAccountCode, contraAccountCode, status, maker, version, createdAt, updatedAt, partnerId, settlementVoucherId, contractId, approver, confirmer | 400, 403, 409 |
+| POST | /v1/payments/{id}/confirm | approved → confirmed — generate + post the settlement voucher | bearer | expectedVersion | id, no, direction, date, period, counterparty, summary, amount, cashAccountCode, contraAccountCode, status, maker, version, createdAt, updatedAt, partnerId, settlementVoucherId, contractId, approver, confirmer, settlementVoucher | 400, 403, 409 |
+| POST | /v1/payments/{id}/void | 作废 a pre-confirmed payment doc | bearer | expectedVersion | id, no, direction, date, period, counterparty, summary, amount, cashAccountCode, contraAccountCode, status, maker, version, createdAt, updatedAt, partnerId, settlementVoucherId, contractId, approver, confirmer | 400, 409 |
 | GET | /v1/contracts | List 合同 (Contract) | bearer | — | — | — |
-| POST | /v1/contracts | Create a 合同 (code auto-assigned HT-{fiscalYear}-{NNN}) | bearer | title | id, ledgerBookId, code, title, type, counterparty, currency, status, summary, createdBy, version, createdAt, updatedAt, amount, startDate, endDate | 400 |
-| GET | /v1/contracts/{id} | Get a contract | bearer | id | id, ledgerBookId, code, title, type, counterparty, currency, status, summary, createdBy, version, createdAt, updatedAt, amount, startDate, endDate | 404 |
-| PATCH | /v1/contracts/{id} | Update a contract (status / fields; version-guarded) | bearer | expectedVersion | id, ledgerBookId, code, title, type, counterparty, currency, status, summary, createdBy, version, createdAt, updatedAt, amount, startDate, endDate | 400, 409 |
+| POST | /v1/contracts | Create a 合同 (code auto-assigned HT-{fiscalYear}-{NNN}) | bearer | title | id, ledgerBookId, code, title, type, counterparty, currency, status, summary, createdBy, version, createdAt, updatedAt, partnerId, amount, startDate, endDate | 400 |
+| GET | /v1/contracts/{id} | Get a contract | bearer | id | id, ledgerBookId, code, title, type, counterparty, currency, status, summary, createdBy, version, createdAt, updatedAt, partnerId, amount, startDate, endDate | 404 |
+| PATCH | /v1/contracts/{id} | Update a contract (status / fields; version-guarded) | bearer | expectedVersion | id, ledgerBookId, code, title, type, counterparty, currency, status, summary, createdBy, version, createdAt, updatedAt, partnerId, amount, startDate, endDate | 400, 409 |
 | GET | /v1/contracts/{id}/timeline | 合同时间线 — contract event ∪ linked vouchers ∪ payments (time-ordered) | bearer | id | contract, items | 404 |
+| GET | /v1/business-partners | List 往来单位 (BusinessPartner) — searchable by name/wechat | bearer | — | — | — |
+| POST | /v1/business-partners | Create a 往来单位 (org-entered; non-member individuals need explicit confirmation) | bearer | partyType, name | id, ledgerBookId, partyType, name, roles, tags, wechat, remark, active, createdBy, version, createdAt, updatedAt, memberUserId | 400 |
+| GET | /v1/business-partners/{id} | Get a business partner | bearer | id | id, ledgerBookId, partyType, name, roles, tags, wechat, remark, active, createdBy, version, createdAt, updatedAt, memberUserId | 404 |
+| PATCH | /v1/business-partners/{id} | Update / deactivate a business partner (version-guarded; no physical delete) | bearer | expectedVersion | id, ledgerBookId, partyType, name, roles, tags, wechat, remark, active, createdBy, version, createdAt, updatedAt, memberUserId | 400, 409 |
 | GET | /v1/opening-balances | Opening balances (期初余额) + the ledger's enabled period | bearer | — | openingPeriod, balances | 401, 403 |
 | PUT | /v1/opening-balances | Set the enabled period + replace opening balances (期初建账) | bearer | openingPeriod, balances | openingPeriod, balances | 400, 401, 403 |

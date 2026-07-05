@@ -7,41 +7,46 @@ import { LedgerScopeGuard } from '../auth/ledger-scope.guard';
 import { RequirePermission } from '../auth/permission.decorator';
 import { PermissionGuard } from '../auth/permission.guard';
 import {
-  ContractsService,
-  type CreateContractDto,
-  type UpdateContractDto,
-} from './contracts.service';
+  BusinessPartnersService,
+  type CreateBusinessPartnerDto,
+  type UpdateBusinessPartnerDto,
+} from './business-partners.service';
 
-// MVP reuses Voucher CASL actions (dedicated Contract subject = follow-up).
-@Controller('contracts')
+@Controller('business-partners')
 @UseGuards(AuthGuard, PermissionGuard, LedgerScopeGuard)
-export class ContractsController {
-  constructor(private readonly service: ContractsService) {}
+export class BusinessPartnersController {
+  constructor(private readonly service: BusinessPartnersService) {}
 
   @Get()
-  @RequirePermission('read', 'Voucher')
+  @RequirePermission('read', 'BusinessPartner')
   async list(
     @LedgerBookId() ledgerBookId: string,
     @CurrentIdentity() identity: Identity,
-    @Query('status') status?: string,
-    @Query('type') type?: string,
-    @Query('partnerId') partnerId?: string,
+    @Query('active') active?: string,
+    @Query('partyType') partyType?: string,
+    @Query('role') role?: string,
+    @Query('q') q?: string,
   ) {
-    return this.service.list(identity, ledgerBookId, { status, type, partnerId });
+    return this.service.list(identity, ledgerBookId, {
+      active: active === undefined ? undefined : active === 'true',
+      partyType,
+      role,
+      q,
+    });
   }
 
   @Post()
-  @RequirePermission('create', 'Voucher')
+  @RequirePermission('create', 'BusinessPartner')
   async create(
     @LedgerBookId() ledgerBookId: string,
     @CurrentIdentity() identity: Identity,
-    @Body() body: CreateContractDto,
+    @Body() body: CreateBusinessPartnerDto,
   ) {
     return this.service.create(identity, ledgerBookId, body);
   }
 
   @Get(':id')
-  @RequirePermission('read', 'Voucher')
+  @RequirePermission('read', 'BusinessPartner')
   async get(
     @LedgerBookId() ledgerBookId: string,
     @CurrentIdentity() identity: Identity,
@@ -50,23 +55,13 @@ export class ContractsController {
     return this.service.get(identity, ledgerBookId, id);
   }
 
-  @Get(':id/timeline')
-  @RequirePermission('read', 'Voucher')
-  async timeline(
-    @LedgerBookId() ledgerBookId: string,
-    @CurrentIdentity() identity: Identity,
-    @Param('id') id: string,
-  ) {
-    return this.service.timeline(identity, ledgerBookId, id);
-  }
-
   @Patch(':id')
-  @RequirePermission('update', 'Voucher')
+  @RequirePermission('update', 'BusinessPartner')
   async update(
     @LedgerBookId() ledgerBookId: string,
     @CurrentIdentity() identity: Identity,
     @Param('id') id: string,
-    @Body() body: UpdateContractDto,
+    @Body() body: UpdateBusinessPartnerDto,
   ) {
     return this.service.update(identity, ledgerBookId, id, body);
   }

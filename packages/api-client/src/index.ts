@@ -45,6 +45,13 @@ export type ContractStatus = Contract['status'];
 export type ContractType = Contract['type'];
 export type ContractTimeline = components['schemas']['ContractTimeline'];
 export type TimelineItem = components['schemas']['TimelineItem'];
+// Business partners (T-012)
+export type BusinessPartner = components['schemas']['BusinessPartner'];
+export type CreateBusinessPartner = components['schemas']['CreateBusinessPartner'];
+export type UpdateBusinessPartner = components['schemas']['UpdateBusinessPartner'];
+export type PartnerPartyType = BusinessPartner['partyType'];
+export type PartnerRole = BusinessPartner['roles'][number];
+export type Membership = components['schemas']['Membership'];
 /** Result of a work-item action: the updated item, plus the source entity for `complete`. */
 export interface WorkItemActionResult {
   readonly workItem: WorkItem;
@@ -141,6 +148,7 @@ export interface ApiClient {
   listPayments(params?: {
     status?: PaymentStatus;
     direction?: PaymentDirection;
+    partnerId?: string;
   }): Promise<PaymentDoc[]>;
   getPayment(id: string): Promise<PaymentDoc>;
   createPayment(body: CreatePayment): Promise<PaymentDoc>;
@@ -153,11 +161,27 @@ export interface ApiClient {
   ): Promise<PaymentConfirmResult>;
   voidPayment(id: string, expectedVersion: number, reason?: string): Promise<PaymentDoc>;
   // Contracts (T-005).
-  listContracts(params?: { status?: ContractStatus; type?: ContractType }): Promise<Contract[]>;
+  listContracts(params?: {
+    status?: ContractStatus;
+    type?: ContractType;
+    partnerId?: string;
+  }): Promise<Contract[]>;
   getContract(id: string): Promise<Contract>;
   createContract(body: CreateContract): Promise<Contract>;
   updateContract(id: string, body: UpdateContract): Promise<Contract>;
   getContractTimeline(id: string): Promise<ContractTimeline>;
+  // Business partners (T-012).
+  listBusinessPartners(params?: {
+    active?: boolean;
+    partyType?: PartnerPartyType;
+    role?: PartnerRole;
+    q?: string;
+  }): Promise<BusinessPartner[]>;
+  getBusinessPartner(id: string): Promise<BusinessPartner>;
+  createBusinessPartner(body: CreateBusinessPartner): Promise<BusinessPartner>;
+  updateBusinessPartner(id: string, body: UpdateBusinessPartner): Promise<BusinessPartner>;
+  /** Org roster — employee quick-select for individual partners (T-012 D2). */
+  listMembers(): Promise<Membership[]>;
 }
 
 export function createApiClient(config: ApiClientConfig): ApiClient {
@@ -269,6 +293,7 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
       const qs = new URLSearchParams();
       if (params?.status) qs.set('status', params.status);
       if (params?.direction) qs.set('direction', params.direction);
+      if (params?.partnerId) qs.set('partnerId', params.partnerId);
       const q = qs.toString();
       return request<PaymentDoc[]>('GET', `/v1/payments${q ? `?${q}` : ''}`);
     },
@@ -296,6 +321,7 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
       const qs = new URLSearchParams();
       if (params?.status) qs.set('status', params.status);
       if (params?.type) qs.set('type', params.type);
+      if (params?.partnerId) qs.set('partnerId', params.partnerId);
       const q = qs.toString();
       return request<Contract[]>('GET', `/v1/contracts${q ? `?${q}` : ''}`);
     },
@@ -305,5 +331,21 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
       request<Contract>('PATCH', `/v1/contracts/${encodeURIComponent(id)}`, body),
     getContractTimeline: (id) =>
       request<ContractTimeline>('GET', `/v1/contracts/${encodeURIComponent(id)}/timeline`),
+    listBusinessPartners: (params) => {
+      const qs = new URLSearchParams();
+      if (params?.active !== undefined) qs.set('active', String(params.active));
+      if (params?.partyType) qs.set('partyType', params.partyType);
+      if (params?.role) qs.set('role', params.role);
+      if (params?.q) qs.set('q', params.q);
+      const q = qs.toString();
+      return request<BusinessPartner[]>('GET', `/v1/business-partners${q ? `?${q}` : ''}`);
+    },
+    getBusinessPartner: (id) =>
+      request<BusinessPartner>('GET', `/v1/business-partners/${encodeURIComponent(id)}`),
+    createBusinessPartner: (body) =>
+      request<BusinessPartner>('POST', '/v1/business-partners', body),
+    updateBusinessPartner: (id, body) =>
+      request<BusinessPartner>('PATCH', `/v1/business-partners/${encodeURIComponent(id)}`, body),
+    listMembers: () => request<Membership[]>('GET', '/v1/members'),
   };
 }

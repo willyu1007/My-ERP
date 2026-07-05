@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-06-26T05:51:02.211Z",
+  "updatedAt": "2026-07-05T04:12:07.968Z",
   "ssot": {
     "mode": "repo-prisma",
     "source": {
@@ -478,6 +478,202 @@
       ]
     },
     {
+      "name": "BusinessPartner",
+      "dbName": "business_partner",
+      "schema": null,
+      "columns": [
+        {
+          "name": "active",
+          "type": "Boolean",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "true",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "created_at",
+          "dbType": "Timestamptz",
+          "default": "now()",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "createdBy",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "created_by",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "id",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": "Uuid",
+          "default": "uuid()",
+          "primaryKey": true,
+          "unique": false
+        },
+        {
+          "name": "ledgerBookId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "ledger_book_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "memberUserId",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "member_user_id",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "partyType",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "party_type",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "remark",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "\"\"",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "roles",
+          "type": "String",
+          "nullable": false,
+          "list": true,
+          "dbName": null,
+          "dbType": null,
+          "default": "[]",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "tags",
+          "type": "String",
+          "nullable": false,
+          "list": true,
+          "dbName": null,
+          "dbType": null,
+          "default": "[]",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "updated_at",
+          "dbType": "Timestamptz",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "version",
+          "type": "Int",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "0",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "wechat",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "\"\"",
+          "primaryKey": false,
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "field": "ledgerBook",
+          "to": "LedgerBook",
+          "optional": false,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "ledgerBookId"
+          ],
+          "references": [
+            "id"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "type": "index",
+          "fields": [
+            "ledgerBookId",
+            "active"
+          ],
+          "name": null,
+          "map": null
+        },
+        {
+          "type": "index",
+          "fields": [
+            "ledgerBookId",
+            "name"
+          ],
+          "name": null,
+          "map": null
+        }
+      ]
+    },
+    {
       "name": "CashFlowItem",
       "dbName": "cash_flow_item",
       "schema": null,
@@ -722,6 +918,17 @@
           "unique": false
         },
         {
+          "name": "partnerId",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "partner_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
           "name": "startDate",
           "type": "DateTime",
           "nullable": true,
@@ -815,6 +1022,15 @@
         }
       ],
       "indexes": [
+        {
+          "type": "index",
+          "fields": [
+            "ledgerBookId",
+            "partnerId"
+          ],
+          "name": null,
+          "map": null
+        },
         {
           "type": "index",
           "fields": [
@@ -1807,6 +2023,15 @@
           "references": []
         },
         {
+          "field": "businessPartners",
+          "to": "BusinessPartner",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
+        },
+        {
           "field": "cashFlowItems",
           "to": "CashFlowItem",
           "optional": false,
@@ -2642,6 +2867,17 @@
           "unique": false
         },
         {
+          "name": "partnerId",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "partner_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
           "name": "period",
           "type": "String",
           "nullable": false,
@@ -2724,6 +2960,15 @@
         }
       ],
       "indexes": [
+        {
+          "type": "index",
+          "fields": [
+            "ledgerBookId",
+            "partnerId"
+          ],
+          "name": null,
+          "map": null
+        },
         {
           "type": "index",
           "fields": [

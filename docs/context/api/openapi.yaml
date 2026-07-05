@@ -724,6 +724,7 @@ paths:
       parameters:
         - { name: status, in: query, required: false, schema: { type: string, enum: [draft, pending_approval, approved, confirmed, void] } }
         - { name: direction, in: query, required: false, schema: { type: string, enum: [receipt, payment] } }
+        - { name: partnerId, in: query, required: false, schema: { type: string, format: uuid }, description: 'Filter by linked BusinessPartner (T-012)' }
       responses:
         '200': { description: Payment docs, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/PaymentDoc' } } } } }
     post:
@@ -806,6 +807,7 @@ paths:
       parameters:
         - { name: status, in: query, required: false, schema: { type: string, enum: [draft, active, closed] } }
         - { name: type, in: query, required: false, schema: { type: string, enum: [sales, purchase, service, other] } }
+        - { name: partnerId, in: query, required: false, schema: { type: string, format: uuid }, description: 'Filter by linked BusinessPartner (T-012)' }
       responses:
         '200': { description: Contracts, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Contract' } } } } }
     post:
@@ -848,6 +850,49 @@ paths:
       responses:
         '200': { description: Timeline, content: { application/json: { schema: { $ref: '#/components/schemas/ContractTimeline' } } } }
         '404': { description: Not found }
+  /v1/business-partners:
+    get:
+      operationId: listBusinessPartners
+      summary: List 往来单位 (BusinessPartner) — searchable by name/wechat
+      tags: [business-partners]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: active, in: query, required: false, schema: { type: boolean } }
+        - { name: partyType, in: query, required: false, schema: { type: string, enum: [organization, individual] } }
+        - { name: role, in: query, required: false, schema: { type: string, enum: [customer, supplier, employee, reimbursee, contractor, shareholder, other] } }
+        - { name: q, in: query, required: false, schema: { type: string }, description: 'Name/wechat substring search' }
+      responses:
+        '200': { description: Partners, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/BusinessPartner' } } } } }
+    post:
+      operationId: createBusinessPartner
+      summary: Create a 往来单位 (org-entered; non-member individuals need explicit confirmation)
+      tags: [business-partners]
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CreateBusinessPartner' } } } }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/BusinessPartner' } } } }
+        '400': { description: Invalid input / unconfirmed non-member individual }
+  /v1/business-partners/{id}:
+    get:
+      operationId: getBusinessPartner
+      summary: Get a business partner
+      tags: [business-partners]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: Partner, content: { application/json: { schema: { $ref: '#/components/schemas/BusinessPartner' } } } }
+        '404': { description: Not found }
+    patch:
+      operationId: updateBusinessPartner
+      summary: Update / deactivate a business partner (version-guarded; no physical delete)
+      tags: [business-partners]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/UpdateBusinessPartner' } } } }
+      responses:
+        '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/BusinessPartner' } } } }
+        '400': { description: Invalid input }
+        '409': { description: Stale version }
   /v1/opening-balances:
     get:
       operationId: getOpeningBalances
@@ -1286,7 +1331,8 @@ components:
         direction: { type: string, enum: [receipt, payment] }
         date: { type: string, format: date }
         period: { type: string, example: 2026-06 }
-        counterparty: { type: string }
+        counterparty: { type: string, description: 'Immutable display snapshot (T-012)' }
+        partnerId: { type: string, format: uuid, nullable: true, description: 'Optional BusinessPartner link (T-012)' }
         summary: { type: string }
         amount: { type: string, description: '2dp' }
         cashAccountCode: { type: string }
@@ -1302,11 +1348,12 @@ components:
         updatedAt: { type: string, format: date-time }
     CreatePayment:
       type: object
-      required: [direction, date, counterparty, summary, amount, cashAccountCode, contraAccountCode]
+      required: [direction, date, summary, amount, cashAccountCode, contraAccountCode]
       properties:
         direction: { type: string, enum: [receipt, payment] }
         date: { type: string, format: date }
-        counterparty: { type: string }
+        counterparty: { type: string, description: 'Required unless partnerId resolves it (T-012)' }
+        partnerId: { type: string, format: uuid, nullable: true, description: 'Optional BusinessPartner link (T-012); must be active and in-scope' }
         summary: { type: string }
         amount: { type: string, description: 'positive, ≤2dp' }
         cashAccountCode: { type: string, description: '货币资金类 (1001/1002/1012)' }
@@ -1344,7 +1391,8 @@ components:
         code: { type: string, example: HT-2026-001 }
         title: { type: string }
         type: { type: string, enum: [sales, purchase, service, other] }
-        counterparty: { type: string }
+        counterparty: { type: string, description: 'Immutable display snapshot (T-012)' }
+        partnerId: { type: string, format: uuid, nullable: true, description: 'Optional BusinessPartner link (T-012)' }
         amount: { type: string, nullable: true }
         currency: { type: string }
         status: { type: string, enum: [draft, active, closed] }
@@ -1362,6 +1410,7 @@ components:
         title: { type: string }
         type: { type: string, enum: [sales, purchase, service, other] }
         counterparty: { type: string }
+        partnerId: { type: string, format: uuid, nullable: true, description: 'Optional BusinessPartner link (T-012); must be active and in-scope' }
         amount: { type: string, nullable: true }
         startDate: { type: string, format: date, nullable: true }
         endDate: { type: string, format: date, nullable: true }
@@ -1374,11 +1423,55 @@ components:
         title: { type: string }
         type: { type: string, enum: [sales, purchase, service, other] }
         counterparty: { type: string }
+        partnerId: { type: string, format: uuid, nullable: true, description: 'Set to link (refreshes the snapshot unless counterparty is also given); null to unlink' }
         amount: { type: string, nullable: true }
         status: { type: string, enum: [draft, active, closed] }
         startDate: { type: string, format: date, nullable: true }
         endDate: { type: string, format: date, nullable: true }
         summary: { type: string }
+    BusinessPartner:
+      type: object
+      required: [id, ledgerBookId, partyType, name, roles, tags, wechat, remark, active, createdBy, version, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        ledgerBookId: { type: string, format: uuid }
+        partyType: { type: string, enum: [organization, individual] }
+        name: { type: string, description: 'Org-entered display name (snapshot semantics, D10)' }
+        roles: { type: array, items: { type: string, enum: [customer, supplier, employee, reimbursee, contractor, shareholder, other] } }
+        tags: { type: array, items: { type: string }, description: 'Display/search-only labels' }
+        memberUserId: { type: string, nullable: true, description: 'Optional org-member link for individuals (D2)' }
+        wechat: { type: string, description: '微信号 — display/search-only contact PII' }
+        remark: { type: string }
+        active: { type: boolean, description: 'Deactivate instead of delete' }
+        createdBy: { type: string }
+        version: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    CreateBusinessPartner:
+      type: object
+      required: [partyType, name]
+      properties:
+        partyType: { type: string, enum: [organization, individual] }
+        name: { type: string }
+        roles: { type: array, items: { type: string, enum: [customer, supplier, employee, reimbursee, contractor, shareholder, other] } }
+        tags: { type: array, items: { type: string } }
+        memberUserId: { type: string, nullable: true, description: 'Individuals only; must be an org member' }
+        wechat: { type: string }
+        remark: { type: string }
+        confirmNonMember: { type: boolean, description: 'Required true for individuals without memberUserId (D2)' }
+    UpdateBusinessPartner:
+      type: object
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: integer }
+        partyType: { type: string, enum: [organization, individual] }
+        name: { type: string }
+        roles: { type: array, items: { type: string, enum: [customer, supplier, employee, reimbursee, contractor, shareholder, other] } }
+        tags: { type: array, items: { type: string } }
+        memberUserId: { type: string, nullable: true }
+        wechat: { type: string }
+        remark: { type: string }
+        active: { type: boolean }
     TimelineItem:
       type: object
       required: [kind, date, title, summary, refType, refId]

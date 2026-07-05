@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-01T23:51:22.778Z",
+  "generatedAt": "2026-07-05T04:19:51.245Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "974513925e8b69f39c9b790f145d0861aa1ae708f7a10e64a989b825f4a81fec",
+  "sourceChecksumSha256": "aafad6f22f78d62d193c54b7fb05c96667df1bfd36049cf03ca43dd7c3d2da68",
   "stats": {
-    "totalEndpoints": 58,
+    "totalEndpoints": 62,
     "byTag": {
       "system": 1,
       "organization": 1,
@@ -21,6 +21,7 @@
       "reports": 3,
       "payments": 7,
       "contracts": 5,
+      "business-partners": 4,
       "opening-balances": 2
     }
   },
@@ -1589,7 +1590,8 @@
         "params": [],
         "query": [
           "status",
-          "direction"
+          "direction",
+          "partnerId"
         ],
         "body": null
       },
@@ -1616,13 +1618,14 @@
           "required": [
             "direction",
             "date",
-            "counterparty",
             "summary",
             "amount",
             "cashAccountCode",
             "contraAccountCode"
           ],
           "optional": [
+            "counterparty",
+            "partnerId",
             "contractId"
           ]
         }
@@ -1645,6 +1648,7 @@
           "version",
           "createdAt",
           "updatedAt",
+          "partnerId",
           "settlementVoucherId",
           "contractId",
           "approver",
@@ -1655,7 +1659,7 @@
         400
       ],
       "example": {
-        "curl": "curl -X POST '/v1/payments' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"direction\":\"<direction>\",\"date\":\"<date>\",\"counterparty\":\"<counterparty>\",\"summary\":\"<summary>\",\"amount\":\"<amount>\",\"cashAccountCode\":\"<cashAccountCode>\",\"contraAccountCode\":\"<contraAccountCode>\"}'"
+        "curl": "curl -X POST '/v1/payments' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"direction\":\"<direction>\",\"date\":\"<date>\",\"summary\":\"<summary>\",\"amount\":\"<amount>\",\"cashAccountCode\":\"<cashAccountCode>\",\"contraAccountCode\":\"<contraAccountCode>\"}'"
       }
     },
     {
@@ -1690,6 +1694,7 @@
           "version",
           "createdAt",
           "updatedAt",
+          "partnerId",
           "settlementVoucherId",
           "contractId",
           "approver",
@@ -1740,6 +1745,7 @@
           "version",
           "createdAt",
           "updatedAt",
+          "partnerId",
           "settlementVoucherId",
           "contractId",
           "approver",
@@ -1791,6 +1797,7 @@
           "version",
           "createdAt",
           "updatedAt",
+          "partnerId",
           "settlementVoucherId",
           "contractId",
           "approver",
@@ -1845,6 +1852,7 @@
           "version",
           "createdAt",
           "updatedAt",
+          "partnerId",
           "settlementVoucherId",
           "contractId",
           "approver",
@@ -1900,6 +1908,7 @@
           "version",
           "createdAt",
           "updatedAt",
+          "partnerId",
           "settlementVoucherId",
           "contractId",
           "approver",
@@ -1925,7 +1934,8 @@
         "params": [],
         "query": [
           "status",
-          "type"
+          "type",
+          "partnerId"
         ],
         "body": null
       },
@@ -1955,6 +1965,7 @@
           "optional": [
             "type",
             "counterparty",
+            "partnerId",
             "amount",
             "startDate",
             "endDate",
@@ -1978,6 +1989,7 @@
           "version",
           "createdAt",
           "updatedAt",
+          "partnerId",
           "amount",
           "startDate",
           "endDate"
@@ -2020,6 +2032,7 @@
           "version",
           "createdAt",
           "updatedAt",
+          "partnerId",
           "amount",
           "startDate",
           "endDate"
@@ -2052,6 +2065,7 @@
             "title",
             "type",
             "counterparty",
+            "partnerId",
             "amount",
             "status",
             "startDate",
@@ -2076,6 +2090,7 @@
           "version",
           "createdAt",
           "updatedAt",
+          "partnerId",
           "amount",
           "startDate",
           "endDate"
@@ -2115,6 +2130,178 @@
       ],
       "example": {
         "curl": "curl -X GET '/v1/contracts/{id}/timeline' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/business-partners",
+      "operationId": "listBusinessPartners",
+      "summary": "List 往来单位 (BusinessPartner) — searchable by name/wechat",
+      "tag": "business-partners",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [
+          "active",
+          "partyType",
+          "role",
+          "q"
+        ],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": []
+      },
+      "errors": [],
+      "example": {
+        "curl": "curl -X GET '/v1/business-partners' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/business-partners",
+      "operationId": "createBusinessPartner",
+      "summary": "Create a 往来单位 (org-entered; non-member individuals need explicit confirmation)",
+      "tag": "business-partners",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": {
+          "required": [
+            "partyType",
+            "name"
+          ],
+          "optional": [
+            "roles",
+            "tags",
+            "memberUserId",
+            "wechat",
+            "remark",
+            "confirmNonMember"
+          ]
+        }
+      },
+      "output": {
+        "successStatus": 201,
+        "coreFields": [
+          "id",
+          "ledgerBookId",
+          "partyType",
+          "name",
+          "roles",
+          "tags",
+          "wechat",
+          "remark",
+          "active",
+          "createdBy",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "memberUserId"
+        ]
+      },
+      "errors": [
+        400
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/business-partners' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"partyType\":\"<partyType>\",\"name\":\"<name>\"}'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/business-partners/{id}",
+      "operationId": "getBusinessPartner",
+      "summary": "Get a business partner",
+      "tag": "business-partners",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id"
+        ],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "ledgerBookId",
+          "partyType",
+          "name",
+          "roles",
+          "tags",
+          "wechat",
+          "remark",
+          "active",
+          "createdBy",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "memberUserId"
+        ]
+      },
+      "errors": [
+        404
+      ],
+      "example": {
+        "curl": "curl -X GET '/v1/business-partners/{id}' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/business-partners/{id}",
+      "operationId": "updateBusinessPartner",
+      "summary": "Update / deactivate a business partner (version-guarded; no physical delete)",
+      "tag": "business-partners",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id"
+        ],
+        "query": [],
+        "body": {
+          "required": [
+            "expectedVersion"
+          ],
+          "optional": [
+            "partyType",
+            "name",
+            "roles",
+            "tags",
+            "memberUserId",
+            "wechat",
+            "remark",
+            "active"
+          ]
+        }
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "ledgerBookId",
+          "partyType",
+          "name",
+          "roles",
+          "tags",
+          "wechat",
+          "remark",
+          "active",
+          "createdBy",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "memberUserId"
+        ]
+      },
+      "errors": [
+        400,
+        409
+      ],
+      "example": {
+        "curl": "curl -X PATCH '/v1/business-partners/{id}' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"expectedVersion\":\"<expectedVersion>\"}'"
       }
     },
     {

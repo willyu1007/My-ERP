@@ -102,8 +102,8 @@ tasks:
     updated: 2026-07-04
   - id: T-012
     slug: finance-sme-usability-foundation
-    status: planned
+    status: in-progress
     milestone_id: M-000
     feature_id: F-000
     dev_docs_path: dev-docs/active/finance-sme-usability-foundation
-    updated: 2026-07-04
+    updated: 2026-07-05

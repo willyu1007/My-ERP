@@ -71,6 +71,7 @@ function ShellWithNav({
           { href: '/finance/ledger', label: '账簿查询' },
           { href: '/finance/reports', label: '财务报表' },
           { href: '/finance/contracts', label: '合同台账' },
+          { href: '/finance/partners', label: '往来单位' },
         ],
       },
       {

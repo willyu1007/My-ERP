@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import type { Contract } from '@my-erp/api-client';
+import type { BusinessPartner, Contract } from '@my-erp/api-client';
 import type { RowModel } from '@my-erp/ui/contracts';
 import { ActionButton, Scene, StatusBadge } from '@my-erp/ui/primitives';
 import { Queue } from '@my-erp/ui/queue';
@@ -167,9 +167,13 @@ function drawerFor(contract: Contract, today: Date, close: () => void) {
 
 export function ContractsClient({
   contracts,
+  partners,
+  filterPartner = null,
   initialEntryOpen = false,
 }: {
   readonly contracts: readonly Contract[];
+  readonly partners: readonly BusinessPartner[];
+  readonly filterPartner?: BusinessPartner | null;
   readonly initialEntryOpen?: boolean;
 }) {
   const [queue, setQueue] = useState<ContractQueueKey>('incomplete');
@@ -182,6 +186,14 @@ export function ContractsClient({
       <ActionButton kind="primary" onClick={() => setEntryOpen((value) => !value)}>
         {entryOpen ? '收起登记' : '登记合同'}
       </ActionButton>
+      {filterPartner ? (
+        <span className={styles.filterChip}>
+          对方：{filterPartner.name}
+          <Link href="/finance/contracts" aria-label="清除往来单位筛选">
+            ×
+          </Link>
+        </span>
+      ) : null}
       <div className="wb-segmented" role="tablist" aria-label="合同工作台队列">
         {CONTRACT_QUEUES.map((item) => (
           <button
@@ -207,7 +219,7 @@ export function ContractsClient({
         inert={!entryOpen}
       >
         <div className={styles.entryPanelInner}>
-          <ContractCreateForm />
+          <ContractCreateForm partners={partners} />
         </div>
       </div>
       <div className={styles.queueScope}>

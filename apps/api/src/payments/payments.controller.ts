@@ -38,8 +38,9 @@ export class PaymentsController {
     @CurrentIdentity() identity: Identity,
     @Query('status') status?: string,
     @Query('direction') direction?: string,
+    @Query('partnerId') partnerId?: string,
   ) {
-    return this.service.list(identity, ledgerBookId, { status, direction });
+    return this.service.list(identity, ledgerBookId, { status, direction, partnerId });
   }
 
   @Post()

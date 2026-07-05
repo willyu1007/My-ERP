@@ -1,9 +1,10 @@
 # 00 — Overview: SME finance usability foundation
 
 ## Status
-- State: planned
-- Phase 0 decision alignment complete: D1-D10 confirmed 2026-07-05.
-- Next step: Start Phase 1 (BusinessPartner foundation) on user go-ahead; sequencing confirmed as five implementation phases (see `01-plan.md`).
+- State: in-progress
+- Phase 0 decision alignment complete: D1-D11 confirmed 2026-07-05.
+- Phase 1 (BusinessPartner foundation) implemented and verified 2026-07-05: partner master + partnerId links/filters/snapshots + partners web page + PartnerPicker. See `03`/`04`.
+- Next step: Phase 2 — standard chart v2 + progressive account picker + tree/metadata-based cash-account identification + chart import/diff for existing ledgers.
 
 ## Problem statement
 Current My-ERP finance foundations are correct but still expose too much accounting structure to small-business users. Cashier payment entry requires selecting accounting contra accounts, counterparties are plain strings instead of queryable master data, and the shared account picker shows many flat/repeated options with disruptive native input suggestions in some browsers.
