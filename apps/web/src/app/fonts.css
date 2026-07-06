@@ -1,0 +1,24 @@
+/* Host font wiring for the web-workbench kit.
+ *
+ * The kit ships the --font-* family stacks but no longer loads the webfont files
+ * (it removed the render-blocking Google Fonts @import). layout.tsx self-hosts
+ * the Latin faces via next/font and exposes them as --f-* variables; here we point
+ * the kit's --font-* tokens at those faces, keeping the system CJK fallbacks. So
+ * Latin renders in the self-hosted Manrope / Source Serif 4 / JetBrains Mono /
+ * Caveat, and Chinese resolves to the platform Han font (PingFang SC / system-ui)
+ * rather than a heavy CJK webfont. Redefining --font-* is the one sanctioned host
+ * override of a kit token, because font *loading* is a host concern.
+ *
+ * Loaded AFTER '@willyu1007/web-workbench/styles' in layout.tsx, so this :root
+ * block wins over the kit's token defaults.
+ */
+:root {
+  --font-sans: var(--f-sans), 'Noto Sans SC', 'PingFang SC', 'HarmonyOS Sans',
+    'Source Han Sans SC', system-ui, sans-serif;
+  --font-display: var(--f-sans), 'Noto Sans SC', 'PingFang SC', system-ui, sans-serif;
+  --font-serif: var(--f-serif), 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC',
+    'STSong', Georgia, serif;
+  --font-mono: var(--f-mono), 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+  --font-hand: var(--f-hand), 'Ma Shan Zheng', 'Kaiti SC', 'STKaiti', 'KaiTi', cursive;
+  --font-hand-cn: 'Ma Shan Zheng', 'Kaiti SC', 'STKaiti', 'KaiTi', var(--f-hand), cursive;
+}

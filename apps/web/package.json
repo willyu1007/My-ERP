@@ -12,7 +12,7 @@
   "dependencies": {
     "@my-erp/api-client": "workspace:*",
     "@my-erp/ui": "workspace:*",
-    "@willyu1007/web-workbench": "^0.6.10",
+    "@willyu1007/web-workbench": "^0.7.0",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
