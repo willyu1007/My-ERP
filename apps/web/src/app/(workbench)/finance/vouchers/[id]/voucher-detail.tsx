@@ -1,15 +1,23 @@
 'use client';
 
 import { Breadcrumb, Section, StatusBadge } from '@my-erp/ui/primitives';
+import type { FundConsumption } from '@my-erp/api-client';
 import { formatDate, formatMoney, formatPeriod } from '@/lib/finance/format';
 import { VOUCHER_STATUS_LABELS, voucherStatusTone } from '@/lib/finance/types';
 import type { VoucherVM } from '@/lib/finance/types';
+import { FundConsumptionPanel } from './fund-consumption-panel';
 
 /**
  * 凭证详情。草稿凭证由页面组件先路由到快录编辑器；这里仅渲染
  * pending/posted/reversed 等非草稿凭证的只读详情，避免非持久化动作。
  */
-export function VoucherDetail({ voucher }: { readonly voucher: VoucherVM }) {
+export function VoucherDetail({
+  voucher,
+  fundConsumptions = [],
+}: {
+  readonly voucher: VoucherVM;
+  readonly fundConsumptions?: readonly FundConsumption[];
+}) {
   const meta: readonly (readonly [string, string])[] = [
     ['日期', formatDate(voucher.date)],
     ['期间', formatPeriod(voucher.period)],
@@ -95,6 +103,8 @@ export function VoucherDetail({ voucher }: { readonly voucher: VoucherVM }) {
           </div>
         </div>
       </div>
+
+      <FundConsumptionPanel rows={fundConsumptions} />
     </div>
   );
 }

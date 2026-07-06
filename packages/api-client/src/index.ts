@@ -38,6 +38,11 @@ export type EnrichPayment = components['schemas']['EnrichPayment'];
 export type PaymentConfirmResult = components['schemas']['PaymentConfirmResult'];
 export type PaymentDirection = PaymentDoc['direction'];
 export type PaymentStatus = PaymentDoc['status'];
+// Cashier fund execution (T-012 Phase 4, D4)
+export type FundConsumption = components['schemas']['FundConsumption'];
+export type ConsumeFundConsumption = components['schemas']['ConsumeFundConsumption'];
+export type FundExecutionStatus = FundConsumption['executionStatus'];
+export type FundReconciliationStatus = FundConsumption['reconciliationStatus'];
 // Contracts (T-005)
 export type Contract = components['schemas']['Contract'];
 export type CreateContract = components['schemas']['CreateContract'];
@@ -167,6 +172,14 @@ export interface ApiClient {
     confirmSinglePerson?: boolean,
   ): Promise<PaymentConfirmResult>;
   voidPayment(id: string, expectedVersion: number, reason?: string): Promise<PaymentDoc>;
+  // Cashier fund execution (T-012 Phase 4, D4).
+  listFundConsumptions(params?: {
+    voucherId?: string;
+    executionStatus?: FundExecutionStatus;
+    reconciliationStatus?: FundReconciliationStatus;
+  }): Promise<FundConsumption[]>;
+  getFundConsumption(id: string): Promise<FundConsumption>;
+  consumeFundConsumption(id: string, body: ConsumeFundConsumption): Promise<FundConsumption>;
   // Contracts (T-005).
   listContracts(params?: {
     status?: ContractStatus;
@@ -337,6 +350,23 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
         expectedVersion,
         ...(reason ? { reason } : {}),
       }),
+    listFundConsumptions: (params) => {
+      const qs = new URLSearchParams();
+      if (params?.voucherId) qs.set('voucherId', params.voucherId);
+      if (params?.executionStatus) qs.set('executionStatus', params.executionStatus);
+      if (params?.reconciliationStatus)
+        qs.set('reconciliationStatus', params.reconciliationStatus);
+      const q = qs.toString();
+      return request<FundConsumption[]>('GET', `/v1/fund-consumptions${q ? `?${q}` : ''}`);
+    },
+    getFundConsumption: (id) =>
+      request<FundConsumption>('GET', `/v1/fund-consumptions/${encodeURIComponent(id)}`),
+    consumeFundConsumption: (id, body) =>
+      request<FundConsumption>(
+        'POST',
+        `/v1/fund-consumptions/${encodeURIComponent(id)}/consume`,
+        body,
+      ),
     listContracts: (params) => {
       const qs = new URLSearchParams();
       if (params?.status) qs.set('status', params.status);

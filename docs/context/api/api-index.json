@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-05T22:45:17.266Z",
+  "generatedAt": "2026-07-06T00:18:17.006Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "cff0c9e4828cda46b9895953a2062be01d501fcd000406c2dd00ab83f0259af0",
+  "sourceChecksumSha256": "c40b6bf9fe1c2c92df6974683876836bffafe5c186eacfcaee0f324fe759e681",
   "stats": {
-    "totalEndpoints": 69,
+    "totalEndpoints": 72,
     "byTag": {
       "system": 1,
       "identity": 1,
@@ -21,6 +21,7 @@
       "cash-flow": 5,
       "reports": 3,
       "payments": 8,
+      "fund-consumptions": 3,
       "contracts": 5,
       "business-partners": 4,
       "opening-balances": 2
@@ -2170,6 +2171,147 @@
       ],
       "example": {
         "curl": "curl -X POST '/v1/payments/{id}/void' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"expectedVersion\":\"<expectedVersion>\"}'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/fund-consumptions",
+      "operationId": "listFundConsumptions",
+      "summary": "List 货币资金结算/出纳执行任务 (FundConsumption) — cashier fund-execution queue (T-012 Phase 4, D4)",
+      "tag": "fund-consumptions",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [
+          "voucherId",
+          "executionStatus",
+          "reconciliationStatus"
+        ],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": []
+      },
+      "errors": [],
+      "example": {
+        "curl": "curl -X GET '/v1/fund-consumptions' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/fund-consumptions/{id}",
+      "operationId": "getFundConsumption",
+      "summary": "Get a fund-consumption row",
+      "tag": "fund-consumptions",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id"
+        ],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "ledgerBookId",
+          "orgId",
+          "voucherId",
+          "voucherLineId",
+          "voucherNo",
+          "lineNo",
+          "accountCode",
+          "accountName",
+          "direction",
+          "amount",
+          "counterparty",
+          "summary",
+          "executionStatus",
+          "reconciliationStatus",
+          "createdBy",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "bankFlowRef",
+          "attachmentId",
+          "workItemId",
+          "executedBy",
+          "executedAt",
+          "reconciledBy",
+          "reconciledAt"
+        ]
+      },
+      "errors": [
+        404
+      ],
+      "example": {
+        "curl": "curl -X GET '/v1/fund-consumptions/{id}' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/fund-consumptions/{id}/consume",
+      "operationId": "consumeFundConsumption",
+      "summary": "pending → executed | skipped — cashier records fund movement (T-012 Phase 4, D4)",
+      "tag": "fund-consumptions",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id"
+        ],
+        "query": [],
+        "body": {
+          "required": [
+            "expectedVersion",
+            "executionStatus"
+          ],
+          "optional": [
+            "bankFlowRef",
+            "attachmentId",
+            "reconciliationStatus"
+          ]
+        }
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "ledgerBookId",
+          "orgId",
+          "voucherId",
+          "voucherLineId",
+          "voucherNo",
+          "lineNo",
+          "accountCode",
+          "accountName",
+          "direction",
+          "amount",
+          "counterparty",
+          "summary",
+          "executionStatus",
+          "reconciliationStatus",
+          "createdBy",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "bankFlowRef",
+          "attachmentId",
+          "workItemId",
+          "executedBy",
+          "executedAt",
+          "reconciledBy",
+          "reconciledAt"
+        ]
+      },
+      "errors": [
+        400,
+        403,
+        409
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/fund-consumptions/{id}/consume' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"expectedVersion\":\"<expectedVersion>\",\"executionStatus\":\"<executionStatus>\"}'"
       }
     },
     {

@@ -1,9 +1,9 @@
 # API Index
 
-> Auto-generated at 2026-07-05T22:45:17.266Z — do NOT hand-edit.
-> Source: `docs/context/api/openapi.yaml` (SHA-256: `cff0c9e4828c...`)
+> Auto-generated at 2026-07-06T00:18:17.006Z — do NOT hand-edit.
+> Source: `docs/context/api/openapi.yaml` (SHA-256: `c40b6bf9fe1c...`)
 
-Total endpoints: **69**
+Total endpoints: **72**
 
 | Method | Path | Summary | Auth | Input (required) | Output (core) | Errors |
 |--------|------|---------|------|------------------|---------------|--------|
@@ -65,6 +65,9 @@ Total endpoints: **69**
 | POST | /v1/payments/{id}/approve | pending_approval → approved (SoD; opens the cashier task) | bearer | expectedVersion | id, no, direction, date, period, counterparty, summary, amount, status, maker, version, createdAt, updatedAt, partnerId, cashAccountCode, contraAccountCode, contraAux, cashFlowItem, settlementVoucherId, contractId, approver, confirmer | 400, 403, 409 |
 | POST | /v1/payments/{id}/confirm | approved → confirmed — generate + post the settlement voucher | bearer | expectedVersion | id, no, direction, date, period, counterparty, summary, amount, status, maker, version, createdAt, updatedAt, partnerId, cashAccountCode, contraAccountCode, contraAux, cashFlowItem, settlementVoucherId, contractId, approver, confirmer, settlementVoucher | 400, 403, 409 |
 | POST | /v1/payments/{id}/void | 作废 a pre-confirmed payment doc | bearer | expectedVersion | id, no, direction, date, period, counterparty, summary, amount, status, maker, version, createdAt, updatedAt, partnerId, cashAccountCode, contraAccountCode, contraAux, cashFlowItem, settlementVoucherId, contractId, approver, confirmer | 400, 409 |
+| GET | /v1/fund-consumptions | List 货币资金结算/出纳执行任务 (FundConsumption) — cashier fund-execution queue (T-012 Phase 4, D4) | bearer | — | — | — |
+| GET | /v1/fund-consumptions/{id} | Get a fund-consumption row | bearer | id | id, ledgerBookId, orgId, voucherId, voucherLineId, voucherNo, lineNo, accountCode, accountName, direction, amount, counterparty, summary, executionStatus, reconciliationStatus, createdBy, version, createdAt, updatedAt, bankFlowRef, attachmentId, workItemId, executedBy, executedAt, reconciledBy, reconciledAt | 404 |
+| POST | /v1/fund-consumptions/{id}/consume | pending → executed \| skipped — cashier records fund movement (T-012 Phase 4, D4) | bearer | expectedVersion, executionStatus | id, ledgerBookId, orgId, voucherId, voucherLineId, voucherNo, lineNo, accountCode, accountName, direction, amount, counterparty, summary, executionStatus, reconciliationStatus, createdBy, version, createdAt, updatedAt, bankFlowRef, attachmentId, workItemId, executedBy, executedAt, reconciledBy, reconciledAt | 400, 403, 409 |
 | GET | /v1/contracts | List 合同 (Contract) | bearer | — | — | — |
 | POST | /v1/contracts | Create a 合同 (code auto-assigned HT-{fiscalYear}-{NNN}) | bearer | title | id, ledgerBookId, code, title, type, counterparty, currency, status, summary, createdBy, version, createdAt, updatedAt, partnerId, amount, startDate, endDate | 400 |
 | GET | /v1/contracts/{id} | Get a contract | bearer | id | id, ledgerBookId, code, title, type, counterparty, currency, status, summary, createdBy, version, createdAt, updatedAt, partnerId, amount, startDate, endDate | 404 |

@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import {
   appendAuditRecordTx,
+  cancelActiveWorkItemsForSourceTx,
   completeActiveWorkItemsForSourceTx,
   countVouchersInPeriodTx,
   createReversalVoucherTx,
@@ -23,6 +24,7 @@ import {
   listVouchersTx,
   setVoucherStatusTx,
   updateDraftVoucherTx,
+  voidFundConsumptionsForVoucherTx,
   withLedgerScope,
   withScope,
   type LedgerBookEntity,
@@ -46,6 +48,7 @@ import {
   postVoucherReviewTx,
   VOUCHER_CONFIRM_WORK_ITEM_TYPE,
 } from '../work-items/voucher-workflow';
+import { FUND_CONSUME_WORK_ITEM_TYPE } from '../work-items/fund-workflow';
 
 interface ParsedLine {
   accountCode: string;
@@ -427,7 +430,10 @@ export class VouchersController {
     @CurrentIdentity() identity: Identity,
     @Param('id') id: string,
   ) {
-    return withLedgerScope(ledgerBookId, async (tx) => {
+    // withScope (not withLedgerScope): the fund-task cleanup below touches the
+    // ORG-scoped work_item + outbox tables, whose RLS needs app.current_org set —
+    // withLedgerScope would leave it empty and silently cancel zero tasks (05-pitfalls).
+    return withScope(identity.orgId, ledgerBookId, async (tx) => {
       const original = await getVoucherTx(tx, id);
       if (!original) throw new NotFoundException('voucher not found');
       if (original.status !== 'posted')
@@ -448,6 +454,17 @@ export class VouchersController {
         postedAt: new Date(),
       });
       await setVoucherStatusTx(tx, id, { status: 'reversed', reversedBy: reversal.id });
+      // T-012 Phase 4: reversing the source voucher invalidates its cashier fund tasks —
+      // void the fund rows (no physical delete) and cancel any open fund.consume items.
+      await voidFundConsumptionsForVoucherTx(tx, id);
+      const canceled = await cancelActiveWorkItemsForSourceTx(tx, {
+        sourceType: 'JournalVoucher',
+        sourceId: id,
+        actorId: identity.userId,
+        workItemType: FUND_CONSUME_WORK_ITEM_TYPE,
+      });
+      for (const item of canceled)
+        await appendWorkItemOutboxEventTx(tx, item, 'work_item.canceled', 'cancel');
       await appendAuditRecordTx(tx, {
         actorId: identity.userId,
         action: 'REVERSE_VOUCHER',

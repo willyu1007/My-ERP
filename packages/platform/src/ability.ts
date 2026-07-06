@@ -11,6 +11,7 @@ export type Action =
   | 'post'
   | 'reverse'
   | 'approve'
+  | 'consume'
   | 'claim'
   | 'complete'
   | 'return'
@@ -27,7 +28,8 @@ export type Subject =
   | 'OutboxEvent'
   | 'AuditRecord'
   | 'Membership'
-  | 'BusinessPartner';
+  | 'BusinessPartner'
+  | 'FundConsumption';
 
 export type AppAbility = MongoAbility<[Action, Subject]>;
 
@@ -52,6 +54,7 @@ export function defineAbilityFor(identity: Identity): AppAbility {
     );
     can('read', 'Intake', scope);
     can('read', 'BusinessPartner', scope);
+    can('read', 'FundConsumption', scope);
   }
   if (has('accountant')) {
     can(
@@ -66,6 +69,7 @@ export function defineAbilityFor(identity: Identity): AppAbility {
     can(['create', 'read', 'update', 'cancel'], 'Intake', scope); // capture/draft/discard
     can(['create', 'read', 'update'], 'BusinessPartner', scope); // org-entered master (T-012 D10)
     can('read', 'Membership', scope); // roster for employee quick-select (T-012 D2)
+    can(['read', 'consume'], 'FundConsumption', scope); // may also execute fund tasks (T-012 D4)
   }
   if (has('cashier')) {
     can('read', ['Organization', 'LedgerBook', 'Account', 'Voucher', 'WorkItem'], scope);
@@ -74,6 +78,9 @@ export function defineAbilityFor(identity: Identity): AppAbility {
     can(['create', 'read', 'update', 'cancel'], 'Intake', scope);
     can(['create', 'read', 'update'], 'BusinessPartner', scope); // cashier adds payees at entry time
     can('read', 'Membership', scope); // roster for employee quick-select (T-012 D2)
+    // T-012 D4: the cashier consumes accountant-voucher fund tasks + confirms payment
+    // execution (the confirm route is realigned to this non-posting capability).
+    can(['read', 'consume'], 'FundConsumption', scope);
   }
   if (has('supervisor')) {
     can(
@@ -88,6 +95,7 @@ export function defineAbilityFor(identity: Identity): AppAbility {
     can('post', 'Voucher', scope);
     can(['claim', 'complete', 'return', 'assign', 'cancel'], 'WorkItem', scope);
     can(['create', 'read', 'update'], 'BusinessPartner', scope);
+    can(['read', 'consume'], 'FundConsumption', scope);
   }
 
   return build();

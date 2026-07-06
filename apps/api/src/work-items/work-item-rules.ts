@@ -11,12 +11,17 @@ export interface LedgerActionState {
   readonly singlePersonMode: boolean;
 }
 
+export interface FundConsumptionActionState {
+  readonly executionStatus: string;
+}
+
 export interface WorkItemRuleContext {
   readonly item: WorkItemEntity;
   readonly identity: Identity;
   readonly handledByUser?: boolean;
   readonly voucher?: VoucherActionState | null;
   readonly ledger?: LedgerActionState | null;
+  readonly fundConsumption?: FundConsumptionActionState | null;
 }
 
 function hasRole(identity: Identity, role: string): boolean {
@@ -71,6 +76,25 @@ function canCompleteVoucherReview(ctx: WorkItemRuleContext): boolean {
   return !selfPost || Boolean(ledger?.singlePersonMode);
 }
 
+/**
+ * T-012 Phase 4 (D4): a cashier may complete a fund.consume task if they own/are
+ * role-eligible for it, the fund line is still pending, and they hold the `consume`
+ * FundConsumption capability. NO `post Voucher` gate (the voucher is already posted and
+ * immutable to the cashier; consuming posts nothing) and NO maker≠checker SoD (this is a
+ * downstream execution step, not the accounting post).
+ */
+function canCompleteFundConsume(ctx: WorkItemRuleContext): boolean {
+  const { item, identity, fundConsumption } = ctx;
+  if (!fundConsumption || fundConsumption.executionStatus !== 'pending') return false;
+  if (!['open', 'claimed', 'returned'].includes(item.status)) return false;
+
+  const assignedToMe = item.assigneeUserId === identity.userId;
+  const roleEligible = hasRole(identity, item.assignedRole) || hasRole(identity, 'admin');
+  const canActOnAssignment = assignedToMe || (!item.assigneeUserId && roleEligible);
+  if (!canActOnAssignment) return false;
+  return defineAbilityFor(identity).can('consume', 'FundConsumption');
+}
+
 export function availableWorkItemActions(ctx: WorkItemRuleContext): WorkItemAction[] {
   const { item, identity } = ctx;
   const ability = defineAbilityFor(identity);
@@ -92,6 +116,14 @@ export function availableWorkItemActions(ctx: WorkItemRuleContext): WorkItemActi
     item.sourceType === 'JournalVoucher' &&
     item.workItemType === 'voucher.review' &&
     canCompleteVoucherReview(ctx)
+  ) {
+    actions.push('complete');
+  }
+
+  if (
+    item.sourceType === 'JournalVoucher' &&
+    item.workItemType === 'fund.consume' &&
+    canCompleteFundConsume(ctx)
   ) {
     actions.push('complete');
   }

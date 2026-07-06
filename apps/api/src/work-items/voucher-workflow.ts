@@ -8,19 +8,23 @@ import {
   appendAuditRecordTx,
   appendOutboxEventTx,
   completeActiveWorkItemsForSourceTx,
+  createFundConsumptionTx,
   createWorkItemWithResultTx,
   getVoucherTx,
   isPeriodClosedTx,
+  isSettlementVoucherTx,
   setVoucherStatusTx,
   transitionWorkItemTx,
+  updateFundConsumptionWorkItemRefTx,
   type LedgerBookEntity,
   type TxClient,
   type VoucherEntity,
   type WorkItemEntity,
 } from '@my-erp/db';
 import { OutboxEventEnvelopeSchema, SafeWorkItemMetadataSchema } from '@my-erp/contracts';
-import { voucherBalanceError } from '@my-erp/finance-domain';
+import { isCashAccountCode, voucherBalanceError } from '@my-erp/finance-domain';
 import type { Identity } from '@my-erp/platform';
+import { createFundConsumeWorkItemTx } from './fund-workflow';
 
 export const VOUCHER_REVIEW_WORK_ITEM_TYPE = 'voucher.review';
 export const VOUCHER_REVIEW_WORKFLOW = {
@@ -227,5 +231,41 @@ export async function postVoucherReviewTx(
 
   const posted = await getVoucherTx(tx, input.voucherId);
   if (!posted) throw new NotFoundException('voucher not found');
+
+  // T-012 Phase 4 (D4): each cash/bank line on this accountant/manual voucher spawns a
+  // cashier fund-consumption task so the cashier records that money actually moved —
+  // WITHOUT any second voucher / ledger effect (FundConsumption has no ledger columns).
+  // Settlement vouchers from the cashier payment flow never reach here (posted directly
+  // by confirm(), never 'pending'); reversal originals are skipped. Belt-and-suspenders:
+  // the isSettlementVoucherTx guard also excludes any doc-linked settlement voucher.
+  if (!posted.reversalOf && !(await isSettlementVoucherTx(tx, posted.id))) {
+    for (const line of posted.lines) {
+      if (!isCashAccountCode(line.accountCode)) continue;
+      const fc = await createFundConsumptionTx(tx, {
+        ledgerBookId: input.ledgerBookId,
+        orgId: input.identity.orgId,
+        voucherId: posted.id,
+        voucherLineId: line.id,
+        voucherNo: posted.no,
+        lineNo: line.lineNo,
+        accountCode: line.accountCode,
+        accountName: line.accountName,
+        // 借 cash → money in (receipt); 贷 cash → money out (payment).
+        direction: line.debit ? 'inflow' : 'outflow',
+        amount: line.debit ?? line.credit ?? '0.00',
+        summary: line.summary || posted.summary,
+        createdBy: input.identity.userId,
+      });
+      const item = await createFundConsumeWorkItemTx(tx, {
+        orgId: input.identity.orgId,
+        ledgerBookId: input.ledgerBookId,
+        voucherId: posted.id,
+        voucherLineId: line.id,
+        actorId: input.identity.userId,
+      });
+      await updateFundConsumptionWorkItemRefTx(tx, fc.id, item.id);
+    }
+  }
+
   return posted;
 }

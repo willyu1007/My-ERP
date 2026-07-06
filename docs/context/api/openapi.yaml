@@ -912,6 +912,43 @@ paths:
         '200': { description: Voided, content: { application/json: { schema: { $ref: '#/components/schemas/PaymentDoc' } } } }
         '400': { description: Already confirmed / void }
         '409': { description: Stale version }
+  /v1/fund-consumptions:
+    get:
+      operationId: listFundConsumptions
+      summary: List 货币资金结算/出纳执行任务 (FundConsumption) — cashier fund-execution queue (T-012 Phase 4, D4)
+      description: One row per cash/bank line of a posted accountant/manual voucher. Consuming records that money actually moved; it never posts a second voucher. Requires read-FundConsumption (cashier-capable).
+      tags: [fund-consumptions]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: voucherId, in: query, required: false, schema: { type: string, format: uuid }, description: 'Filter to one source voucher' }
+        - { name: executionStatus, in: query, required: false, schema: { type: string, enum: [pending, executed, skipped, void] } }
+        - { name: reconciliationStatus, in: query, required: false, schema: { type: string, enum: [unreconciled, reconciled] } }
+      responses:
+        '200': { description: Fund consumptions, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/FundConsumption' } } } } }
+  /v1/fund-consumptions/{id}:
+    get:
+      operationId: getFundConsumption
+      summary: Get a fund-consumption row
+      tags: [fund-consumptions]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: Fund consumption, content: { application/json: { schema: { $ref: '#/components/schemas/FundConsumption' } } } }
+        '404': { description: Not found }
+  /v1/fund-consumptions/{id}/consume:
+    post:
+      operationId: consumeFundConsumption
+      summary: pending → executed | skipped — cashier records fund movement (T-012 Phase 4, D4)
+      description: Records execution (bank-flow reference, attachment, reconciliation) and completes the paired fund.consume task. NEVER posts a voucher or produces any ledger effect. Requires consume-FundConsumption (cashier-capable).
+      tags: [fund-consumptions]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ConsumeFundConsumption' } } } }
+      responses:
+        '200': { description: Consumed, content: { application/json: { schema: { $ref: '#/components/schemas/FundConsumption' } } } }
+        '400': { description: Wrong status / invalid executionStatus }
+        '403': { description: Task claimed by another cashier }
+        '409': { description: Stale version }
   /v1/contracts:
     get:
       operationId: listContracts
@@ -1573,6 +1610,46 @@ components:
         - type: object
           properties:
             settlementVoucher: { $ref: '#/components/schemas/Voucher' }
+    FundConsumption:
+      type: object
+      description: 'A cashier fund-execution task over one cash/bank line of a posted voucher (T-012 Phase 4, D4). Has NO ledger columns — consuming it never posts a voucher.'
+      required: [id, ledgerBookId, orgId, voucherId, voucherLineId, voucherNo, lineNo, accountCode, accountName, direction, amount, counterparty, summary, executionStatus, reconciliationStatus, createdBy, version, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        ledgerBookId: { type: string, format: uuid }
+        orgId: { type: string, format: uuid }
+        voucherId: { type: string, format: uuid, description: 'The posted source voucher' }
+        voucherLineId: { type: string, format: uuid, description: 'The cash/bank line this task tracks (one task per line)' }
+        voucherNo: { type: string }
+        lineNo: { type: integer }
+        accountCode: { type: string, description: '货币资金类 (1001/1002/1012 subtree)' }
+        accountName: { type: string }
+        direction: { type: string, enum: [inflow, outflow], description: 'inflow = debit to cash; outflow = credit' }
+        amount: { type: string, description: '2dp' }
+        counterparty: { type: string }
+        summary: { type: string }
+        executionStatus: { type: string, enum: [pending, executed, skipped, void] }
+        bankFlowRef: { type: string, nullable: true, description: 'Bank流水号 / settlement reference' }
+        reconciliationStatus: { type: string, enum: [unreconciled, reconciled] }
+        attachmentId: { type: string, nullable: true }
+        workItemId: { type: string, format: uuid, nullable: true, description: 'The paired fund.consume work item' }
+        executedBy: { type: string, nullable: true }
+        executedAt: { type: string, format: date-time, nullable: true }
+        reconciledBy: { type: string, nullable: true }
+        reconciledAt: { type: string, format: date-time, nullable: true }
+        createdBy: { type: string }
+        version: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    ConsumeFundConsumption:
+      type: object
+      required: [expectedVersion, executionStatus]
+      properties:
+        expectedVersion: { type: integer, description: 'Optimistic concurrency version' }
+        executionStatus: { type: string, enum: [executed, skipped], description: 'executed = money moved; skipped = pure bookkeeping / no cashier movement' }
+        bankFlowRef: { type: string, nullable: true }
+        attachmentId: { type: string, nullable: true }
+        reconciliationStatus: { type: string, enum: [unreconciled, reconciled], description: 'Optional; defaults to unreconciled' }
     Contract:
       type: object
       required: [id, ledgerBookId, code, title, type, counterparty, currency, status, summary, createdBy, version, createdAt, updatedAt]

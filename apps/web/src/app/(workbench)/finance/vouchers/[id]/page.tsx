@@ -4,6 +4,7 @@ import {
   listAccounts,
   listCashFlowItems,
   listContracts,
+  listFundConsumptions,
 } from '@/lib/finance/data-source';
 import { VoucherFastEntry } from '../../daily-accounting/voucher-fast-entry';
 import { VoucherDetail } from './voucher-detail';
@@ -89,5 +90,8 @@ export default async function VoucherDetailPage({
     );
   }
 
-  return <VoucherDetail voucher={voucher} />;
+  // Posted vouchers may carry cashier fund-execution tasks over their cash/bank lines
+  // (T-012 Phase 4, D4). Load them so the detail can surface the inline settlement panel.
+  const fundConsumptions = await listFundConsumptions({ voucherId: voucher.id });
+  return <VoucherDetail voucher={voucher} fundConsumptions={fundConsumptions} />;
 }

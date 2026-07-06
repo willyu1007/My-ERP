@@ -79,9 +79,13 @@ export function WorkbenchTasks({ rows }: { readonly rows: readonly TaskRow[] }) 
       const res = await run;
       setBusyId(null);
       if (res.ok) {
+        // Fund-execution complete records a cashier fund movement, not a voucher post —
+        // so it reports 已确认执行, never 已过账 (T-012 Phase 4, D4).
+        const isFund = row.titleKey.includes('.fund.');
+        const completeTitle = isFund ? '已确认执行' : '已过账';
         toast.notify(
           'success',
-          action === 'complete' ? '已过账' : `已${WORK_ITEM_ACTION_LABEL[action]}`,
+          action === 'complete' ? completeTitle : `已${WORK_ITEM_ACTION_LABEL[action]}`,
           action === 'complete' && res.postedNo ? res.postedNo : (row.ref?.no ?? ''),
         );
         router.refresh();
@@ -233,6 +237,9 @@ function countWorkflows(rows: readonly TaskRow[]): ReadonlyMap<WorkflowKey, numb
 }
 
 function workflowOf(row: TaskRow): WorkflowKey {
+  // Fund-execution tasks (T-012 Phase 4) deep-link to their source voucher but belong
+  // to the cashier — match `.fund.` before the voucher href rule so they bucket correctly.
+  if (row.titleKey.includes('.fund.')) return 'cashier';
   if (row.titleKey.includes('.voucher.') || row.href.includes('/finance/vouchers'))
     return 'voucher';
   if (row.titleKey.includes('.intake.') || row.href.includes('/finance/intakes')) return 'intake';
@@ -277,7 +284,7 @@ function TaskActions({
           disabled={busy}
           onClick={() => onAction('complete')}
         >
-          {busy ? '处理中…' : '通过并过账'}
+          {busy ? '处理中…' : row.titleKey.includes('.fund.') ? '确认执行' : '通过并过账'}
         </button>
       )}
       {row.availableActions.includes('cancel') && (

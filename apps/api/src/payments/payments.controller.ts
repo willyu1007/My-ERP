@@ -112,9 +112,13 @@ export class PaymentsController {
     return this.service.approve(identity, ledgerBookId, id, expectedVersion(body));
   }
 
+  // T-012 Phase 4 (D4): confirming a payment IS the cashier's fund movement — the
+  // settlement voucher is system-generated + posted (制单=审核, SoD-exempt), so the
+  // route gates on `consume FundConsumption` (cashier-capable), not `post Voucher`.
+  // maker≠confirmer SoD stays enforced in PaymentsService.confirm.
   @Post(':id/confirm')
   @HttpCode(200)
-  @RequirePermission('post', 'Voucher')
+  @RequirePermission('consume', 'FundConsumption')
   async confirm(
     @LedgerBookId() ledgerBookId: string,
     @CurrentIdentity() identity: Identity,

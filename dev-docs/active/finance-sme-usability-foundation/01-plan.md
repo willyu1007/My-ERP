@@ -49,7 +49,7 @@
 - Web flows: simple cashier entry form (no account fields) and accountant enrichment view.
 - Payment surfaces vocabulary per D11: business-facing action button copy (replace jargon such as 「确认收付并过账」 for cashier users) and regrouped/simplified status tabs (currently seven; must not grow to eight with the enrichment state).
 
-### Phase 4 — Accountant voucher to cashier fund consumption
+### Phase 4 — Accountant voucher to cashier fund consumption (done 2026-07-06)
 - Detect cash/bank settlement lines on accountant-created posted vouchers using the Phase 2 identification rule.
 - Create cashier WorkItems and a fund-consumption view linked to voucher/voucher line.
 - Cashier consumption records execution confirmation, attachments, bank-flow references, and reconciliation/settlement status; no second voucher, no duplicate ledger effect.
@@ -97,8 +97,12 @@
   - [x] Accounting-capable roles can still enter docs directly with accounting subjects (D8, direct path unchanged).
   - [x] Payment action buttons use business wording (`确认收付`, no 过账) and the status tabs are simplified to 6 who-acts-next groups per D11.
   - [x] FULL D7 enrichment: subjects + contra-line auxiliary dimensions + cash-flow item thread into the settlement voucher, generated only at confirm.
-- Accountant voucher to cashier consumption:
-  - [ ] Accountant cash/bank voucher -> cashier consumption flow works and traces to voucher lines.
-  - [ ] Consumption never creates a second voucher or duplicate ledger effect.
+- Accountant voucher to cashier consumption (Phase 4 done 2026-07-06):
+  - [x] Accountant/manual cash/bank voucher -> cashier `fund.consume` task (one per cash line, subaccounts included) traces to voucher + voucher line via the `FundConsumption` row.
+  - [x] Consumption never creates a second voucher or duplicate ledger effect (`FundConsumption` has zero ledger columns; live smoke confirms voucher count unchanged on consume; both REST and workbench `act` paths post no voucher).
+  - [x] Settlement vouchers from the cashier payment flow are excluded (structurally — posted by `confirm()` not `postVoucherReviewTx` — plus the `isSettlementVoucherTx` belt-and-suspenders guard).
+  - [x] Reversing the source voucher voids the fund rows (no physical delete) and cancels still-open `fund.consume` tasks.
+  - [x] `payment.confirm` realigned to the cashier: route gates on `consume`/`FundConsumption` (cashier-capable), maker≠confirmer SoD preserved in `PaymentsService.confirm`.
+  - [x] WorkItem title/subStatus/action mapping follows the kernel + T-009 `availableActions` rendering (`货币资金结算` title, `确认执行` button, `已确认执行` toast — never `过账`).
 - Verification:
-  - [ ] Typecheck/tests/lint/context/governance checks pass for touched scope.
+  - [x] Typecheck/tests/lint/context/governance checks pass for touched scope (204 tests, all packages typecheck, eslint + stylelint clean, live `/v1` smoke green).

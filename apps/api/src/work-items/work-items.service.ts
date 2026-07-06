@@ -8,6 +8,7 @@ import {
 import {
   cancelWorkItemTx,
   claimWorkItemTx,
+  getFundConsumptionByWorkItemTx,
   getLedgerBookByIdTx,
   getWorkItemTx,
   getVoucherTx,
@@ -38,6 +39,7 @@ import {
   postVoucherReviewTx,
   VOUCHER_REVIEW_WORK_ITEM_TYPE,
 } from './voucher-workflow';
+import { consumeFundConsumptionWorkflowTx, FUND_CONSUME_WORK_ITEM_TYPE } from './fund-workflow';
 
 interface ListWorkItemsQuery {
   view?: string;
@@ -238,31 +240,48 @@ export class WorkItemsService {
       }
 
       if (action === 'complete') {
-        if (
-          item.sourceType !== 'JournalVoucher' ||
-          item.workItemType !== VOUCHER_REVIEW_WORK_ITEM_TYPE
-        ) {
-          throw new BadRequestException('complete is not implemented for this work item source');
-        }
         if (!item.ledgerBookId)
-          throw new BadRequestException('voucher task is missing ledger scope');
-        const book = await getLedgerBookByIdTx(tx, item.ledgerBookId);
-        if (!book) throw new ForbiddenException('ledger book not found in your organization');
-        const voucher = await postVoucherReviewTx(tx, {
-          ledgerBookId: item.ledgerBookId,
-          book,
-          identity,
-          voucherId: item.sourceId,
-          confirmSinglePerson: body.confirmSinglePerson ?? false,
-          workItemId: item.id,
-          expectedWorkItemVersion: body.expectedVersion,
-        });
-        const completed = await getWorkItemTx(tx, workItemId);
-        if (!completed) throw new NotFoundException('work item not found');
-        return {
-          workItem: toDto(completed, await this.availableActionsTx(tx, completed, identity, true)),
-          source: voucher,
-        };
+          throw new BadRequestException('task is missing ledger scope');
+
+        // Voucher review complete → post the voucher (T-003).
+        if (item.workItemType === VOUCHER_REVIEW_WORK_ITEM_TYPE) {
+          const book = await getLedgerBookByIdTx(tx, item.ledgerBookId);
+          if (!book) throw new ForbiddenException('ledger book not found in your organization');
+          const voucher = await postVoucherReviewTx(tx, {
+            ledgerBookId: item.ledgerBookId,
+            book,
+            identity,
+            voucherId: item.sourceId,
+            confirmSinglePerson: body.confirmSinglePerson ?? false,
+            workItemId: item.id,
+            expectedWorkItemVersion: body.expectedVersion,
+          });
+          const completed = await getWorkItemTx(tx, workItemId);
+          if (!completed) throw new NotFoundException('work item not found');
+          return {
+            workItem: toDto(completed, await this.availableActionsTx(tx, completed, identity, true)),
+            source: voucher,
+          };
+        }
+
+        // Fund-consume complete → record execution (T-012 Phase 4). No voucher.
+        if (item.workItemType === FUND_CONSUME_WORK_ITEM_TYPE) {
+          const fc = await getFundConsumptionByWorkItemTx(tx, item.id);
+          if (!fc) throw new NotFoundException('fund consumption not found');
+          await consumeFundConsumptionWorkflowTx(tx, {
+            identity,
+            ledgerBookId: item.ledgerBookId,
+            fundConsumptionId: fc.id,
+            body: { executionStatus: 'executed' },
+          });
+          const completed = await getWorkItemTx(tx, workItemId);
+          if (!completed) throw new NotFoundException('work item not found');
+          return {
+            workItem: toDto(completed, await this.availableActionsTx(tx, completed, identity, true)),
+          };
+        }
+
+        throw new BadRequestException('complete is not implemented for this work item source');
       }
 
       throw new BadRequestException(`action is not implemented: ${action}`);
@@ -284,20 +303,26 @@ export class WorkItemsService {
     identity: Identity,
     handledByUser: boolean,
   ): Promise<WorkItemAction[]> {
-    if (
-      item.sourceType !== 'JournalVoucher' ||
-      item.workItemType !== VOUCHER_REVIEW_WORK_ITEM_TYPE
-    ) {
-      return availableWorkItemActions({ item, identity, handledByUser });
+    if (item.sourceType === 'JournalVoucher' && item.workItemType === VOUCHER_REVIEW_WORK_ITEM_TYPE) {
+      const voucher = await getVoucherTx(tx, item.sourceId);
+      const ledger = item.ledgerBookId ? await getLedgerBookByIdTx(tx, item.ledgerBookId) : null;
+      return availableWorkItemActions({
+        item,
+        identity,
+        handledByUser,
+        voucher: voucher ? { status: voucher.status, maker: voucher.maker } : null,
+        ledger: ledger ? { singlePersonMode: ledger.singlePersonMode } : null,
+      });
     }
-    const voucher = await getVoucherTx(tx, item.sourceId);
-    const ledger = item.ledgerBookId ? await getLedgerBookByIdTx(tx, item.ledgerBookId) : null;
-    return availableWorkItemActions({
-      item,
-      identity,
-      handledByUser,
-      voucher: voucher ? { status: voucher.status, maker: voucher.maker } : null,
-      ledger: ledger ? { singlePersonMode: ledger.singlePersonMode } : null,
-    });
+    if (item.sourceType === 'JournalVoucher' && item.workItemType === FUND_CONSUME_WORK_ITEM_TYPE) {
+      const fc = await getFundConsumptionByWorkItemTx(tx, item.id);
+      return availableWorkItemActions({
+        item,
+        identity,
+        handledByUser,
+        fundConsumption: fc ? { executionStatus: fc.executionStatus } : null,
+      });
+    }
+    return availableWorkItemActions({ item, identity, handledByUser });
   }
 }

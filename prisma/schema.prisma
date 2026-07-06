@@ -128,6 +128,7 @@ model LedgerBook {
   contracts          Contract[]
   businessPartners   BusinessPartner[]
   accountPreferences AccountPreference[]
+  fundConsumptions   FundConsumption[]
 
   @@index([orgId])
   @@map("ledger_book")
@@ -584,4 +585,61 @@ model BusinessPartner {
   @@index([ledgerBookId, active])
   @@index([ledgerBookId, name])
   @@map("business_partner")
+}
+
+/// 货币资金结算/出纳执行 (T-012 Phase 4, D4). A cashier-facing EXECUTION view over a
+/// cash/bank line of an accountant-posted voucher — spawned by postVoucherReviewTx, one
+/// row per cash/bank line. It holds ONLY execution/reconciliation state (no debit/credit,
+/// no posting) so consuming it can never create a second voucher or duplicate ledger
+/// effect; voucherId/voucherLineId are read-only pointers to the accounting source of
+/// truth. Settlement vouchers from the cashier payment flow (PaymentDoc.settlementVoucherId)
+/// are excluded — they never pass through postVoucherReviewTx. Ledger-scoped (RLS), no
+/// physical delete (reversal → void).
+model FundConsumption {
+  id                   String    @id @default(uuid()) @db.Uuid
+  ledgerBookId         String    @map("ledger_book_id") @db.Uuid
+  /// Snapshot for WorkItem/outbox parity; RLS stays ledger-keyed.
+  orgId                String    @map("org_id")
+  /// The accountant voucher this fund line belongs to (plain UUID, no FK relation).
+  voucherId            String    @map("voucher_id") @db.Uuid
+  /// The specific cash/bank JournalEntryLine.id (stable id, not lineNo).
+  voucherLineId        String    @map("voucher_line_id") @db.Uuid
+  voucherNo            String    @default("") @map("voucher_no")
+  lineNo               Int       @map("line_no")
+  /// Snapshot of the cash/bank line's account code (the one that passed isCashAccountCode).
+  accountCode          String    @map("account_code")
+  accountName          String    @default("") @map("account_name")
+  /// inflow (借 cash → receipt) | outflow (贷 cash → payment).
+  direction            String
+  /// The cash LINE amount (debit ‖ credit), not the voucher total.
+  amount               Decimal   @db.Decimal(18, 2)
+  /// Display snapshots — never copied to outbox metadata.
+  counterparty         String    @default("")
+  summary              String    @default("")
+  /// pending | executed | skipped | void
+  executionStatus      String    @default("pending") @map("execution_status")
+  /// 银行流水号/回单 supplied by the cashier (free text).
+  bankFlowRef          String?   @map("bank_flow_ref")
+  /// unreconciled | reconciled (lightweight flag; full bank-recon stays v1.1).
+  reconciliationStatus String    @default("unreconciled") @map("reconciliation_status")
+  /// Single execution-evidence Attachment pointer (FundConsumption owns its own link).
+  attachmentId         String?   @map("attachment_id") @db.Uuid
+  /// Back-ref to the paired fund.consume WorkItem.
+  workItemId           String?   @map("work_item_id") @db.Uuid
+  executedBy           String?   @map("executed_by")
+  executedAt           DateTime? @map("executed_at") @db.Timestamptz(6)
+  reconciledBy         String?   @map("reconciled_by")
+  reconciledAt         DateTime? @map("reconciled_at") @db.Timestamptz(6)
+  /// The posting checker (actor of postVoucherReviewTx).
+  createdBy            String    @map("created_by")
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  version              Int       @default(0)
+
+  ledgerBook LedgerBook @relation(fields: [ledgerBookId], references: [id], onDelete: Cascade)
+
+  @@unique([ledgerBookId, voucherLineId])
+  @@index([ledgerBookId, executionStatus])
+  @@index([voucherId])
+  @@map("fund_consumption")
 }

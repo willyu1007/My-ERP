@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-07-05T22:26:10.457Z",
+  "updatedAt": "2026-07-06T00:00:30.134Z",
   "ssot": {
     "mode": "repo-prisma",
     "source": {
@@ -1173,6 +1173,342 @@
       ]
     },
     {
+      "name": "FundConsumption",
+      "dbName": "fund_consumption",
+      "schema": null,
+      "columns": [
+        {
+          "name": "accountCode",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "account_code",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "accountName",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "account_name",
+          "dbType": null,
+          "default": "\"\"",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "amount",
+          "type": "Decimal",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": "Decimal",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "attachmentId",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "attachment_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "bankFlowRef",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "bank_flow_ref",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "counterparty",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "\"\"",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "created_at",
+          "dbType": "Timestamptz",
+          "default": "now()",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "createdBy",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "created_by",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "direction",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "executedAt",
+          "type": "DateTime",
+          "nullable": true,
+          "list": false,
+          "dbName": "executed_at",
+          "dbType": "Timestamptz",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "executedBy",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "executed_by",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "executionStatus",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "execution_status",
+          "dbType": null,
+          "default": "\"pending\"",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "id",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": "Uuid",
+          "default": "uuid()",
+          "primaryKey": true,
+          "unique": false
+        },
+        {
+          "name": "ledgerBookId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "ledger_book_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "lineNo",
+          "type": "Int",
+          "nullable": false,
+          "list": false,
+          "dbName": "line_no",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "orgId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "org_id",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "reconciledAt",
+          "type": "DateTime",
+          "nullable": true,
+          "list": false,
+          "dbName": "reconciled_at",
+          "dbType": "Timestamptz",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "reconciledBy",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "reconciled_by",
+          "dbType": null,
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "reconciliationStatus",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "reconciliation_status",
+          "dbType": null,
+          "default": "\"unreconciled\"",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "summary",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "\"\"",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "nullable": false,
+          "list": false,
+          "dbName": "updated_at",
+          "dbType": "Timestamptz",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "version",
+          "type": "Int",
+          "nullable": false,
+          "list": false,
+          "dbName": null,
+          "dbType": null,
+          "default": "0",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "voucherId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "voucher_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "voucherLineId",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "voucher_line_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "voucherNo",
+          "type": "String",
+          "nullable": false,
+          "list": false,
+          "dbName": "voucher_no",
+          "dbType": null,
+          "default": "\"\"",
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "workItemId",
+          "type": "String",
+          "nullable": true,
+          "list": false,
+          "dbName": "work_item_id",
+          "dbType": "Uuid",
+          "default": null,
+          "primaryKey": false,
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "field": "ledgerBook",
+          "to": "LedgerBook",
+          "optional": false,
+          "list": false,
+          "relationName": null,
+          "fields": [
+            "ledgerBookId"
+          ],
+          "references": [
+            "id"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "type": "index",
+          "fields": [
+            "ledgerBookId",
+            "executionStatus"
+          ],
+          "name": null,
+          "map": null
+        },
+        {
+          "type": "index",
+          "fields": [
+            "voucherId"
+          ],
+          "name": null,
+          "map": null
+        },
+        {
+          "type": "unique",
+          "fields": [
+            "ledgerBookId",
+            "voucherLineId"
+          ],
+          "name": null,
+          "map": null
+        }
+      ]
+    },
+    {
       "name": "Intake",
       "dbName": "intake",
       "schema": null,
@@ -2173,6 +2509,15 @@
         {
           "field": "contracts",
           "to": "Contract",
+          "optional": false,
+          "list": true,
+          "relationName": null,
+          "fields": [],
+          "references": []
+        },
+        {
+          "field": "fundConsumptions",
+          "to": "FundConsumption",
           "optional": false,
           "list": true,
           "relationName": null,

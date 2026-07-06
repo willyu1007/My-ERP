@@ -1,10 +1,20 @@
 # 03 — Implementation Notes
 
 ## Status
-- Current status: `in-progress` — Phases 1-3 implemented and verified; Phase 4 (accountant voucher → cashier fund consumption, D4) next.
+- Current status: `in-progress` — Phases 1-4 implemented and verified. All planned phases complete; bundle handoff-ready.
 - Last updated: 2026-07-06
 
 ## What changed
+- Phase 4 (2026-07-06): accountant/manual voucher → cashier fund consumption (D4), designed per-line so the "no duplicate ledger effect" invariant is structural, not procedural.
+  - **Per-line `FundConsumption` table with ZERO ledger columns** (migration `20260707120000_t012_fund_consumption`; ledger-scoped RLS, select/insert/update policies, NO delete policy). Because the row carries no debit/credit/account balance, consuming it *cannot* touch the ledger — the invariant is enforced by the schema, not by remembering to avoid a second `createVoucherTx`.
+  - **Spawn hook** in `postVoucherReviewTx` (the single voucher-post path): after a voucher posts, each line where `isCashAccountCode(line.accountCode)` (Phase 2 tree-prefix rule, subaccounts included) gets one `FundConsumption` (direction `inflow` for 借 cash / `outflow` for 贷 cash; amount = the line's debit or credit) + one `fund.consume` WorkItem (assignedRole `cashier`, per-line dedupe key). Guarded by `!posted.reversalOf && !isSettlementVoucherTx(...)`.
+  - **Settlement-voucher exclusion is belt-and-suspenders**: the cashier payment `confirm()` posts its settlement voucher directly via `setVoucherStatusTx('posted')` (never reaching `postVoucherReviewTx`, which requires status `pending`), so those vouchers structurally never spawn; the `isSettlementVoucherTx` guard (counts `payment_doc` rows referencing the voucher) is a second net.
+  - **Shared consume core** `consumeFundConsumptionWorkflowTx` (mirrors `postVoucherReviewTx`): resolves the row, checks `pending`, enforces the assignment gate (a claimed task's assignee, supervision-capable overrides), version-guarded `consumeFundConsumptionTx` (writes only execution/reconciliation fields), completes the paired WorkItem + outbox, audits `CONSUME_FUND`. Provably no voucher/ledger effect (touches only `fund_consumption` + WorkItem + outbox + audit). Both the REST endpoint and the workbench `complete` action call it.
+  - **`payment.confirm` realignment (the deferred Phase 3 confirm-actor tension)**: the `/payments/:id/confirm` route now gates on `@RequirePermission('consume','FundConsumption')` (cashier-capable) instead of `post Voucher` — confirming a payment IS the cashier's fund movement, and the settlement voucher is system-generated + posted (制单=审核, SoD-exempt). maker≠confirmer SoD stays enforced in `PaymentsService.confirm`.
+  - **Reversal cleanup**: `vouchers.controller.reverse()` calls `voidFundConsumptionsForVoucherTx` (pending|executed|skipped → `void`, no physical delete) + `cancelActiveWorkItemsForSourceTx` for still-open `fund.consume` items + outbox `work_item.canceled`.
+  - **CASL**: new `consume` action + `FundConsumption` subject; viewer read-only, accountant/cashier/supervisor read+consume. `isAccountingCapable` unchanged (the cashier still lacks `post Voucher`).
+  - **API/client/web**: `/v1/fund-consumptions` (list?voucherId/executionStatus/reconciliationStatus, get, `POST :id/consume`); `FundConsumption`/`ConsumeFundConsumption` OpenAPI schemas + api-client methods + data-source wrappers; inline `FundConsumptionPanel` on the posted-voucher detail (per-line bank-flow ref / attachment / reconciliation toggle + 确认执行 / 标记无需); workbench routes `.fund.` tasks into the 出纳 bucket, labels complete `确认执行` and toasts `已确认执行` (never `过账`), title `货币资金结算`.
+  - **Review fixes (2026-07-06)**: a 6-angle adversarial-verify workflow over the Phase 4 commit kept 6 findings; 3 distinct bugs fixed. (1) `reverse()` used `withLedgerScope` while its fund cleanup touches ORG-scoped work_item/outbox → tasks silently uncanceled under RLS; now `withScope(identity.orgId, ...)` (the org-scope pitfall recurred — see 05). (2) the REST consume gate skipped role-eligibility on UNCLAIMED tasks (an accountant could execute a cashier task via REST); unified the assignment/eligibility gate in the shared `consumeFundConsumptionWorkflowTx` core to match `canCompleteFundConsume`. (3) already-processed threw `BadRequestException` (400) that the web classifier hard-errored; now `ConflictException` (409) for the soft refresh path. Each got a regression test (incl. one that drives the real `VouchersController.reverse` under the app role, RLS on).
 - Phase 3 (2026-07-06): cashier-to-accountant enrichment (D3/D7/D8/D11), designed via a fan-out understand+design workflow then implemented + reviewed.
   - Decisions locked with the user: FULL D7 enrichment now (subjects + aux + cash-flow + posting-template); confirm-actor tension deferred to Phase 4.
   - State machine: new `pending_accounting` status + `enrich` transition. Cashier create → `pending_accounting` (null subjects) + opens a `payment.enrich` WorkItem (assignedRole accountant); accountant `enrich()` sets subjects/aux/cash-flow and advances **straight to `pending_approval`** (opening the approve WorkItem) — refinement over the synth's enrich→draft, since D3's flow is create→enrich→approval and the kernel should auto-hand-off. Direct accounting-capable create → `draft` (T-007 unchanged, D8 back-compat).
@@ -49,6 +59,7 @@
 - `apps/web`: `lib/finance/{data-source,partner-display}.ts`, `finance/partners/` (new), `finance/_components/partner-picker.*`, payments/contracts pages + forms, `components/workbench-shell.tsx`
 - `docs/context/api/openapi.yaml` (+ generated index), `docs/context/db/schema.json` (synced)
 - `dev-docs/active/finance-sme-usability-foundation/`
+- Phase 4 (fund consumption): `prisma/schema.prisma` + `prisma/migrations/20260707120000_t012_fund_consumption/`; `packages/db` (`FundConsumption` repo block + `fund-consumption.integration.test.ts`, `cancelActiveWorkItemsForSourceTx`); `packages/platform` (`consume`/`FundConsumption` CASL); `apps/api/src/fund-consumptions/` (new module + `fund-consumptions.integration.test.ts`), `work-items/{fund-workflow.ts (new),voucher-workflow.ts,work-item-rules.ts,work-items.service.ts}`, `vouchers/vouchers.controller.ts` (reverse cleanup), `payments/payments.controller.ts` (confirm gate), `app.module.ts`; `packages/api-client` + `apps/web/src/lib/finance/data-source.ts` + `finance/vouchers/[id]/{fund-consumption-panel.tsx,fund-actions.ts (new),voucher-detail.tsx,page.tsx}` + `finance/workbench/workbench-tasks.tsx` + `lib/finance/work-item-display.ts`
 
 ## Decisions & tradeoffs
 - Decision: Treat "付款对象" as the cashier label for the broader `BusinessPartner` / 往来单位 master.
@@ -112,9 +123,12 @@
 ## Known issues / follow-ups
 - ~~Define the exact standard chart v2 account-code list during implementation.~~ Done 2026-07-05 (92 accounts; see Phase 2 notes).
 - ~~Design explicit import/diff review for applying standard chart v2 additions to existing ledgers.~~ Done 2026-07-05 (`standard-diff`/`import-standard` + 科目设置 review card).
+- ~~Confirm-actor tension (deferred from Phase 3).~~ Resolved in Phase 4: `payment.confirm` gates on `consume`/`FundConsumption` (cashier), SoD preserved in the service.
 - Ledger-default recommended list is API-complete (`PATCH /v1/account-preferences/ledger-default`, permission-gated) but has no settings UI yet — small follow-up.
 - Pre-existing report gap (not introduced here): 生产成本 5001 / 制造费用 5101 balances have no BS 在产品 mapping (the line exists without terms). Worth fixing when reports are next touched.
-- Aux-dimension vocabulary still `customer/supplier/department/project`; a unified `partner` dimension (wired to BusinessPartner) is a Phase 3/4 concern.
+- Aux-dimension vocabulary still `customer/supplier/department/project`; a unified `partner` dimension (wired to BusinessPartner) is a later concern.
+- `FundConsumption.attachmentId` / `bankFlowRef` are free-text strings in v1 (no upload pipeline / bank-statement matching); reconciliation is a manual toggle. A real bank-flow reconciliation feature is a future slice.
+- The `FundConsumptionPanel` renders on any non-draft voucher that has fund rows, including reversed ones (rows show as 已作废, read-only) — intentional for audit visibility.
 
 ## Pitfalls / dead ends (do not repeat)
 - Keep the detailed log in `05-pitfalls.md` (append-only).

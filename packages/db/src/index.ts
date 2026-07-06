@@ -1556,6 +1556,28 @@ export async function cancelWorkItemTx(
   });
 }
 
+/** Cancel all active work items for a source (optionally of one type) — used when the
+ *  source is invalidated (e.g. a voucher reversal cancels its fund.consume tasks). */
+export async function cancelActiveWorkItemsForSourceTx(
+  tx: TxClient,
+  input: { sourceType: string; sourceId: string; actorId: string; workItemType?: string },
+): Promise<WorkItemEntity[]> {
+  const rows = await tx.workItem.findMany({
+    where: {
+      sourceType: input.sourceType,
+      sourceId: input.sourceId,
+      status: activeStatusWhere(),
+      ...(input.workItemType ? { workItemType: input.workItemType } : {}),
+    },
+  });
+  const canceled: WorkItemEntity[] = [];
+  for (const row of rows) {
+    const item = await cancelWorkItemTx(tx, row.id, input.actorId);
+    if (item) canceled.push(item);
+  }
+  return canceled;
+}
+
 export async function appendOutboxEventTx(
   tx: TxClient,
   input: AppendOutboxEventInput,
@@ -2547,6 +2569,241 @@ export async function upsertAccountPreferenceTx(
     pinned: row.pinned,
     hidden: row.hidden,
   };
+}
+
+/* ---- FundConsumption (货币资金结算/出纳执行, T-012 Phase 4) — ledger-scoped ---- */
+
+export interface FundConsumptionEntity {
+  id: string;
+  ledgerBookId: string;
+  orgId: string;
+  voucherId: string;
+  voucherLineId: string;
+  voucherNo: string;
+  lineNo: number;
+  accountCode: string;
+  accountName: string;
+  /** inflow | outflow */
+  direction: string;
+  /** 2dp string */
+  amount: string;
+  counterparty: string;
+  summary: string;
+  /** pending | executed | skipped | void */
+  executionStatus: string;
+  bankFlowRef: string | null;
+  /** unreconciled | reconciled */
+  reconciliationStatus: string;
+  attachmentId: string | null;
+  workItemId: string | null;
+  executedBy: string | null;
+  executedAt: Date | null;
+  reconciledBy: string | null;
+  reconciledAt: Date | null;
+  createdBy: string;
+  version: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+function toFundConsumption(f: {
+  id: string;
+  ledgerBookId: string;
+  orgId: string;
+  voucherId: string;
+  voucherLineId: string;
+  voucherNo: string;
+  lineNo: number;
+  accountCode: string;
+  accountName: string;
+  direction: string;
+  amount: Prisma.Decimal;
+  counterparty: string;
+  summary: string;
+  executionStatus: string;
+  bankFlowRef: string | null;
+  reconciliationStatus: string;
+  attachmentId: string | null;
+  workItemId: string | null;
+  executedBy: string | null;
+  executedAt: Date | null;
+  reconciledBy: string | null;
+  reconciledAt: Date | null;
+  createdBy: string;
+  version: number;
+  createdAt: Date;
+  updatedAt: Date;
+}): FundConsumptionEntity {
+  return {
+    id: f.id,
+    ledgerBookId: f.ledgerBookId,
+    orgId: f.orgId,
+    voucherId: f.voucherId,
+    voucherLineId: f.voucherLineId,
+    voucherNo: f.voucherNo,
+    lineNo: f.lineNo,
+    accountCode: f.accountCode,
+    accountName: f.accountName,
+    direction: f.direction,
+    amount: f.amount.toFixed(2),
+    counterparty: f.counterparty,
+    summary: f.summary,
+    executionStatus: f.executionStatus,
+    bankFlowRef: f.bankFlowRef,
+    reconciliationStatus: f.reconciliationStatus,
+    attachmentId: f.attachmentId,
+    workItemId: f.workItemId,
+    executedBy: f.executedBy,
+    executedAt: f.executedAt,
+    reconciledBy: f.reconciledBy,
+    reconciledAt: f.reconciledAt,
+    createdBy: f.createdBy,
+    version: f.version,
+    createdAt: f.createdAt,
+    updatedAt: f.updatedAt,
+  };
+}
+
+export interface CreateFundConsumptionInput {
+  ledgerBookId: string;
+  orgId: string;
+  voucherId: string;
+  voucherLineId: string;
+  voucherNo?: string;
+  lineNo: number;
+  accountCode: string;
+  accountName?: string;
+  direction: string;
+  amount: string;
+  counterparty?: string;
+  summary?: string;
+  createdBy: string;
+}
+
+export async function createFundConsumptionTx(
+  tx: TxClient,
+  input: CreateFundConsumptionInput,
+): Promise<FundConsumptionEntity> {
+  const row = await tx.fundConsumption.create({
+    data: {
+      ledgerBookId: input.ledgerBookId,
+      orgId: input.orgId,
+      voucherId: input.voucherId,
+      voucherLineId: input.voucherLineId,
+      voucherNo: input.voucherNo ?? '',
+      lineNo: input.lineNo,
+      accountCode: input.accountCode,
+      accountName: input.accountName ?? '',
+      direction: input.direction,
+      amount: input.amount,
+      counterparty: input.counterparty ?? '',
+      summary: input.summary ?? '',
+      createdBy: input.createdBy,
+    },
+  });
+  return toFundConsumption(row);
+}
+
+export async function getFundConsumptionTx(
+  tx: TxClient,
+  id: string,
+): Promise<FundConsumptionEntity | null> {
+  const row = await tx.fundConsumption.findUnique({ where: { id } });
+  return row ? toFundConsumption(row) : null;
+}
+
+/** Resolve the fund consumption paired with a fund.consume WorkItem (workbench path). */
+export async function getFundConsumptionByWorkItemTx(
+  tx: TxClient,
+  workItemId: string,
+): Promise<FundConsumptionEntity | null> {
+  const row = await tx.fundConsumption.findFirst({ where: { workItemId } });
+  return row ? toFundConsumption(row) : null;
+}
+
+export async function listFundConsumptionsTx(
+  tx: TxClient,
+  filters?: { voucherId?: string; executionStatus?: string; reconciliationStatus?: string },
+): Promise<FundConsumptionEntity[]> {
+  const rows = await tx.fundConsumption.findMany({
+    where: {
+      ...(filters?.voucherId ? { voucherId: filters.voucherId } : {}),
+      ...(filters?.executionStatus ? { executionStatus: filters.executionStatus } : {}),
+      ...(filters?.reconciliationStatus
+        ? { reconciliationStatus: filters.reconciliationStatus }
+        : {}),
+    },
+    orderBy: [{ voucherNo: 'desc' }, { lineNo: 'asc' }],
+  });
+  return rows.map(toFundConsumption);
+}
+
+/** Attach the paired fund.consume WorkItem id after it is created (same tx, internal). */
+export async function updateFundConsumptionWorkItemRefTx(
+  tx: TxClient,
+  id: string,
+  workItemId: string,
+): Promise<void> {
+  await tx.fundConsumption.updateMany({ where: { id }, data: { workItemId } });
+}
+
+export interface ConsumeFundConsumptionInput {
+  expectedVersion: number;
+  executionStatus: string; // executed | skipped
+  bankFlowRef?: string | null;
+  attachmentId?: string | null;
+  reconciliationStatus?: string;
+  executedBy: string;
+  executedAt: Date;
+}
+
+/** Version-guarded consume — writes ONLY execution/reconciliation fields, never a ledger
+ *  column. Returns null on a version mismatch (conflict). */
+export async function consumeFundConsumptionTx(
+  tx: TxClient,
+  id: string,
+  input: ConsumeFundConsumptionInput,
+): Promise<FundConsumptionEntity | null> {
+  const data: Prisma.FundConsumptionUpdateManyMutationInput = {
+    version: { increment: 1 },
+    executionStatus: input.executionStatus,
+    executedBy: input.executedBy,
+    executedAt: input.executedAt,
+  };
+  if (input.bankFlowRef !== undefined) data.bankFlowRef = input.bankFlowRef;
+  if (input.attachmentId !== undefined) data.attachmentId = input.attachmentId;
+  if (input.reconciliationStatus !== undefined) {
+    data.reconciliationStatus = input.reconciliationStatus;
+    if (input.reconciliationStatus === 'reconciled') {
+      data.reconciledBy = input.executedBy;
+      data.reconciledAt = input.executedAt;
+    }
+  }
+  const res = await tx.fundConsumption.updateMany({
+    where: { id, version: input.expectedVersion },
+    data,
+  });
+  if (res.count === 0) return null;
+  return getFundConsumptionTx(tx, id);
+}
+
+/** Void all live fund tasks of a voucher (reversal path) — no physical delete. */
+export async function voidFundConsumptionsForVoucherTx(
+  tx: TxClient,
+  voucherId: string,
+): Promise<number> {
+  const res = await tx.fundConsumption.updateMany({
+    where: { voucherId, executionStatus: { in: ['pending', 'executed', 'skipped'] } },
+    data: { executionStatus: 'void', version: { increment: 1 } },
+  });
+  return res.count;
+}
+
+/** Whether a voucher is a cashier-payment settlement voucher (PaymentDoc.settlementVoucherId).
+ *  Belt-and-suspenders for the fund-consumption spawn exclusion. */
+export async function isSettlementVoucherTx(tx: TxClient, voucherId: string): Promise<boolean> {
+  const count = await tx.paymentDoc.count({ where: { settlementVoucherId: voucherId } });
+  return count > 0;
 }
 
 export { Prisma } from '@prisma/client';

@@ -23,8 +23,12 @@ import {
   type ContractTimeline,
   type ContractType,
   type CreateContract,
+  type ConsumeFundConsumption,
   type CreatePayment,
   type EnrichPayment,
+  type FundConsumption,
+  type FundExecutionStatus,
+  type FundReconciliationStatus,
   type IncomeStatement,
   type Intake,
   type Membership,
@@ -339,6 +343,39 @@ export async function voidPayment(
   reason?: string,
 ): Promise<PaymentDoc> {
   return requireFinanceApi().voidPayment(id, expectedVersion, reason);
+}
+
+// --- Cashier fund execution (T-012 Phase 4, D4 货币资金结算/出纳执行) ---
+
+/** Fund-execution tasks over a posted voucher's cash/bank lines (empty in demo mode). */
+export async function listFundConsumptions(filters?: {
+  voucherId?: string;
+  executionStatus?: FundExecutionStatus;
+  reconciliationStatus?: FundReconciliationStatus;
+}): Promise<readonly FundConsumption[]> {
+  const api = getFinanceApi();
+  if (!api) return [];
+  return api.listFundConsumptions(filters);
+}
+
+/** A single fund-consumption row, or `null` (not found / demo mode). */
+export async function getFundConsumption(id: string): Promise<FundConsumption | null> {
+  const api = getFinanceApi();
+  if (!api) return null;
+  try {
+    return await api.getFundConsumption(id);
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return null;
+    throw err;
+  }
+}
+
+/** Record fund movement (executed | skipped) + close the paired task. No voucher. */
+export async function consumeFundConsumption(
+  id: string,
+  input: ConsumeFundConsumption,
+): Promise<FundConsumption> {
+  return requireFinanceApi().consumeFundConsumption(id, input);
 }
 
 // --- Contracts / 交易生命周期 (T-005) ---
