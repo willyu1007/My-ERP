@@ -25,7 +25,7 @@ import {
 } from './fund-consumptions.service';
 
 /**
- * 货币资金结算/出纳执行 (T-012 Phase 4, D4). The cashier's fund-execution view over
+ * 资金执行 (T-012 Phase 4, D4). The cashier's fund-execution view over
  * accountant-voucher cash/bank lines. Consuming records execution WITHOUT posting a
  * second voucher — gated on the `consume`/`FundConsumption` capability (which a
  * cashier holds), never on `post Voucher`.
@@ -101,10 +101,6 @@ export class FundConsumptionsController {
       expectedVersion: b.expectedVersion as number,
       executionStatus: b.executionStatus,
       bankFlowRef: typeof b.bankFlowRef === 'string' ? b.bankFlowRef : null,
-      attachmentId: typeof b.attachmentId === 'string' ? b.attachmentId : null,
-      ...(b.reconciliationStatus === 'reconciled' || b.reconciliationStatus === 'unreconciled'
-        ? { reconciliationStatus: b.reconciliationStatus }
-        : {}),
     };
     return this.service.consume(identity, ledgerBookId, id, dto);
   }

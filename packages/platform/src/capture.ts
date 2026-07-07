@@ -22,9 +22,7 @@ export interface PutObjectInput {
 /** Append-only object storage for capture attachments (accounting-archive intent). */
 export interface ObjectStore {
   put(input: PutObjectInput): Promise<StoredObject>;
-  /** A signed/ephemeral URL for an authorized reader; ERP-side only. */
-  getUrl(storageKey: string): Promise<string>;
-  /** Read the stored bytes back (ERP-side authorized reader streams them). */
+  /** Read the stored bytes back (an ERP-side authorized reader streams them). */
   get(storageKey: string): Promise<Uint8Array>;
 }
 

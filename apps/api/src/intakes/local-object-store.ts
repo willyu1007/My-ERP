@@ -26,10 +26,6 @@ export class LocalObjectStore implements ObjectStore {
     return { storageKey, sha256, byteSize: input.bytes.byteLength };
   }
 
-  async getUrl(storageKey: string): Promise<string> {
-    return `/v1/intakes/attachments/${encodeURIComponent(storageKey)}`;
-  }
-
   async get(storageKey: string): Promise<Uint8Array> {
     // storageKey is always DB-sourced (an Attachment.storageKey), never user input,
     // so the org/ledger/sha256 shape is trusted; still resolve under root only.

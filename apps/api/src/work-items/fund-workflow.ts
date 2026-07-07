@@ -72,8 +72,6 @@ export interface ConsumeFundInput {
   /** executed (money moved) | skipped (pure bookkeeping / no cashier movement) */
   executionStatus: 'executed' | 'skipped';
   bankFlowRef?: string | null;
-  attachmentId?: string | null;
-  reconciliationStatus?: 'unreconciled' | 'reconciled';
   /** REST path supplies the row version; the workbench path uses the loaded version. */
   expectedVersion?: number;
 }
@@ -125,8 +123,6 @@ export async function consumeFundConsumptionWorkflowTx(
     expectedVersion: input.body.expectedVersion ?? fc.version,
     executionStatus: input.body.executionStatus,
     bankFlowRef: input.body.bankFlowRef,
-    attachmentId: input.body.attachmentId,
-    reconciliationStatus: input.body.reconciliationStatus,
     executedBy: identity.userId,
     executedAt: new Date(),
   });

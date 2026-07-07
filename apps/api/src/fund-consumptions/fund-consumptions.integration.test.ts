@@ -1,5 +1,5 @@
 /**
- * Service-level integration test for 货币资金结算/出纳执行 (T-012 Phase 4, D4). Drives the
+ * Service-level integration test for 资金执行 (T-012 Phase 4, D4). Drives the
  * real fund-execution workflow against a live Postgres:
  *   - posting an accountant/manual voucher spawns one cashier fund.consume task PER
  *     cash/bank line (subaccounts included), and only for cash lines;
@@ -69,9 +69,6 @@ const objectStore: ObjectStore = {
     const storageKey = `${orgId}/${ledgerBookId}/${sha256}`;
     objectBytes.set(storageKey, bytes);
     return { storageKey, sha256, byteSize: bytes.byteLength };
-  },
-  async getUrl(storageKey) {
-    return `/x/${storageKey}`;
   },
   async get(storageKey) {
     const b = objectBytes.get(storageKey);

@@ -915,7 +915,7 @@ paths:
   /v1/fund-consumptions:
     get:
       operationId: listFundConsumptions
-      summary: List 货币资金结算/出纳执行任务 (FundConsumption) — cashier fund-execution queue (T-012 Phase 4, D4)
+      summary: List 资金执行任务 (FundConsumption) — cashier fund-execution queue (T-012 Phase 4, D4)
       description: One row per cash/bank line of a posted accountant/manual voucher. Consuming records that money actually moved; it never posts a second voucher. Requires read-FundConsumption (cashier-capable).
       tags: [fund-consumptions]
       security: [{ bearerAuth: [] }]
@@ -958,7 +958,7 @@ paths:
     post:
       operationId: consumeFundConsumption
       summary: pending → executed | skipped — cashier records fund movement (T-012 Phase 4, D4)
-      description: Records execution (bank-flow reference, attachment, reconciliation) and completes the paired fund.consume task. NEVER posts a voucher or produces any ledger effect. Requires consume-FundConsumption (cashier-capable).
+      description: Records execution (optional bank-flow reference) and completes the paired fund.consume task. The receipt attachment has its own endpoint (POST :id/attachment). NEVER posts a voucher or produces any ledger effect. Requires consume-FundConsumption (cashier-capable).
       tags: [fund-consumptions]
       security: [{ bearerAuth: [] }]
       parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
@@ -1698,9 +1698,7 @@ components:
       properties:
         expectedVersion: { type: integer, description: 'Optimistic concurrency version' }
         executionStatus: { type: string, enum: [executed, skipped], description: 'executed = money moved; skipped = pure bookkeeping / no cashier movement' }
-        bankFlowRef: { type: string, nullable: true }
-        attachmentId: { type: string, nullable: true }
-        reconciliationStatus: { type: string, enum: [unreconciled, reconciled], description: 'Optional; defaults to unreconciled' }
+        bankFlowRef: { type: string, nullable: true, description: '银行流水号 / 结算参考. The receipt attachment has its own endpoint (POST :id/attachment); reconciliation is a future action, not set here.' }
     UploadFundReceipt:
       type: object
       required: [contentType, contentBase64]

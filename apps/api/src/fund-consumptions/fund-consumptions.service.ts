@@ -24,8 +24,6 @@ export interface ConsumeFundDto {
   expectedVersion: number;
   executionStatus: 'executed' | 'skipped';
   bankFlowRef?: string | null;
-  attachmentId?: string | null;
-  reconciliationStatus?: 'unreconciled' | 'reconciled';
 }
 
 export interface UploadReceiptDto {
@@ -63,7 +61,7 @@ function toDto(f: FundConsumptionEntity) {
 }
 
 /**
- * 货币资金结算/出纳执行 (T-012 Phase 4, D4). Read + consume the cashier fund tasks
+ * 资金执行 (T-012 Phase 4, D4). Read + consume the cashier fund tasks
  * spawned from accountant/manual voucher posts. Consuming records execution +
  * bank-flow reference + reconciliation and completes the paired fund.consume task —
  * never creating a voucher or any ledger effect (see consumeFundConsumptionWorkflowTx).
@@ -114,8 +112,6 @@ export class FundConsumptionsService {
     const consumeInput: ConsumeFundInput = {
       executionStatus: body.executionStatus,
       bankFlowRef: body.bankFlowRef ?? null,
-      attachmentId: body.attachmentId ?? null,
-      ...(body.reconciliationStatus ? { reconciliationStatus: body.reconciliationStatus } : {}),
       expectedVersion: body.expectedVersion,
     };
     return withScope(identity.orgId, ledgerBookId, async (tx) => {

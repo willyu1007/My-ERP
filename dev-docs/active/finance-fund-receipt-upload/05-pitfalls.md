@@ -7,5 +7,11 @@
 
 ## Pitfall log (append-only)
 
+### 2026-07-08 - Dead-code / dual-track cleanup after the T-012/13/14 fund slices
+- `attachment_id` must be set ONLY via `POST :id/attachment` (which stores real bytes + an Attachment). The old `consume` DTO also accepted a free-text `attachmentId` — a second, UNVALIDATED way to set the same FK (you could point it at any string). Removed from the entire consume chain (API DTO/controller, `ConsumeFundInput`, `consumeFundConsumptionTx` write branch, OpenAPI). Do not re-add it to consume.
+- Reconciliation (`reconciliationStatus`/`reconciledBy`/`reconciledAt`) is repository-ready (`consumeFundConsumptionTx` + column + read list-filter) but NOT surfaced on the consume API/UI. When the 对账 feature lands it gets its OWN action calling that primitive — do NOT re-expose it on consume (that would recreate a dual-track). The consume-time `reconciliationStatus` input was removed as dead surface.
+- `ObjectStore.getUrl` was removed — it was dead (zero callers) and its "signed URL" intent is served by `get()` + the streaming download endpoint + the web proxy route.
+- Naming: the product name is 资金执行 (not 货币资金结算); code comments/OpenAPI summaries were aligned to it to avoid implying a separate concept.
+
 ### 2026-07-08 - Planning baseline
 - Task opened; scope locked (attach at confirm + after-the-fact; in-app view). Reuses the T-004 object store + Attachment; bypasses Intake for compliance.

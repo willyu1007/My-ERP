@@ -346,7 +346,7 @@ export async function voidPayment(
   return requireFinanceApi().voidPayment(id, expectedVersion, reason);
 }
 
-// --- Cashier fund execution (T-012 Phase 4, D4 货币资金结算/出纳执行) ---
+// --- Cashier fund execution (资金执行, T-012 Phase 4, D4) ---
 
 /** Fund-execution tasks over a posted voucher's cash/bank lines (empty in demo mode). */
 export async function listFundConsumptions(filters?: {

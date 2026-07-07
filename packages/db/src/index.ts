@@ -2571,7 +2571,7 @@ export async function upsertAccountPreferenceTx(
   };
 }
 
-/* ---- FundConsumption (货币资金结算/出纳执行, T-012 Phase 4) — ledger-scoped ---- */
+/* ---- FundConsumption (资金执行, T-012 Phase 4) — ledger-scoped ---- */
 
 export interface FundConsumptionEntity {
   id: string;
@@ -2789,14 +2789,20 @@ export interface ConsumeFundConsumptionInput {
   expectedVersion: number;
   executionStatus: string; // executed | skipped
   bankFlowRef?: string | null;
-  attachmentId?: string | null;
+  /**
+   * Reconciliation is the sole write path for the (roadmapped) bank-reconciliation
+   * feature; it is NOT surfaced on the consume API/UI yet. A future 对账 action will
+   * call this primitive — the receipt attachment moved to its own endpoint
+   * (setFundConsumptionAttachmentTx), so no attachment field lives here.
+   */
   reconciliationStatus?: string;
   executedBy: string;
   executedAt: Date;
 }
 
 /** Version-guarded consume — writes ONLY execution/reconciliation fields, never a ledger
- *  column. Returns null on a version mismatch (conflict). */
+ *  column and never the attachment (that has its own endpoint). Returns null on a version
+ *  mismatch (conflict). */
 export async function consumeFundConsumptionTx(
   tx: TxClient,
   id: string,
@@ -2809,7 +2815,6 @@ export async function consumeFundConsumptionTx(
     executedAt: input.executedAt,
   };
   if (input.bankFlowRef !== undefined) data.bankFlowRef = input.bankFlowRef;
-  if (input.attachmentId !== undefined) data.attachmentId = input.attachmentId;
   if (input.reconciliationStatus !== undefined) {
     data.reconciliationStatus = input.reconciliationStatus;
     if (input.reconciliationStatus === 'reconciled') {

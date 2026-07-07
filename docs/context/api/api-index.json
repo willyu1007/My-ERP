@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-07T22:41:05.115Z",
+  "generatedAt": "2026-07-07T23:34:19.048Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "3dfbb2c72e91098d913621e4c67f630e0b5e6e8e8e43890efb24453c0c0f75fc",
+  "sourceChecksumSha256": "88e2feb533c28157d2954f9813300ea965d764fb8171656ef47de42b78da006c",
   "stats": {
     "totalEndpoints": 75,
     "byTag": {
@@ -2177,7 +2177,7 @@
       "method": "GET",
       "path": "/v1/fund-consumptions",
       "operationId": "listFundConsumptions",
-      "summary": "List 货币资金结算/出纳执行任务 (FundConsumption) — cashier fund-execution queue (T-012 Phase 4, D4)",
+      "summary": "List 资金执行任务 (FundConsumption) — cashier fund-execution queue (T-012 Phase 4, D4)",
       "tag": "fund-consumptions",
       "auth": "bearer",
       "input": {
@@ -2294,9 +2294,7 @@
             "executionStatus"
           ],
           "optional": [
-            "bankFlowRef",
-            "attachmentId",
-            "reconciliationStatus"
+            "bankFlowRef"
           ]
         }
       },
