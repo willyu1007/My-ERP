@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-07T14:24:04.649Z",
+  "generatedAt": "2026-07-07T22:41:05.115Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "52170e115291339773d918b49331c5f31cd6be50d8e11bd596a87f9266808b4c",
+  "sourceChecksumSha256": "3dfbb2c72e91098d913621e4c67f630e0b5e6e8e8e43890efb24453c0c0f75fc",
   "stats": {
-    "totalEndpoints": 73,
+    "totalEndpoints": 75,
     "byTag": {
       "system": 1,
       "identity": 1,
@@ -21,7 +21,7 @@
       "cash-flow": 5,
       "reports": 3,
       "payments": 8,
-      "fund-consumptions": 4,
+      "fund-consumptions": 6,
       "contracts": 5,
       "business-partners": 4,
       "opening-balances": 2
@@ -2338,6 +2338,90 @@
       ],
       "example": {
         "curl": "curl -X POST '/v1/fund-consumptions/{id}/consume' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"expectedVersion\":\"<expectedVersion>\",\"executionStatus\":\"<executionStatus>\"}'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/fund-consumptions/{id}/attachment",
+      "operationId": "getFundReceipt",
+      "summary": "View a fund line's bank receipt (streamed bytes, in-app)",
+      "tag": "fund-consumptions",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id"
+        ],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": []
+      },
+      "errors": [
+        404
+      ],
+      "example": {
+        "curl": "curl -X GET '/v1/fund-consumptions/{id}/attachment' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/fund-consumptions/{id}/attachment",
+      "operationId": "uploadFundReceipt",
+      "summary": "上传银行回单 — attach receipt evidence to a fund line (T-014)",
+      "tag": "fund-consumptions",
+      "auth": "bearer",
+      "input": {
+        "params": [
+          "id"
+        ],
+        "query": [],
+        "body": {
+          "required": [
+            "contentType",
+            "contentBase64"
+          ],
+          "optional": []
+        }
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "id",
+          "ledgerBookId",
+          "orgId",
+          "voucherId",
+          "voucherLineId",
+          "voucherNo",
+          "lineNo",
+          "accountCode",
+          "accountName",
+          "direction",
+          "amount",
+          "counterparty",
+          "summary",
+          "executionStatus",
+          "reconciliationStatus",
+          "createdBy",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "bankFlowRef",
+          "attachmentId",
+          "workItemId",
+          "executedBy",
+          "executedAt",
+          "reconciledBy",
+          "reconciledAt"
+        ]
+      },
+      "errors": [
+        400,
+        404
+      ],
+      "example": {
+        "curl": "curl -X POST '/v1/fund-consumptions/{id}/attachment' -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d '{\"contentType\":\"<contentType>\",\"contentBase64\":\"<contentBase64>\"}'"
       }
     },
     {

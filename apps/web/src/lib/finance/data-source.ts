@@ -29,6 +29,7 @@ import {
   type FundConsumption,
   type FundExecutionStatus,
   type FundReconciliationStatus,
+  type UploadFundReceipt,
   type IncomeStatement,
   type Intake,
   type Membership,
@@ -386,6 +387,14 @@ export async function consumeFundConsumption(
   input: ConsumeFundConsumption,
 ): Promise<FundConsumption> {
   return requireFinanceApi().consumeFundConsumption(id, input);
+}
+
+/** Attach a bank receipt to a fund line (T-014). Requires the backend. */
+export async function uploadFundReceipt(
+  id: string,
+  input: UploadFundReceipt,
+): Promise<FundConsumption> {
+  return requireFinanceApi().uploadFundReceipt(id, input);
 }
 
 // --- Contracts / 交易生命周期 (T-005) ---

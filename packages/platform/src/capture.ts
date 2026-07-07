@@ -24,6 +24,8 @@ export interface ObjectStore {
   put(input: PutObjectInput): Promise<StoredObject>;
   /** A signed/ephemeral URL for an authorized reader; ERP-side only. */
   getUrl(storageKey: string): Promise<string>;
+  /** Read the stored bytes back (ERP-side authorized reader streams them). */
+  get(storageKey: string): Promise<Uint8Array>;
 }
 
 export interface ExtractInput {

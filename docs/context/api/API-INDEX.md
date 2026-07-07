@@ -1,9 +1,9 @@
 # API Index
 
-> Auto-generated at 2026-07-07T14:24:04.649Z — do NOT hand-edit.
-> Source: `docs/context/api/openapi.yaml` (SHA-256: `52170e115291...`)
+> Auto-generated at 2026-07-07T22:41:05.115Z — do NOT hand-edit.
+> Source: `docs/context/api/openapi.yaml` (SHA-256: `3dfbb2c72e91...`)
 
-Total endpoints: **73**
+Total endpoints: **75**
 
 | Method | Path | Summary | Auth | Input (required) | Output (core) | Errors |
 |--------|------|---------|------|------------------|---------------|--------|
@@ -69,6 +69,8 @@ Total endpoints: **73**
 | GET | /v1/fund-consumptions/pending-count | Open fund-execution workload for the ledger (queue badge / dashboard, T-013) | bearer | — | count | — |
 | GET | /v1/fund-consumptions/{id} | Get a fund-consumption row | bearer | id | id, ledgerBookId, orgId, voucherId, voucherLineId, voucherNo, lineNo, accountCode, accountName, direction, amount, counterparty, summary, executionStatus, reconciliationStatus, createdBy, version, createdAt, updatedAt, bankFlowRef, attachmentId, workItemId, executedBy, executedAt, reconciledBy, reconciledAt | 404 |
 | POST | /v1/fund-consumptions/{id}/consume | pending → executed \| skipped — cashier records fund movement (T-012 Phase 4, D4) | bearer | expectedVersion, executionStatus | id, ledgerBookId, orgId, voucherId, voucherLineId, voucherNo, lineNo, accountCode, accountName, direction, amount, counterparty, summary, executionStatus, reconciliationStatus, createdBy, version, createdAt, updatedAt, bankFlowRef, attachmentId, workItemId, executedBy, executedAt, reconciledBy, reconciledAt | 400, 403, 409 |
+| GET | /v1/fund-consumptions/{id}/attachment | View a fund line's bank receipt (streamed bytes, in-app) | bearer | id | — | 404 |
+| POST | /v1/fund-consumptions/{id}/attachment | 上传银行回单 — attach receipt evidence to a fund line (T-014) | bearer | contentType, contentBase64 | id, ledgerBookId, orgId, voucherId, voucherLineId, voucherNo, lineNo, accountCode, accountName, direction, amount, counterparty, summary, executionStatus, reconciliationStatus, createdBy, version, createdAt, updatedAt, bankFlowRef, attachmentId, workItemId, executedBy, executedAt, reconciledBy, reconciledAt | 400, 404 |
 | GET | /v1/contracts | List 合同 (Contract) | bearer | — | — | — |
 | POST | /v1/contracts | Create a 合同 (code auto-assigned HT-{fiscalYear}-{NNN}) | bearer | title | id, ledgerBookId, code, title, type, counterparty, currency, status, summary, createdBy, version, createdAt, updatedAt, partnerId, amount, startDate, endDate | 400 |
 | GET | /v1/contracts/{id} | Get a contract | bearer | id | id, ledgerBookId, code, title, type, counterparty, currency, status, summary, createdBy, version, createdAt, updatedAt, partnerId, amount, startDate, endDate | 404 |

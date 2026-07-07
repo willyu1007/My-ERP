@@ -42,4 +42,5 @@ Project: `main`
 | T-011 web-workbench-split-imports | archived | dev-docs/archive/web-workbench-split-imports |
 | T-012 finance-sme-usability-foundation | in-progress | dev-docs/active/finance-sme-usability-foundation |
 | T-013 finance-cashier-fund-queue | done | dev-docs/active/finance-cashier-fund-queue |
+| T-014 finance-fund-receipt-upload | done | dev-docs/active/finance-fund-receipt-upload |
 <!-- AUTO-GENERATED:END feature-map -->

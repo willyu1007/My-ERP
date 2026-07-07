@@ -968,6 +968,38 @@ paths:
         '400': { description: Wrong status / invalid executionStatus }
         '403': { description: Task claimed by another cashier }
         '409': { description: Stale version }
+  /v1/fund-consumptions/{id}/attachment:
+    post:
+      operationId: uploadFundReceipt
+      summary: 上传银行回单 — attach receipt evidence to a fund line (T-014)
+      description: |
+        Stores an image/PDF receipt in the object store + an Attachment row and points the
+        fund line at it. Works at confirm-time AND after the fact (any non-void line).
+        Deliberately does NOT go through the Intake flow: NO outbox event, NO OCR extraction —
+        the receipt is sensitive financial detail and must never leak toward the ecosystem
+        (AGENTS.md §3). Requires consume-FundConsumption (cashier-capable). Not version-guarded.
+      tags: [fund-consumptions]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/UploadFundReceipt' } } } }
+      responses:
+        '200': { description: Attached, content: { application/json: { schema: { $ref: '#/components/schemas/FundConsumption' } } } }
+        '400': { description: Void line / not image or PDF / empty / exceeds 10MB }
+        '404': { description: Fund line not found }
+    get:
+      operationId: getFundReceipt
+      summary: View a fund line's bank receipt (streamed bytes, in-app)
+      description: Streams the attached receipt bytes with its Content-Type (inline). Requires read-FundConsumption. Served as binary — consumed via a web route handler, not the JSON api-client.
+      tags: [fund-consumptions]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200':
+          description: Receipt bytes
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        '404': { description: Fund line or receipt not found }
   /v1/contracts:
     get:
       operationId: listContracts
@@ -1669,6 +1701,13 @@ components:
         bankFlowRef: { type: string, nullable: true }
         attachmentId: { type: string, nullable: true }
         reconciliationStatus: { type: string, enum: [unreconciled, reconciled], description: 'Optional; defaults to unreconciled' }
+    UploadFundReceipt:
+      type: object
+      required: [contentType, contentBase64]
+      description: 'Bank-receipt evidence for a fund line (T-014). image/* or application/pdf, ≤10MB.'
+      properties:
+        contentType: { type: string, example: image/jpeg, description: 'image/* or application/pdf' }
+        contentBase64: { type: string, description: 'Base64-encoded receipt bytes (≤10MB)' }
     Contract:
       type: object
       required: [id, ledgerBookId, code, title, type, counterparty, currency, status, summary, createdBy, version, createdAt, updatedAt]

@@ -35,8 +35,9 @@ import {
   type SeedAccountInput,
   type VoucherLineInput,
 } from '@my-erp/db';
-import { ConflictException, ForbiddenException } from '@nestjs/common';
-import { defineAbilityFor, type Identity } from '@my-erp/platform';
+import { createHash } from 'node:crypto';
+import { BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
+import { defineAbilityFor, type Identity, type ObjectStore } from '@my-erp/platform';
 import { postVoucherReviewTx } from '../work-items/voucher-workflow';
 import { FUND_CONSUME_WORK_ITEM_TYPE } from '../work-items/fund-workflow';
 import { VouchersController } from '../vouchers/vouchers.controller';
@@ -60,7 +61,26 @@ const CHART: readonly SeedAccountInput[] = [
   { code: '6001', name: '主营业务收入', category: 'income', direction: 'credit', parentCode: null, level: 1, isLeaf: true },
 ];
 
-const fund = new FundConsumptionsService();
+// In-memory object store (T-014) — avoids touching the disk in tests.
+const objectBytes = new Map<string, Uint8Array>();
+const objectStore: ObjectStore = {
+  async put({ orgId, ledgerBookId, bytes }) {
+    const sha256 = createHash('sha256').update(bytes).digest('hex');
+    const storageKey = `${orgId}/${ledgerBookId}/${sha256}`;
+    objectBytes.set(storageKey, bytes);
+    return { storageKey, sha256, byteSize: bytes.byteLength };
+  },
+  async getUrl(storageKey) {
+    return `/x/${storageKey}`;
+  },
+  async get(storageKey) {
+    const b = objectBytes.get(storageKey);
+    if (!b) throw new Error('not found');
+    return b;
+  },
+};
+
+const fund = new FundConsumptionsService(objectStore);
 
 let noSeq = 0;
 function nextNo(): string {
@@ -134,6 +154,7 @@ describe.skipIf(!PG_AVAILABLE)('fund consumption (service integration)', () => {
        GRANT SELECT, INSERT, DELETE ON "journal_entry_line" TO ${APP_ROLE};
        GRANT SELECT, INSERT, UPDATE ON "payment_doc" TO ${APP_ROLE};
        GRANT SELECT, INSERT, UPDATE ON "fund_consumption" TO ${APP_ROLE};
+       GRANT SELECT, INSERT ON "attachment" TO ${APP_ROLE};
        GRANT SELECT, INSERT, UPDATE ON "work_item" TO ${APP_ROLE};
        GRANT SELECT, INSERT ON "work_item_event" TO ${APP_ROLE};
        GRANT SELECT, INSERT, UPDATE ON "outbox_event" TO ${APP_ROLE};
@@ -398,6 +419,77 @@ describe.skipIf(!PG_AVAILABLE)('fund consumption (service integration)', () => {
     await fund.consume(cashA, LB, row.id, { expectedVersion: row.version, executionStatus: 'executed' });
     const after = await fund.pendingCount(cashA, LB);
     expect(after.count).toBe(before.count - 1);
+  });
+
+  it('T-014: upload attaches a receipt + streams the exact bytes back, with NO outbox event', async () => {
+    const { id } = await postManual([
+      { accountCode: '1001', accountName: '库存现金', summary: '收款', debit: '410.00', credit: null },
+      { accountCode: '6001', accountName: '主营业务收入', summary: '收入', debit: null, credit: '410.00' },
+    ]);
+    const [row] = await withScope(ORG, LB, (tx) => listFundConsumptionsTx(tx, { voucherId: id }));
+    expect(row.attachmentId).toBeNull();
+
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3, 4, 5]);
+    const contentBase64 = Buffer.from(png).toString('base64');
+    const outboxBefore = await withScope(ORG, LB, (tx) => tx.outboxEvent.count());
+
+    const updated = await fund.uploadReceipt(cashA, LB, row.id, {
+      contentType: 'image/png',
+      contentBase64,
+    });
+    expect(updated.attachmentId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    );
+
+    // Compliance: attaching a receipt emits ZERO outbox events (no ecosystem leak).
+    const outboxAfter = await withScope(ORG, LB, (tx) => tx.outboxEvent.count());
+    expect(outboxAfter).toBe(outboxBefore);
+    // …but leaves an internal audit trail.
+    const audits = await withScope(ORG, LB, (tx) =>
+      tx.auditRecord.count({ where: { action: 'ATTACH_FUND_RECEIPT', entityId: row.id } }),
+    );
+    expect(audits).toBe(1);
+
+    // Round-trip: the streamed bytes and content-type match exactly.
+    const receipt = await fund.getReceipt(cashA, LB, row.id);
+    expect(receipt.contentType).toBe('image/png');
+    expect(Buffer.from(receipt.bytes).equals(Buffer.from(png))).toBe(true);
+  });
+
+  it('T-014: a receipt can be attached to an already-executed line, but not a void one', async () => {
+    const { id } = await postManual([
+      { accountCode: '1001', accountName: '库存现金', summary: '收款', debit: '330.00', credit: null },
+      { accountCode: '6001', accountName: '主营业务收入', summary: '收入', debit: null, credit: '330.00' },
+    ]);
+    const [row] = await withScope(ORG, LB, (tx) => listFundConsumptionsTx(tx, { voucherId: id }));
+    // execute first, then attach after the fact
+    await fund.consume(cashA, LB, row.id, { expectedVersion: row.version, executionStatus: 'executed' });
+    const b64 = Buffer.from(new Uint8Array([1, 2, 3])).toString('base64');
+    const after = await fund.uploadReceipt(cashA, LB, row.id, { contentType: 'image/jpeg', contentBase64: b64 });
+    expect(after.executionStatus).toBe('executed');
+    expect(after.attachmentId).not.toBeNull();
+
+    // reverse → row void → upload rejected
+    await new VouchersController().reverse(LB, acc, id);
+    await expect(
+      fund.uploadReceipt(cashA, LB, row.id, { contentType: 'image/jpeg', contentBase64: b64 }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('T-014: upload rejects a non-image/pdf content type and empty content', async () => {
+    const { id } = await postManual([
+      { accountCode: '1001', accountName: '库存现金', summary: '收款', debit: '90.00', credit: null },
+      { accountCode: '6001', accountName: '主营业务收入', summary: '收入', debit: null, credit: '90.00' },
+    ]);
+    const [row] = await withScope(ORG, LB, (tx) => listFundConsumptionsTx(tx, { voucherId: id }));
+    await expect(
+      fund.uploadReceipt(cashA, LB, row.id, { contentType: 'text/plain', contentBase64: 'aGk=' }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      fund.uploadReceipt(cashA, LB, row.id, { contentType: 'image/png', contentBase64: '' }),
+    ).rejects.toThrow(BadRequestException);
+    // getReceipt on a line with no attachment → not found
+    await expect(fund.getReceipt(cashA, LB, row.id)).rejects.toThrow();
   });
 
   it('RBAC: a cashier can consume FundConsumption but cannot post a Voucher (D4)', () => {

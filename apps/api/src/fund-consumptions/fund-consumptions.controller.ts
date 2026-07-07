@@ -3,10 +3,12 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   HttpCode,
   Param,
   Post,
   Query,
+  StreamableFile,
   UseGuards,
 } from '@nestjs/common';
 import type { Identity } from '@my-erp/platform';
@@ -16,7 +18,11 @@ import { LedgerBookId } from '../auth/ledger-book-id.decorator';
 import { LedgerScopeGuard } from '../auth/ledger-scope.guard';
 import { RequirePermission } from '../auth/permission.decorator';
 import { PermissionGuard } from '../auth/permission.guard';
-import { FundConsumptionsService, type ConsumeFundDto } from './fund-consumptions.service';
+import {
+  FundConsumptionsService,
+  type ConsumeFundDto,
+  type UploadReceiptDto,
+} from './fund-consumptions.service';
 
 /**
  * 货币资金结算/出纳执行 (T-012 Phase 4, D4). The cashier's fund-execution view over
@@ -101,5 +107,37 @@ export class FundConsumptionsController {
         : {}),
     };
     return this.service.consume(identity, ledgerBookId, id, dto);
+  }
+
+  // 上传银行回单 (T-014). Evidence for a fund line — gated on `consume` (the cashier who
+  // executes), works at confirm-time and after the fact. Base64 JSON, image/* or PDF, ≤10MB.
+  @Post(':id/attachment')
+  @HttpCode(200)
+  @RequirePermission('consume', 'FundConsumption')
+  async uploadReceipt(
+    @LedgerBookId() ledgerBookId: string,
+    @CurrentIdentity() identity: Identity,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    const b = (body ?? {}) as Record<string, unknown>;
+    if (typeof b.contentType !== 'string' || typeof b.contentBase64 !== 'string')
+      throw new BadRequestException('contentType and contentBase64 are required');
+    const dto: UploadReceiptDto = { contentType: b.contentType, contentBase64: b.contentBase64 };
+    return this.service.uploadReceipt(identity, ledgerBookId, id, dto);
+  }
+
+  // View the receipt bytes in-app (streamed; not an api-client JSON method).
+  @Get(':id/attachment')
+  @RequirePermission('read', 'FundConsumption')
+  @Header('Content-Disposition', 'inline')
+  @Header('Cache-Control', 'private, no-store')
+  async getReceipt(
+    @LedgerBookId() ledgerBookId: string,
+    @CurrentIdentity() identity: Identity,
+    @Param('id') id: string,
+  ): Promise<StreamableFile> {
+    const { bytes, contentType } = await this.service.getReceipt(identity, ledgerBookId, id);
+    return new StreamableFile(bytes, { type: contentType });
   }
 }

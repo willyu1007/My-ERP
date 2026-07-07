@@ -14,6 +14,7 @@ import {
   FUND_EXECUTION_TONE,
   FUND_QUEUE_FETCH_LIMIT,
 } from '@/lib/finance/fund-display';
+import { ReceiptUpload } from '../_components/receipt-upload';
 import { consumeFundAction } from '../vouchers/[id]/fund-actions';
 
 /**
@@ -163,6 +164,15 @@ function FundQueueRow({
             >
               {expanded ? '收起' : '处理'}
             </button>
+          ) : row.attachmentId ? (
+            <a
+              className="mt-btn mt-btn--ghost mt-btn--sm"
+              href={`/finance/attachments/fund/${encodeURIComponent(row.id)}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              查看回单
+            </a>
           ) : (
             <Link
               className="mt-btn mt-btn--ghost mt-btn--sm"
@@ -185,6 +195,10 @@ function FundQueueRow({
               onChange={(e) => setBankFlowRef(e.target.value)}
             />
           </label>
+          <div className="mt-field">
+            <span className="mt-label">银行回单（可选）</span>
+            <ReceiptUpload fundId={row.id} attachmentId={row.attachmentId} size="sm" />
+          </div>
           <div className="wb-row wb-row--wrap">
             <button
               type="button"

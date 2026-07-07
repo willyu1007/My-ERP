@@ -46,6 +46,17 @@ export function getFinanceApi(): ApiClient | null {
   return createApiClient({ baseUrl, token });
 }
 
+/**
+ * Raw `/v1` endpoint + bearer for callers that must bypass the JSON api-client —
+ * e.g. a route handler streaming a binary attachment. `null` when unconfigured.
+ */
+export function resolveApiEndpoint(): { baseUrl: string; token: string } | null {
+  const baseUrl = process.env.API_BASE_URL;
+  const token = resolveApiToken();
+  if (!baseUrl || !token) return null;
+  return { baseUrl, token };
+}
+
 /** Like {@link getFinanceApi} but throws when unconfigured — for mutations that cannot demo. */
 export function requireFinanceApi(): ApiClient {
   const api = getFinanceApi();

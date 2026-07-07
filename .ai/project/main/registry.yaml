@@ -114,3 +114,10 @@ tasks:
     feature_id: F-000
     dev_docs_path: dev-docs/active/finance-cashier-fund-queue
     updated: 2026-07-07
+  - id: T-014
+    slug: finance-fund-receipt-upload
+    status: done
+    milestone_id: M-000
+    feature_id: F-000
+    dev_docs_path: dev-docs/active/finance-fund-receipt-upload
+    updated: 2026-07-08

@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import type { ObjectStore, PutObjectInput, StoredObject } from '@my-erp/platform';
 
 /**
@@ -28,5 +28,15 @@ export class LocalObjectStore implements ObjectStore {
 
   async getUrl(storageKey: string): Promise<string> {
     return `/v1/intakes/attachments/${encodeURIComponent(storageKey)}`;
+  }
+
+  async get(storageKey: string): Promise<Uint8Array> {
+    // storageKey is always DB-sourced (an Attachment.storageKey), never user input,
+    // so the org/ledger/sha256 shape is trusted; still resolve under root only.
+    try {
+      return new Uint8Array(await readFile(join(this.root, storageKey)));
+    } catch {
+      throw new NotFoundException('attachment bytes not found');
+    }
   }
 }

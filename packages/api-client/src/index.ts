@@ -41,6 +41,7 @@ export type PaymentStatus = PaymentDoc['status'];
 // Cashier fund execution (T-012 Phase 4, D4)
 export type FundConsumption = components['schemas']['FundConsumption'];
 export type ConsumeFundConsumption = components['schemas']['ConsumeFundConsumption'];
+export type UploadFundReceipt = components['schemas']['UploadFundReceipt'];
 export type FundExecutionStatus = FundConsumption['executionStatus'];
 export type FundReconciliationStatus = FundConsumption['reconciliationStatus'];
 // Contracts (T-005)
@@ -184,6 +185,8 @@ export interface ApiClient {
   getFundConsumption(id: string): Promise<FundConsumption>;
   getFundConsumptionPendingCount(): Promise<{ count: number }>;
   consumeFundConsumption(id: string, body: ConsumeFundConsumption): Promise<FundConsumption>;
+  /** Attach a bank receipt (T-014). Returns the updated fund line with attachmentId set. */
+  uploadFundReceipt(id: string, body: UploadFundReceipt): Promise<FundConsumption>;
   // Contracts (T-005).
   listContracts(params?: {
     status?: ContractStatus;
@@ -374,6 +377,12 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
       request<FundConsumption>(
         'POST',
         `/v1/fund-consumptions/${encodeURIComponent(id)}/consume`,
+        body,
+      ),
+    uploadFundReceipt: (id, body) =>
+      request<FundConsumption>(
+        'POST',
+        `/v1/fund-consumptions/${encodeURIComponent(id)}/attachment`,
         body,
       ),
     listContracts: (params) => {

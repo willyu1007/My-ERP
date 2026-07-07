@@ -2837,6 +2837,26 @@ export async function voidFundConsumptionsForVoucherTx(
   return res.count;
 }
 
+/**
+ * Attach receipt evidence (an Attachment.id) to a fund line (T-014). Deliberately
+ * NOT version-guarded and does NOT bump version: the receipt is orthogonal to the
+ * optimistic-consume version, so attaching at confirm-time (before consume) leaves
+ * the caller's cached version valid. Blocked once the line is void. Returns the
+ * updated row, or null if the line is missing / void.
+ */
+export async function setFundConsumptionAttachmentTx(
+  tx: TxClient,
+  id: string,
+  attachmentId: string,
+): Promise<FundConsumptionEntity | null> {
+  const res = await tx.fundConsumption.updateMany({
+    where: { id, executionStatus: { not: 'void' } },
+    data: { attachmentId },
+  });
+  if (res.count === 0) return null;
+  return getFundConsumptionTx(tx, id);
+}
+
 /** Whether a voucher is a cashier-payment settlement voucher (PaymentDoc.settlementVoucherId).
  *  Belt-and-suspenders for the fund-consumption spawn exclusion. */
 export async function isSettlementVoucherTx(tx: TxClient, voucherId: string): Promise<boolean> {

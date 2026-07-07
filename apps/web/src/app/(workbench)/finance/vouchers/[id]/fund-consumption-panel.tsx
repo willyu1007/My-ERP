@@ -12,6 +12,7 @@ import {
   FUND_EXECUTION_LABEL,
   FUND_EXECUTION_TONE,
 } from '@/lib/finance/fund-display';
+import { ReceiptUpload } from '../../_components/receipt-upload';
 import { consumeFundAction } from './fund-actions';
 
 /**
@@ -40,17 +41,17 @@ function FundRow({ row }: { readonly row: FundConsumption }) {
   const toast = useToast();
   const [pending, start] = useTransition();
   const [bankFlowRef, setBankFlowRef] = useState(row.bankFlowRef ?? '');
-  const [attachmentId, setAttachmentId] = useState(row.attachmentId ?? '');
 
   const isPending = row.executionStatus === 'pending';
 
   function run(executionStatus: 'executed' | 'skipped'): void {
     start(async () => {
+      // Omit attachmentId: the receipt is attached via its own endpoint (ReceiptUpload),
+      // and consume preserves any existing attachment.
       const res = await consumeFundAction(row.id, {
         expectedVersion: row.version,
         executionStatus,
         bankFlowRef: bankFlowRef.trim() || null,
-        attachmentId: attachmentId.trim() || null,
       });
       if (res.ok) {
         toast.notify(
@@ -103,16 +104,10 @@ function FundRow({ row }: { readonly row: FundConsumption }) {
               onChange={(e) => setBankFlowRef(e.target.value)}
             />
           </label>
-          <label className="mt-field">
-            <span className="mt-label">附件编号（可选）</span>
-            <input
-              className="mt-input"
-              value={attachmentId}
-              autoComplete="off"
-              placeholder="回单 / 凭据附件 ID"
-              onChange={(e) => setAttachmentId(e.target.value)}
-            />
-          </label>
+          <div className="mt-field">
+            <span className="mt-label">银行回单（可选）</span>
+            <ReceiptUpload fundId={row.id} attachmentId={row.attachmentId} />
+          </div>
           <div className="wb-row wb-row--wrap">
             <button
               type="button"
@@ -149,6 +144,12 @@ function FundRow({ row }: { readonly row: FundConsumption }) {
                 {row.executedBy}
                 {row.executedAt ? ` · ${formatDate(row.executedAt.slice(0, 10))}` : ''}
               </span>
+            </div>
+          )}
+          {row.executionStatus !== 'void' && (
+            <div className="mt-field">
+              <span className="mt-label">银行回单</span>
+              <ReceiptUpload fundId={row.id} attachmentId={row.attachmentId} size="sm" />
             </div>
           )}
         </div>

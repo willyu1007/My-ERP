@@ -7,9 +7,9 @@
  * (the backend `consume` path touches no ledger); the real `/v1` re-checks the assignment
  * gate + optimistic version, so a 403/409 surfaces as "已变化，请刷新".
  */
-import type { ConsumeFundConsumption } from '@my-erp/api-client';
+import type { ConsumeFundConsumption, UploadFundReceipt } from '@my-erp/api-client';
 import { classifyActionFailure } from '@/lib/finance/action-failure';
-import { consumeFundConsumption } from '@/lib/finance/data-source';
+import { consumeFundConsumption, uploadFundReceipt } from '@/lib/finance/data-source';
 
 export type FundActionResult =
   | { readonly ok: true; readonly no: string; readonly executionStatus: string }
@@ -25,6 +25,19 @@ export async function consumeFundAction(
 ): Promise<FundActionResult> {
   try {
     const fc = await consumeFundConsumption(id, input);
+    return { ok: true, no: fc.voucherNo, executionStatus: fc.executionStatus };
+  } catch (err) {
+    return { ok: false, ...classifyActionFailure(err) };
+  }
+}
+
+/** Attach a bank receipt to a fund line (T-014). Evidence only — no ledger/voucher effect. */
+export async function uploadFundReceiptAction(
+  id: string,
+  input: UploadFundReceipt,
+): Promise<FundActionResult> {
+  try {
+    const fc = await uploadFundReceipt(id, input);
     return { ok: true, no: fc.voucherNo, executionStatus: fc.executionStatus };
   } catch (err) {
     return { ok: false, ...classifyActionFailure(err) };
