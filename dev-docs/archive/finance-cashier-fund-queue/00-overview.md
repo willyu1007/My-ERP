@@ -1,7 +1,7 @@
 # 00 — Overview: cashier fund-execution queue
 
 ## Status
-- State: done
+- State: archived
 - Scope aligned with the user 2026-07-07 (three decisions locked; see 01-plan); implemented and verified the same day (see 03/04).
 
 ## Problem statement

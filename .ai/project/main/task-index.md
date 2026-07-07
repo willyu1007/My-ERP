@@ -21,7 +21,7 @@ Project: `main`
 | T-009 finance-workbench-kernel-rewire | in-progress | F-000 | dev-docs/active/finance-workbench-kernel-rewire |
 | T-010 fast-entry-stash-drafts | done | F-000 | dev-docs/active/fast-entry-stash-drafts |
 | T-011 web-workbench-split-imports | archived | F-000 | dev-docs/archive/web-workbench-split-imports |
-| T-012 finance-sme-usability-foundation | in-progress | F-000 | dev-docs/active/finance-sme-usability-foundation |
-| T-013 finance-cashier-fund-queue | done | F-000 | dev-docs/active/finance-cashier-fund-queue |
-| T-014 finance-fund-receipt-upload | done | F-000 | dev-docs/active/finance-fund-receipt-upload |
+| T-012 finance-sme-usability-foundation | archived | F-000 | dev-docs/archive/finance-sme-usability-foundation |
+| T-013 finance-cashier-fund-queue | archived | F-000 | dev-docs/archive/finance-cashier-fund-queue |
+| T-014 finance-fund-receipt-upload | archived | F-000 | dev-docs/archive/finance-fund-receipt-upload |
 <!-- AUTO-GENERATED:END task-index -->

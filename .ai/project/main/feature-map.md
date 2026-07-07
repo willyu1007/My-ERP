@@ -40,7 +40,7 @@ Project: `main`
 | T-009 finance-workbench-kernel-rewire | in-progress | dev-docs/active/finance-workbench-kernel-rewire |
 | T-010 fast-entry-stash-drafts | done | dev-docs/active/fast-entry-stash-drafts |
 | T-011 web-workbench-split-imports | archived | dev-docs/archive/web-workbench-split-imports |
-| T-012 finance-sme-usability-foundation | in-progress | dev-docs/active/finance-sme-usability-foundation |
-| T-013 finance-cashier-fund-queue | done | dev-docs/active/finance-cashier-fund-queue |
-| T-014 finance-fund-receipt-upload | done | dev-docs/active/finance-fund-receipt-upload |
+| T-012 finance-sme-usability-foundation | archived | dev-docs/archive/finance-sme-usability-foundation |
+| T-013 finance-cashier-fund-queue | archived | dev-docs/archive/finance-cashier-fund-queue |
+| T-014 finance-fund-receipt-upload | archived | dev-docs/archive/finance-fund-receipt-upload |
 <!-- AUTO-GENERATED:END feature-map -->

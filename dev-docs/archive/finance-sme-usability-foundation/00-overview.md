@@ -1,7 +1,7 @@
 # 00 — Overview: SME finance usability foundation
 
 ## Status
-- State: in-progress
+- State: archived
 - Phase 0 decision alignment complete: D1-D11 confirmed 2026-07-05.
 - Phase 1 (BusinessPartner foundation) implemented and verified 2026-07-05: partner master + partnerId links/filters/snapshots + partners web page + PartnerPicker. See `03`/`04`.
 - Phase 2 (standard chart v2 + progressive picker) implemented and verified 2026-07-05: 92-account v2 template (official 小企业会计准则 set, repo code convention), explicit diff/import for existing ledgers, tree-based cash identification, D5 display preferences, progressive 分类→主科目→明细 picker with 常用/收藏/隐藏.

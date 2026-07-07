@@ -1,7 +1,7 @@
 # 00 — Overview: 回单拍照上传 (fund receipt upload)
 
 ## Status
-- State: done
+- State: archived
 - Scope aligned with the user 2026-07-08 (two decisions locked; see 01-plan); implemented and verified the same day (see 03/04).
 
 ## Problem statement
