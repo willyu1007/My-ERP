@@ -13,7 +13,7 @@ export const WORK_ITEM_TITLE: Record<string, string> = {
   'finance.payment.enrich': '收付款补录',
   'finance.payment.approve': '收付款审批',
   'finance.payment.confirm': '收付款确认',
-  'finance.fund.consume': '货币资金结算',
+  'finance.fund.consume': '资金执行',
 };
 
 /** Platform WorkItem.status (lifecycle) → display label. */

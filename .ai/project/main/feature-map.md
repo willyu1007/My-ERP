@@ -41,4 +41,5 @@ Project: `main`
 | T-010 fast-entry-stash-drafts | done | dev-docs/active/fast-entry-stash-drafts |
 | T-011 web-workbench-split-imports | archived | dev-docs/archive/web-workbench-split-imports |
 | T-012 finance-sme-usability-foundation | in-progress | dev-docs/active/finance-sme-usability-foundation |
+| T-013 finance-cashier-fund-queue | done | dev-docs/active/finance-cashier-fund-queue |
 <!-- AUTO-GENERATED:END feature-map -->

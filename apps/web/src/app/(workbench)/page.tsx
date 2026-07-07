@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Section, Stat, StatStrip } from '@my-erp/ui/primitives';
 import { ApiError, type WorkItem } from '@my-erp/api-client';
 import {
+  getFundConsumptionPendingCount,
   listContracts,
   listIntakes,
   listPayments,
@@ -47,7 +48,7 @@ function toRows(
     subStatus: it.subStatus,
     titleKey: it.titleKey,
     availableActions: it.availableActions ?? [],
-    href: workItemDeepLink(it.sourceType, it.sourceId),
+    href: workItemDeepLink(it.sourceType, it.sourceId, it.workItemType),
     ref: resolveWorkItemRef(it, voucherById, paymentById),
   }));
 }
@@ -63,12 +64,16 @@ export default async function DashboardPage() {
     else throw err;
   }
 
-  const [vouchers, payments, intakes, contracts, periods] = await Promise.all([
+  const [vouchers, payments, intakes, contracts, periods, fundPending] = await Promise.all([
     readListOrEmpty(listVouchers),
     readListOrEmpty(listPayments),
     readListOrEmpty(listIntakes),
     readListOrEmpty(listContracts),
     readListOrEmpty(listPeriods),
+    getFundConsumptionPendingCount().catch((err) => {
+      if (isFetchUnavailable(err)) return 0;
+      throw err;
+    }),
   ]);
   const voucherById = new Map(vouchers.map((v) => [v.id, v]));
   const paymentById = new Map(payments.map((p) => [p.id, p]));
@@ -150,7 +155,11 @@ export default async function DashboardPage() {
             href="/finance/payments"
             tone="cashier"
             title="出纳收付"
-            meta={`${paymentOpen} 待确认`}
+            meta={
+              fundPending > 0
+                ? `${paymentOpen} 待确认 · ${fundPending} 待执行`
+                : `${paymentOpen} 待确认`
+            }
           />
           <CommandLink
             href="/finance/contracts"

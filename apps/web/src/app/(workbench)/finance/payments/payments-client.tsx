@@ -10,6 +10,7 @@ import type {
   AccountPreferences,
   BusinessPartner,
   Contract,
+  FundConsumption,
   PaymentDoc,
   PaymentStatus,
 } from '@my-erp/api-client';
@@ -20,6 +21,7 @@ import {
   paymentStatusTone,
 } from '@/lib/finance/payment-display';
 import { PaymentCreateForm } from './payment-create-form';
+import { FundExecutionQueue } from './fund-execution-queue';
 import chrome from '../_components/queue-page.module.css';
 import styles from './payments.module.css';
 
@@ -171,6 +173,7 @@ export function PaymentsClient({
   canEnterAccounting,
   initialDate,
   initialEntryOpen = false,
+  fundConsumptions = [],
 }: {
   readonly payments: readonly PaymentDoc[];
   readonly accounts: readonly AccountVM[];
@@ -182,6 +185,8 @@ export function PaymentsClient({
   readonly canEnterAccounting: boolean;
   readonly initialDate: string;
   readonly initialEntryOpen?: boolean;
+  /** T-013 资金执行 queue rows (capped server-side; the section hints at the cap). */
+  readonly fundConsumptions?: readonly FundConsumption[];
 }) {
   const [queue, setQueue] = useState<PaymentQueueKey>('open');
   const [entryOpen, setEntryOpen] = useState(initialEntryOpen);
@@ -245,6 +250,9 @@ export function PaymentsClient({
           empty={{ title: '暂无待处理收付', desc: '当前队列没有需要处理的收付款单。' }}
         />
       </div>
+      {/* T-013: the cashier's fund-execution queue — same page, separate section
+          (a different entity than the payment docs above, same person). */}
+      {fundConsumptions.length > 0 && <FundExecutionQueue rows={fundConsumptions} />}
     </Scene>
   );
 }

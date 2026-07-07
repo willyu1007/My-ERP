@@ -25,12 +25,13 @@ Project: `main`
 <!-- AUTO-GENERATED:START dashboard -->
 ## Summary
 
-- Tasks: 12 (planned: 0, in-progress: 2, blocked: 0, done: 9, archived: 1)
+- Tasks: 13 (planned: 0, in-progress: 2, blocked: 0, done: 10, archived: 1)
 
 ## Recent tasks
 
 | Task | Status | Feature | Dev Docs |
 | --- | --- | --- | --- |
+| T-013 finance-cashier-fund-queue | done | F-000 | dev-docs/active/finance-cashier-fund-queue |
 | T-012 finance-sme-usability-foundation | in-progress | F-000 | dev-docs/active/finance-sme-usability-foundation |
 | T-011 web-workbench-split-imports | archived | F-000 | dev-docs/archive/web-workbench-split-imports |
 | T-010 fast-entry-stash-drafts | done | F-000 | dev-docs/active/fast-entry-stash-drafts |

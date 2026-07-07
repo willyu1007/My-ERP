@@ -14,8 +14,15 @@ export interface WorkItemSourceRef {
   readonly date: string;
 }
 
-/** Deep link to a work item's source entity (sourceType-aware). */
-export function workItemDeepLink(sourceType: string, sourceId: string): string {
+/** Deep link to a work item's source entity (sourceType/workItemType-aware). */
+export function workItemDeepLink(
+  sourceType: string,
+  sourceId: string,
+  workItemType?: string,
+): string {
+  // fund.consume sources a JournalVoucher, but the cashier's first-person surface
+  // is the 资金执行 queue on the 出纳收付 page (T-013), not the voucher detail.
+  if (workItemType === 'fund.consume') return '/finance/payments#fund-queue';
   return sourceType === 'PaymentDoc'
     ? `/finance/payments/${sourceId}`
     : `/finance/vouchers/${sourceId}`;

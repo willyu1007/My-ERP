@@ -172,13 +172,17 @@ export interface ApiClient {
     confirmSinglePerson?: boolean,
   ): Promise<PaymentConfirmResult>;
   voidPayment(id: string, expectedVersion: number, reason?: string): Promise<PaymentDoc>;
-  // Cashier fund execution (T-012 Phase 4, D4).
+  // Cashier fund execution (T-012 Phase 4, D4; queue filters T-013).
   listFundConsumptions(params?: {
     voucherId?: string;
     executionStatus?: FundExecutionStatus;
     reconciliationStatus?: FundReconciliationStatus;
+    period?: string;
+    limit?: number;
+    cursor?: string;
   }): Promise<FundConsumption[]>;
   getFundConsumption(id: string): Promise<FundConsumption>;
+  getFundConsumptionPendingCount(): Promise<{ count: number }>;
   consumeFundConsumption(id: string, body: ConsumeFundConsumption): Promise<FundConsumption>;
   // Contracts (T-005).
   listContracts(params?: {
@@ -356,11 +360,16 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
       if (params?.executionStatus) qs.set('executionStatus', params.executionStatus);
       if (params?.reconciliationStatus)
         qs.set('reconciliationStatus', params.reconciliationStatus);
+      if (params?.period) qs.set('period', params.period);
+      if (params?.limit) qs.set('limit', String(params.limit));
+      if (params?.cursor) qs.set('cursor', params.cursor);
       const q = qs.toString();
       return request<FundConsumption[]>('GET', `/v1/fund-consumptions${q ? `?${q}` : ''}`);
     },
     getFundConsumption: (id) =>
       request<FundConsumption>('GET', `/v1/fund-consumptions/${encodeURIComponent(id)}`),
+    getFundConsumptionPendingCount: () =>
+      request<{ count: number }>('GET', '/v1/fund-consumptions/pending-count'),
     consumeFundConsumption: (id, body) =>
       request<FundConsumption>(
         'POST',

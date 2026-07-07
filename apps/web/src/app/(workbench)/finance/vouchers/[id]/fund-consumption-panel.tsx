@@ -4,37 +4,28 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Section, StatusBadge } from '@my-erp/ui/primitives';
 import { useToast } from '@my-erp/ui/feedback';
-import type { CardTone } from '@my-erp/ui/contracts';
 import type { FundConsumption } from '@my-erp/api-client';
 import { formatDate, formatMoney } from '@/lib/finance/format';
+import {
+  FUND_CONFIRM_LABEL,
+  FUND_DIRECTION_LABEL,
+  FUND_EXECUTION_LABEL,
+  FUND_EXECUTION_TONE,
+} from '@/lib/finance/fund-display';
 import { consumeFundAction } from './fund-actions';
 
 /**
- * 货币资金结算 · 出纳执行 (T-012 Phase 4, D4). Inline on a posted voucher's detail:
+ * 资金执行 (T-012 Phase 4, D4; copy/queue T-013). Inline on a posted voucher's detail:
  * one card per cash/bank line where the cashier records that money actually moved
- * (bank-flow reference, attachment, reconciliation) or marks it 无需执行. Consuming
- * NEVER posts a second voucher — the action reports 已确认执行, not 已过账.
+ * (确认到账 / 确认已付, optional bank-flow ref) or marks it 无需执行. Consuming NEVER
+ * posts a second voucher. This panel is the accountant/audit-side view; the cashier's
+ * first-person queue lives on the 出纳收付 page (T-013).
+ * 对账 was intentionally removed from the UI (no post-execution action backs it yet).
  */
-const DIRECTION_LABEL: Record<string, string> = { inflow: '资金流入', outflow: '资金流出' };
-
-const EXECUTION_LABEL: Record<string, string> = {
-  pending: '待执行',
-  executed: '已执行',
-  skipped: '无需执行',
-  void: '已作废',
-};
-
-const EXECUTION_TONE: Record<string, CardTone> = {
-  pending: 'warning',
-  executed: 'success',
-  skipped: 'muted',
-  void: 'muted',
-};
-
 export function FundConsumptionPanel({ rows }: { readonly rows: readonly FundConsumption[] }) {
   if (rows.length === 0) return null;
   return (
-    <Section title="货币资金结算 · 出纳执行">
+    <Section title="资金执行">
       <div className="wb-stack wb-stack--md">
         {rows.map((row) => (
           <FundRow key={row.id} row={row} />
@@ -50,7 +41,6 @@ function FundRow({ row }: { readonly row: FundConsumption }) {
   const [pending, start] = useTransition();
   const [bankFlowRef, setBankFlowRef] = useState(row.bankFlowRef ?? '');
   const [attachmentId, setAttachmentId] = useState(row.attachmentId ?? '');
-  const [reconciled, setReconciled] = useState(row.reconciliationStatus === 'reconciled');
 
   const isPending = row.executionStatus === 'pending';
 
@@ -61,12 +51,13 @@ function FundRow({ row }: { readonly row: FundConsumption }) {
         executionStatus,
         bankFlowRef: bankFlowRef.trim() || null,
         attachmentId: attachmentId.trim() || null,
-        reconciliationStatus: reconciled ? 'reconciled' : 'unreconciled',
       });
       if (res.ok) {
         toast.notify(
           'success',
-          executionStatus === 'executed' ? '已确认执行' : '已标记无需',
+          executionStatus === 'executed'
+            ? (FUND_CONFIRM_LABEL[row.direction] ?? '已确认执行')
+            : '已标记无需',
           `${row.voucherNo} 第 ${row.lineNo} 行`,
         );
         router.refresh();
@@ -89,13 +80,13 @@ function FundRow({ row }: { readonly row: FundConsumption }) {
         </span>
         <span className="wb-spacer" />
         <StatusBadge
-          tone={EXECUTION_TONE[row.executionStatus] ?? 'muted'}
+          tone={FUND_EXECUTION_TONE[row.executionStatus] ?? 'muted'}
           dot
-          label={EXECUTION_LABEL[row.executionStatus] ?? row.executionStatus}
+          label={FUND_EXECUTION_LABEL[row.executionStatus] ?? row.executionStatus}
         />
       </div>
       <div className="wb-row">
-        <span className="wb-muted">{DIRECTION_LABEL[row.direction] ?? row.direction}</span>
+        <span className="wb-muted">{FUND_DIRECTION_LABEL[row.direction] ?? row.direction}</span>
         <span className="wb-spacer" />
         <span className="wb-mono">{formatMoney(row.amount)}</span>
       </div>
@@ -122,14 +113,6 @@ function FundRow({ row }: { readonly row: FundConsumption }) {
               onChange={(e) => setAttachmentId(e.target.value)}
             />
           </label>
-          <label className="wb-row">
-            <input
-              type="checkbox"
-              checked={reconciled}
-              onChange={(e) => setReconciled(e.target.checked)}
-            />
-            <span>已与银行对账</span>
-          </label>
           <div className="wb-row wb-row--wrap">
             <button
               type="button"
@@ -137,7 +120,7 @@ function FundRow({ row }: { readonly row: FundConsumption }) {
               disabled={pending}
               onClick={() => run('executed')}
             >
-              {pending ? '处理中…' : '确认执行'}
+              {pending ? '处理中…' : (FUND_CONFIRM_LABEL[row.direction] ?? '确认执行')}
             </button>
             <button
               type="button"
@@ -158,11 +141,6 @@ function FundRow({ row }: { readonly row: FundConsumption }) {
               <span>{row.bankFlowRef}</span>
             </div>
           )}
-          <div className="wb-row">
-            <span className="wb-muted">对账</span>
-            <span className="wb-spacer" />
-            <span>{row.reconciliationStatus === 'reconciled' ? '已对账' : '未对账'}</span>
-          </div>
           {row.executedBy && (
             <div className="wb-row">
               <span className="wb-muted">经办</span>

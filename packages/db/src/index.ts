@@ -2723,19 +2723,57 @@ export async function getFundConsumptionByWorkItemTx(
 
 export async function listFundConsumptionsTx(
   tx: TxClient,
-  filters?: { voucherId?: string; executionStatus?: string; reconciliationStatus?: string },
+  filters?: {
+    voucherId?: string;
+    executionStatus?: string;
+    reconciliationStatus?: string;
+    /** Source-voucher accounting period (e.g. "2026-06"); resolved via journal_voucher. */
+    period?: string;
+    /** Page size; omitted = full result (back-compat for per-voucher panel reads). */
+    limit?: number;
+    /** Cursor = the `id` of the last row of the previous page (workbench convention). */
+    cursor?: string;
+  },
 ): Promise<FundConsumptionEntity[]> {
+  // No FundConsumption→voucher relation in the schema (plain uuid column), so the
+  // period filter resolves voucher ids first (indexed by [ledgerBookId, period] via RLS).
+  let periodVoucherIds: string[] | null = null;
+  if (filters?.period) {
+    const vouchers = await tx.journalVoucher.findMany({
+      where: { period: filters.period },
+      select: { id: true },
+    });
+    periodVoucherIds = vouchers.map((v) => v.id);
+    if (periodVoucherIds.length === 0) return [];
+  }
+  // voucherId + period compose by intersection (a voucherId outside the period → empty).
+  if (filters?.voucherId && periodVoucherIds && !periodVoucherIds.includes(filters.voucherId)) {
+    return [];
+  }
+  const voucherIdWhere: Prisma.FundConsumptionWhereInput = filters?.voucherId
+    ? { voucherId: filters.voucherId }
+    : periodVoucherIds
+      ? { voucherId: { in: periodVoucherIds } }
+      : {};
   const rows = await tx.fundConsumption.findMany({
     where: {
-      ...(filters?.voucherId ? { voucherId: filters.voucherId } : {}),
+      ...voucherIdWhere,
       ...(filters?.executionStatus ? { executionStatus: filters.executionStatus } : {}),
       ...(filters?.reconciliationStatus
         ? { reconciliationStatus: filters.reconciliationStatus }
         : {}),
     },
-    orderBy: [{ voucherNo: 'desc' }, { lineNo: 'asc' }],
+    // id tiebreaker keeps the order deterministic so cursor paging never skips/repeats.
+    orderBy: [{ voucherNo: 'desc' }, { lineNo: 'asc' }, { id: 'asc' }],
+    ...(filters?.cursor ? { cursor: { id: filters.cursor }, skip: 1 } : {}),
+    ...(filters?.limit ? { take: filters.limit } : {}),
   });
   return rows.map(toFundConsumption);
+}
+
+/** Open fund-execution workload for the current ledger (queue badge / dashboard count). */
+export async function countPendingFundConsumptionsTx(tx: TxClient): Promise<number> {
+  return tx.fundConsumption.count({ where: { executionStatus: 'pending' } });
 }
 
 /** Attach the paired fund.consume WorkItem id after it is created (same tx, internal). */

@@ -37,12 +37,34 @@ export class FundConsumptionsController {
     @Query('voucherId') voucherId?: string,
     @Query('executionStatus') executionStatus?: string,
     @Query('reconciliationStatus') reconciliationStatus?: string,
+    @Query('period') period?: string,
+    @Query('limit') limit?: string,
+    @Query('cursor') cursor?: string,
   ) {
+    let parsedLimit: number | undefined;
+    if (limit !== undefined) {
+      parsedLimit = Number(limit);
+      if (!Number.isInteger(parsedLimit) || parsedLimit < 1 || parsedLimit > 100)
+        throw new BadRequestException('limit must be an integer between 1 and 100');
+    }
     return this.service.list(identity, ledgerBookId, {
       voucherId,
       executionStatus,
       reconciliationStatus,
+      period,
+      limit: parsedLimit,
+      cursor,
     });
+  }
+
+  // Declared before `:id` so the literal segment is not captured as an id.
+  @Get('pending-count')
+  @RequirePermission('read', 'FundConsumption')
+  async pendingCount(
+    @LedgerBookId() ledgerBookId: string,
+    @CurrentIdentity() identity: Identity,
+  ) {
+    return this.service.pendingCount(identity, ledgerBookId);
   }
 
   @Get(':id')

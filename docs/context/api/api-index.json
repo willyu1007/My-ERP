@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-06T00:18:17.006Z",
+  "generatedAt": "2026-07-07T14:24:04.649Z",
   "sourceOpenapi": "docs/context/api/openapi.yaml",
-  "sourceChecksumSha256": "c40b6bf9fe1c2c92df6974683876836bffafe5c186eacfcaee0f324fe759e681",
+  "sourceChecksumSha256": "52170e115291339773d918b49331c5f31cd6be50d8e11bd596a87f9266808b4c",
   "stats": {
-    "totalEndpoints": 72,
+    "totalEndpoints": 73,
     "byTag": {
       "system": 1,
       "identity": 1,
@@ -21,7 +21,7 @@
       "cash-flow": 5,
       "reports": 3,
       "payments": 8,
-      "fund-consumptions": 3,
+      "fund-consumptions": 4,
       "contracts": 5,
       "business-partners": 4,
       "opening-balances": 2
@@ -2185,7 +2185,10 @@
         "query": [
           "voucherId",
           "executionStatus",
-          "reconciliationStatus"
+          "reconciliationStatus",
+          "period",
+          "limit",
+          "cursor"
         ],
         "body": null
       },
@@ -2196,6 +2199,29 @@
       "errors": [],
       "example": {
         "curl": "curl -X GET '/v1/fund-consumptions' -H 'Authorization: Bearer <token>'"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/fund-consumptions/pending-count",
+      "operationId": "getFundConsumptionPendingCount",
+      "summary": "Open fund-execution workload for the ledger (queue badge / dashboard, T-013)",
+      "tag": "fund-consumptions",
+      "auth": "bearer",
+      "input": {
+        "params": [],
+        "query": [],
+        "body": null
+      },
+      "output": {
+        "successStatus": 200,
+        "coreFields": [
+          "count"
+        ]
+      },
+      "errors": [],
+      "example": {
+        "curl": "curl -X GET '/v1/fund-consumptions/pending-count' -H 'Authorization: Bearer <token>'"
       }
     },
     {

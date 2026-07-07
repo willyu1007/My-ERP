@@ -65,7 +65,10 @@ const fund = new FundConsumptionsService();
 let noSeq = 0;
 function nextNo(): string {
   noSeq += 1;
-  return `记-2026-06-${String(noSeq).padStart(3, '0')}`;
+  // T-prefixed sequence: the reverse endpoint derives its reversal no from
+  // countVouchersInPeriodTx (plain 记-YYYY-MM-NNN), which would collide with a
+  // plain counter here once the counts cross.
+  return `记-2026-06-T${String(noSeq).padStart(3, '0')}`;
 }
 
 function sum(lines: readonly VoucherLineInput[], side: 'debit' | 'credit'): string {
@@ -350,6 +353,51 @@ describe.skipIf(!PG_AVAILABLE)('fund consumption (service integration)', () => {
     await expect(
       fund.consume(cashA, LB, after[0].id, { expectedVersion: after[0].version, executionStatus: 'executed' }),
     ).rejects.toThrow(ConflictException);
+  });
+
+  it('T-013: cursor pagination walks all rows without skips or repeats; period filter + pending count', async () => {
+    // Three fresh vouchers in a dedicated period area — every earlier test also left rows,
+    // so assertions filter by collected ids rather than absolute counts.
+    const ids: string[] = [];
+    for (const amt of ['11.00', '22.00', '33.00']) {
+      const { id } = await postManual([
+        { accountCode: '1001', accountName: '库存现金', summary: '收款', debit: amt, credit: null },
+        { accountCode: '6001', accountName: '主营业务收入', summary: '收入', debit: null, credit: amt },
+      ]);
+      ids.push(id);
+    }
+
+    // Cursor walk with limit 2 over the pending set of the period.
+    const page1 = await fund.list(cashA, LB, { period: '2026-06', executionStatus: 'pending', limit: 2 });
+    expect(page1.length).toBeLessThanOrEqual(2);
+    const page2 = await fund.list(cashA, LB, {
+      period: '2026-06',
+      executionStatus: 'pending',
+      limit: 100,
+      cursor: page1[page1.length - 1].id,
+    });
+    const all = await fund.list(cashA, LB, { period: '2026-06', executionStatus: 'pending' });
+    const walked = [...page1, ...page2].map((r) => r.id);
+    expect(new Set(walked).size).toBe(walked.length); // no repeats
+    expect(walked).toEqual(all.map((r) => r.id)); // no skips, same order
+
+    // Period filter: a bogus period returns nothing; the real one contains the new rows.
+    expect(await fund.list(cashA, LB, { period: '2030-01' })).toHaveLength(0);
+    const inPeriod = await fund.list(cashA, LB, { period: '2026-06' });
+    for (const vid of ids) expect(inPeriod.some((r) => r.voucherId === vid)).toBe(true);
+
+    // voucherId + period intersect: right period → rows; wrong period → empty.
+    expect((await fund.list(cashA, LB, { voucherId: ids[0], period: '2026-06' })).length).toBe(1);
+    expect(await fund.list(cashA, LB, { voucherId: ids[0], period: '2030-01' })).toHaveLength(0);
+
+    // Pending count matches the unfiltered pending list, and drops after a consume.
+    const before = await fund.pendingCount(cashA, LB);
+    const pendingAll = await fund.list(cashA, LB, { executionStatus: 'pending' });
+    expect(before.count).toBe(pendingAll.length);
+    const [row] = await fund.list(cashA, LB, { voucherId: ids[0] });
+    await fund.consume(cashA, LB, row.id, { expectedVersion: row.version, executionStatus: 'executed' });
+    const after = await fund.pendingCount(cashA, LB);
+    expect(after.count).toBe(before.count - 1);
   });
 
   it('RBAC: a cashier can consume FundConsumption but cannot post a Voucher (D4)', () => {

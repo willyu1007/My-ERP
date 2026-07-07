@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
+  countPendingFundConsumptionsTx,
   getFundConsumptionTx,
   listFundConsumptionsTx,
   withScope,
@@ -45,13 +46,31 @@ export class FundConsumptionsService {
   async list(
     identity: Identity,
     ledgerBookId: string,
-    filters: { voucherId?: string; executionStatus?: string; reconciliationStatus?: string },
+    filters: {
+      voucherId?: string;
+      executionStatus?: string;
+      reconciliationStatus?: string;
+      period?: string;
+      limit?: number;
+      cursor?: string;
+    },
   ) {
     if (filters.voucherId && !UUID_RE.test(filters.voucherId))
       throw new BadRequestException('voucherId must be a uuid');
+    if (filters.cursor && !UUID_RE.test(filters.cursor))
+      throw new BadRequestException('cursor must be a uuid');
+    if (filters.period && !/^\d{4}-\d{2}$/.test(filters.period))
+      throw new BadRequestException('period must be YYYY-MM');
     return withScope(identity.orgId, ledgerBookId, async (tx) =>
       (await listFundConsumptionsTx(tx, filters)).map(toDto),
     );
+  }
+
+  /** Open fund-execution workload (queue badge / dashboard). */
+  async pendingCount(identity: Identity, ledgerBookId: string): Promise<{ count: number }> {
+    return withScope(identity.orgId, ledgerBookId, async (tx) => ({
+      count: await countPendingFundConsumptionsTx(tx),
+    }));
   }
 
   async get(identity: Identity, ledgerBookId: string, id: string) {

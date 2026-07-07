@@ -352,10 +352,20 @@ export async function listFundConsumptions(filters?: {
   voucherId?: string;
   executionStatus?: FundExecutionStatus;
   reconciliationStatus?: FundReconciliationStatus;
+  period?: string;
+  limit?: number;
+  cursor?: string;
 }): Promise<readonly FundConsumption[]> {
   const api = getFinanceApi();
   if (!api) return [];
   return api.listFundConsumptions(filters);
+}
+
+/** Open fund-execution workload (queue badge / dashboard; 0 in demo mode). */
+export async function getFundConsumptionPendingCount(): Promise<number> {
+  const api = getFinanceApi();
+  if (!api) return 0;
+  return (await api.getFundConsumptionPendingCount()).count;
 }
 
 /** A single fund-consumption row, or `null` (not found / demo mode). */

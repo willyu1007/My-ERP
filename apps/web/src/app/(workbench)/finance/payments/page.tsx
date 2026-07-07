@@ -5,8 +5,10 @@ import {
   listAccounts,
   listBusinessPartners,
   listContracts,
+  listFundConsumptions,
   listPayments,
 } from '@/lib/finance/data-source';
+import { FUND_QUEUE_FETCH_LIMIT } from '@/lib/finance/fund-display';
 import { PaymentsClient } from './payments-client';
 
 export const dynamic = 'force-dynamic';
@@ -34,6 +36,7 @@ export default async function PaymentsPage({
     filterPartner,
     accountPreferences,
     canEnterAccounting,
+    fundConsumptions,
   ] = await Promise.all([
     listPayments(partnerId ? { partnerId } : undefined),
     listAccounts(),
@@ -42,6 +45,8 @@ export default async function PaymentsPage({
     partnerId ? getBusinessPartner(partnerId) : Promise.resolve(null),
     getAccountPreferences(),
     getAccountingCapable(),
+    // T-013 资金执行 queue: newest-first, capped (the queue shows a cap hint at the limit).
+    listFundConsumptions({ limit: FUND_QUEUE_FETCH_LIMIT }),
   ]);
   const today = new Date().toISOString().slice(0, 10);
 
@@ -56,6 +61,7 @@ export default async function PaymentsPage({
       canEnterAccounting={canEnterAccounting}
       initialDate={today}
       initialEntryOpen={first(sp.entry) === '1'}
+      fundConsumptions={fundConsumptions}
     />
   );
 }
